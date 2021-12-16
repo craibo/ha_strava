@@ -1,7 +1,7 @@
 # Strava Home Assistant Integration
 Custom Component to integrate Activity Data from Strava into Home Assistant.
 
-This is a fork from Codingcyclist https://github.com/madmic1314/ha_strava to keep the integration alive. I'm not a coder and the best you'll get from me is copy + paste, but happy to accept contributuions and help from the community.
+This is a fork from Codingcyclist https://github.com/codingcyclist/ha_strava in an attempt to keep the integration alive - I take no credit for his hard work. I'm not a coder and the best you'll get from me is copy + paste, but happy to accept contributuions and help from the community.
 
 ## Features
 * Gives you access to **up to 10 of your most recent activities** in Strava. 
