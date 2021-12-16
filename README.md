@@ -12,7 +12,7 @@ This is a fork from Codingcyclist <https://github.com/codingcyclist/ha_strava> i
 * Exposes **5 customizable sensor entities** for each Strava activity
 * **Easy set-up**: only enter your Strava Client-ID and -secret and you're ready to go
 
-![](sensor_overview.png)
+![sensor_overview image](sensor_overview.png)
 
 For every Strava activity, the Strava Home Assistant Integration creates a **device entity** in Home Assistant (max 10 activities). Each of these virtual device entities exposes **five sensor entities** which you can customize to display one of the following **activity KPIs**:
 
@@ -50,7 +50,7 @@ As of now, the Strava Home Assistant Integration can only be installed as a cust
 
 Now is the time to fire up the Strava Home Assistant Integration for the first time and make a connection between Strava and your Home Assistant Instance.
 
-![](ha_strava_install.gif)
+![ha_strava_install image](ha_strava_install.gif)
 
 From within Home Assistant, head over to `Configuration` > `Integrations` and hit the "+"-symbol at the bottom. Search for "Strava Home Assistant" and click on the icon to add the Integration to Home Assistant. You'll automatically be prompted to enter your Strava API credentials. It'll take a few seconds to complete the set-up process after you've granted all the required permissions.
 
@@ -64,7 +64,7 @@ Upon completion of the installation process, the Strava Home Assistant integrati
 
 You can always **adjust the number of Strava activities you whish to track** from within Home Assistant (min 1; max 10).
 
-![](ha_strava_config.gif)
+![ha_strava_config image](ha_strava_config.gif)
 
 Just locate the Strava Home Assistant Integration under `Configuration` > `Integrations`, click on `Options`, and use the slider to adjust the number of activities. After you've saved your settings, it might take a few minutes for Home Assistant to create the corresponding sensor entities and fetch the underlying data. The activities available in Home Assistant always correspond to the most recent ones under your Strava profile.
 
@@ -86,7 +86,7 @@ As of now, customization is only supported for **Ride, Run, and Hike activities*
 
 Below, you can find an example UI-configuration, which adds metrics from your two most recent Strava activities to a separate Lovelace Dashboard in Home Assistant.
 
-![](ha_strava_ui_config.gif)
+![ha_strava_ui_config image](ha_strava_ui_config.gif)
 
 ```yaml
 title: Home
