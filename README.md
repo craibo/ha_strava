@@ -2,14 +2,14 @@
 
 Custom Component to integrate Activity Data from Strava into Home Assistant.
 
-This is a fork from Codingcyclist <https://github.com/codingcyclist/ha_strava> in an attempt to keep the integration alive - I take no credit for his hard work. I'm not a coder and the best you'll get from me is copy + paste, but happy to accept contributuions and help from the community.
+This is a fork from Codingcyclist <https://github.com/codingcyclist/ha_strava> in an attempt to keep the integration alive - I take no credit for his hard work. I'm not a coder and the best you'll get from me is copy + paste, but happy to accept contributions and help from the community.
 
 ## Features
 
 * Gives you access to **up to 10 of your most recent activities** in Strava.
 * Supports both the **metric and the imperial** unit system
 * Activity data in Home Assistant **auto-updates** whenever you add, modify, or delete activities on Strava
-* Exposes **5 customizeable sensor entities** for each Strava activity
+* Exposes **5 customizable sensor entities** for each Strava activity
 * **Easy set-up**: only enter your Strava Client-ID and -secret and you're ready to go
 
 ![](sensor_overview.png)
@@ -21,7 +21,7 @@ For every Strava activity, the Strava Home Assistant Integration creates a **dev
 * Speed (Miles/Hour; Km/Hour)
 * Distance (Miles; Km)
 * \# Kudos
-* Kalories (cKal),
+* Calories (kcal),
 * Elevation Gain (Feet, Meter)
 * Power (Watts)
 * \# Trophies
@@ -34,7 +34,7 @@ Since every Strava activity gets its own virtual device, you can use the underly
 
 ### First, set up remote access to your Home Assistant Installation
 
-To use the Strava Home Assitant integration, your Home Assistant Instance must be accessible from an **External URL** (i.e. Remote Access). Without remote access, the integration won't be able to pull data from Strava. To learn how to set up Remote Access for Home Assistant, please visit the [Official Documentation](https://www.home-assistant.io/docs/configuration/remote/)
+To use the Strava Home Assistant integration, your Home Assistant Instance must be accessible from an **External URL** (i.e. Remote Access). Without remote access, the integration won't be able to pull data from Strava. To learn how to set up Remote Access for Home Assistant, please visit the [Official Documentation](https://www.home-assistant.io/docs/configuration/remote/)
 
 ### Second, obtain your Strava API credentials
 
@@ -42,13 +42,13 @@ After you've set up remote access and configured the External URL for your Home 
 
 **!!! IMPORTANT !!!** It is essential that the **Authorization Callback Domain** which you set for your Strava API matches the domain of your **Home Assistant External URL**
 
-### Third, add the Strava Home Assistant Integration to your Home Assistant Insallation
+### Third, add the Strava Home Assistant Integration to your Home Assistant Installation
 
 As of now, the Strava Home Assistant Integration can only be installed as a custom repository through the Home Assistant Community Store (HACS). The installation process is super easy, check out my **5-minute tutorial on how to install Custom Components in HACS** [here](https://medium.com/@codingcyclist/how-to-install-any-custom-component-from-github-in-less-than-5-minutes-ad84e6dc56ff)
 
 ### Fourth, make a connection between your Strava account and Home Assistant
 
-Now is the time to fire up the Strava Home Assitant Integration for the first time and make a connection between Strava and your Home Assistant Instance.
+Now is the time to fire up the Strava Home Assistant Integration for the first time and make a connection between Strava and your Home Assistant Instance.
 
 ![](ha_strava_install.gif)
 
@@ -56,11 +56,11 @@ From within Home Assistant, head over to `Configuration` > `Integrations` and hi
 
 ## Configuration/Customization
 
-_Strava Home Assistant only supports configuration through the Home Assitant UI. Configuration via. `configuration.yaml` will be deprecated [official announcement to the HA community](https://www.home-assistant.io/blog/2020/04/14/the-future-of-yaml/) and is therefore not supported._
+_Strava Home Assistant only supports configuration through the Home Assistant UI. Configuration via. `configuration.yaml` will be deprecated [official announcement to the HA community](https://www.home-assistant.io/blog/2020/04/14/the-future-of-yaml/) and is therefore not supported._
 
 Upon completion of the installation process, the Strava Home Assistant integration **automatically creates device- and sensor entities** for you to access data from your most recent Strava activities. The number of sensor entities varies, depending on how many of your most recent Strava activities you whish to track from within Home Assistant (5 + 1 sensors per activity). Per default, only sensor entities for the **two most recent Strava activities** are visible in Home Assistant. Please read the section below to learn how to change the number of visible sensor entities for Strava Home Assistant.
 
-### Increase/Decrease the number of Strava activities avaiable in Home Assistant
+### Increase/Decrease the number of Strava activities available in Home Assistant
 
 You can always **adjust the number of Strava activities you whish to track** from within Home Assistant (min 1; max 10).
 
@@ -84,7 +84,7 @@ As of now, customization is only supported for **Ride, Run, and Hike activities*
 
 ### Integrate Strava Activities into your Home Assistant UI
 
-Below, you can find an example UI-configuration, which adds metrics from your two most recent Strava activities to a separate Lovelace Dashboard in Home Assitant.
+Below, you can find an example UI-configuration, which adds metrics from your two most recent Strava activities to a separate Lovelace Dashboard in Home Assistant.
 
 ![](ha_strava_ui_config.gif)
 
@@ -135,7 +135,7 @@ views:
 
 ## Contributors
 
-- [@codingcyclist](https://github.com/codingcyclist)
+* [@codingcyclist](https://github.com/codingcyclist)
 
 ## TODO
 
