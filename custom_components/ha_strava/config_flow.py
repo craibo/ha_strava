@@ -8,7 +8,7 @@ import voluptuous as vol
 
 # HASS imports
 from homeassistant import config_entries
-from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET, HTTP_OK
+from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from homeassistant.core import callback
 from homeassistant.helpers import config_entry_oauth2_flow, config_validation as cv
 from homeassistant.helpers.network import get_url, NoURLAvailableError
