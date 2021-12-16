@@ -1,11 +1,11 @@
 {
-    "name": "Strava Home Assistant",
-    "domain": "ha_strava",
-    "config_flow": true,
-    "documentation": "https://github.com/codingcyclist/ha_strava",
-    "requirements": ["aiohttp>=3.6.1", "voluptuous>=0.11.7"],
-    "dependencies": [],
-    "codeowners": ["@codingcyclist"],
-    "version": "0.2",
-    "iot_class": "cloud_push"
+  "name": "Strava Home Assistant",
+  "domain": "ha_strava",
+  "config_flow": true,
+  "documentation": "https://github.com/codingcyclist/ha_strava",
+  "requirements": ["aiohttp>=3.6.1", "voluptuous>=0.11.7"],
+  "dependencies": [],
+  "codeowners": ["@codingcyclist"],
+  "version": "0.2",
+  "iot_class": "cloud_push"
 }
