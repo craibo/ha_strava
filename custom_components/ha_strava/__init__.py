@@ -9,6 +9,7 @@ import voluptuous as vol
 from aiohttp import ClientSession
 from aiohttp.web import json_response, Response, Request
 from datetime import datetime as dt
+from http import HTTPStatus
 
 # HASS imports
 from homeassistant import data_entry_flow
@@ -20,7 +21,6 @@ from homeassistant.config_entries import ConfigEntry, SOURCE_IMPORT
 from homeassistant.const import (
     CONF_CLIENT_ID,
     CONF_CLIENT_SECRET,
-    HTTP_OK,
     CONF_WEBHOOK_ID,
     EVENT_COMPONENT_LOADED,
     EVENT_CORE_CONFIG_UPDATE,
@@ -365,10 +365,10 @@ class StravaWebhookView(HomeAssistantView):
         webhook_subscription_challenge = request.query.get("hub.challenge", None)
         if webhook_subscription_challenge:
             return json_response(
-                status=HTTP_OK, data={"hub.challenge": webhook_subscription_challenge}
+                status=HTTPStatus.OK, data={"hub.challenge": webhook_subscription_challenge}
             )
 
-        return Response(status=HTTP_OK)
+        return Response(status=HTTPStatus.OK)
 
     async def post(self, request: Request):
         """Handle incoming post request"""
@@ -388,7 +388,7 @@ class StravaWebhookView(HomeAssistantView):
             self.hass.async_create_task(self.fetch_strava_data())
 
         # always return a 200 response
-        return Response(status=HTTP_OK)
+        return Response(status=HTTPStatus.OK)
 
 
 async def renew_webhook_subscription(
