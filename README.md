@@ -1,7 +1,7 @@
 # Strava Home Assistant Integration
 Custom Component to integrate Activity Data from Strava into Home Assistant.
 
-<a href="https://www.buymeacoffee.com/codingcyclist1" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: 41px !important;width: 174px !important;box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;-webkit-box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;" ></a>
+This is a fork from Codingcyclist https://github.com/madmic1314/ha_strava to keep the integration alive. I'm not a coder and the best you'll get from me is copy + paste, but happy to accept contributuions and help from the community.
 
 ## Features
 * Gives you access to **up to 10 of your most recent activities** in Strava. 
@@ -125,9 +125,6 @@ views:
 ## Contributors
 - [@codingcyclist](https://github.com/codingcyclist)
 
-<a href="https://www.buymeacoffee.com/codingcyclist1" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: 41px !important;width: 174px !important;box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;-webkit-box-shadow: 0px 3px 2px 0px rgba(190, 190, 190, 0.5) !important;" ></a>
-
 ## TODO
-- [] Add customization support for more activity types
-- [] Add German language support
-- [] Add support for more KPIs
+--- NONE PLANNED ---
+Learn how to code?
