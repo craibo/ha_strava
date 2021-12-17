@@ -5,9 +5,8 @@
     "config_flow": true,
     "dependencies": [],
     "documentation": "https://github.com/madmic1314/ha_strava",
-    "domain": "mrkstrava",
+    "domain": "ha_strava",
     "iot_class": "cloud_polling",
-    "issue_tracker": "https://github.com/hacs/integration/issues",
     "name": "HA Strava",
     "requirements": [
         "aiohttp>=3.6.1",
