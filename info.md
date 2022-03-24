@@ -33,19 +33,4 @@ The Strava Home Assistant Integration also creates a **device entity** for both 
 ...for **Ride, Run, and Swim** activities
 
 ## Installation
-1. Set up remote access to your Home Assistant Installation
-2. Obtain your Strava API credentials
-3. Add the Strava Home Assistant Integration to your Home Assistant Installation
-4. Make a connection between your Strava account and Home Assistant
-Now is the time to fire up the Strava Home Assitant Integration for the first time and make a connection between Strava and your Home Assistant Instance. 
-
-For much more detailed guidelines on how to install Strava Home Assitant, check out the (README)[https://github.com/codingcyclist/ha_strava]
-
-## Configuration/Customization
-You have the following options to customize Strava Home Assistant:
-- Increase/Decrease the number of Strava activities avaiable in Home Assistant
-- Increase/Decrease the frequency of the Photo Carousel
-- Customize sensor KPIs for different types of Strava Activities
-- Integrate Strava Activities into your Home Assistant UI
-
-For much more detailed guidelines on how to configure Strava Home Assitant, check out the (README)[https://github.com/codingcyclist/ha_strava]
+For much more detailed guidelines on how to configure Strava Home Assitant, check out the (README)[https://github.com/madmic1314/ha_strava]
