@@ -1,6 +1,6 @@
 {
     "codeowners": [
-        "@codingcyclist"
+        "@madmic"
     ],
     "config_flow": true,
     "dependencies": [],
