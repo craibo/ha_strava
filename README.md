@@ -1,5 +1,7 @@
 # Strava Home Assistant Integration
 
+NOTE: You MUST remove the HA_Strava integration from Home Assistant integration, HACS Integration, HACS Custom Repository and reboot HA before adding this.
+
 Custom Component to integrate Activity Data from Strava into Home Assistant.
 
 This is a fork from Codingcyclist <https://github.com/codingcyclist/ha_strava> in an attempt to keep the integration alive - I take no credit for his hard work. I'm not a coder and the best you'll get from me is copy + paste, but happy to accept contributions and help from the community.
@@ -36,6 +38,8 @@ Since every Strava activity gets its own virtual device, you can use the underly
 
 To use the Strava Home Assistant integration, your Home Assistant Instance must be accessible from an **External URL** (i.e. Remote Access). Without remote access, the integration won't be able to pull data from Strava. To learn how to set up Remote Access for Home Assistant, please visit the [Official Documentation](https://www.home-assistant.io/docs/configuration/remote/)
 
+_If you use NabuCasa (and I strongly advise you to support this project!) then do this configuration from your Nabucasa URL. You can find this under Configuration -> "Home Assistant Cloud"_
+
 ### Second, obtain your Strava API credentials
 
 After you've set up remote access and configured the External URL for your Home Assistant instance, head over to your **Strava Profile**. Under "**Settings**", go to "**My API Application**", follow the steps in the configuration wizard, and eventually obtain your Strava API credentials (ID + secret). We need those credentials during the final installation step.
@@ -55,8 +59,6 @@ Now is the time to fire up the Strava Home Assistant Integration for the first t
 From within Home Assistant, head over to `Configuration` > `Integrations` and hit the "+"-symbol at the bottom. Search for "Strava Home Assistant" and click on the icon to add the Integration to Home Assistant. You'll automatically be prompted to enter your Strava API credentials. It'll take a few seconds to complete the set-up process after you've granted all the required permissions.
 
 ## Configuration/Customization
-
-_Strava Home Assistant only supports configuration through the Home Assistant UI. Configuration via. `configuration.yaml` will be deprecated [official announcement to the HA community](https://www.home-assistant.io/blog/2020/04/14/the-future-of-yaml/) and is therefore not supported._
 
 Upon completion of the installation process, the Strava Home Assistant integration **automatically creates device- and sensor entities** for you to access data from your most recent Strava activities. The number of sensor entities varies, depending on how many of your most recent Strava activities you whish to track from within Home Assistant (5 + 1 sensors per activity). Per default, only sensor entities for the **two most recent Strava activities** are visible in Home Assistant. Please read the section below to learn how to change the number of visible sensor entities for Strava Home Assistant.
 
