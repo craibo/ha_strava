@@ -152,7 +152,7 @@ class UrlCam(Camera):
         return False
 
     @property
-    def device_state_attributes(self):
+    def extra_state_attributes(self):
         """Return the camera state attributes."""
         if len(self._urls) == self._url_index:
             return {"img_url": self._default_url}
