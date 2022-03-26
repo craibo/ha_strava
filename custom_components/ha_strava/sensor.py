@@ -331,12 +331,9 @@ class StravaStatsSensor(Entity):
             return distance
 
         if metric == CONF_SENSOR_PACE:
-            if self._data[CONF_SENSOR_DISTANCE] > 0:
-                pace = self._data[CONF_SENSOR_MOVING_TIME] / (
-                    self._data[CONF_SENSOR_DISTANCE] / 1000
-                )
-            else:
-                pace = 0
+            pace = self._data[CONF_SENSOR_MOVING_TIME] / (
+                self._data[CONF_SENSOR_DISTANCE] / 1000
+            )
             unit = f"{TIME_MINUTES}/{LENGTH_KILOMETERS}"
             if not self.hass.config.units.is_metric:
                 pace = (self._data[CONF_SENSOR_MOVING_TIME]) / (
