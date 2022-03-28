@@ -33,4 +33,4 @@ The Strava Home Assistant Integration also creates a **device entity** for both 
 ...for **Ride, Run, and Swim** activities
 
 ## Installation
-For much more detailed guidelines on how to configure Strava Home Assitant, check out the (README)[https://github.com/madmic1314/ha_strava]
+For much more detailed guidelines on how to configure Strava Home Assitant, check out the (README) https://github.com/madmic1314/ha_strava
