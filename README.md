@@ -1,4 +1,4 @@
-# Integration Abandonded
+# Integration Abandonded - do not add to Home Assistant, it will fail
 With the last set of changes required, I've decided to no longer try and maintain integration. There will be no fixes or replies to issues - I leave this here in case anyone wants to fork it and take over.
 
 I used the original integration as I makde a gadget for my wife's running that sat on her desk at home as a bit of fun. She no longer works from home often, so this has fallen into disuse, especially with the drive to save as much electricity as possible, this now sits in a drawer.
