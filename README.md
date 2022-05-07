@@ -5,7 +5,7 @@ I used the original integration as I makde a gadget for my wife's running that s
 
 I'm a technologist by day, but never learnt to code beyond VBA and a bit of VB - was also pretty good at the OPL Language used on the Psion devices - so dropping into this integration at this level is too much a learning curve. Unfortunately, I have too much else to do outside of work to learn try and Python to the level of understanding required to carry this integration on. The rate of breaking changes that come from the rapid pace of HA means I simply can't keep up - I did try.
 
-Hopefully someone will pick this up and run with it (see what I did there?) - else so long, thanks for all the fish.
+Hopefully someone will pick this up and run with it (see what I did there?), else "My battery is low and it’s getting dark." -Opportunity Rover
 
 
 # Strava Home Assistant Integration
