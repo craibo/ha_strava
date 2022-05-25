@@ -1,6 +1,6 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
 # Picking up the Pieces
-An abandoned project which needs a home, so hopefully I can keep it alive for a little longer.
+A project which needs a home, so hopefully I can keep it alive for a little longer.
 
 This is a fork from @madmic1314 <https://github.com/madmic1314/ha_strava> after they abandoned the project
 
@@ -10,7 +10,7 @@ NOTE: You MUST remove the HA_Strava integration from Home Assistant integration,
 
 Custom Component to integrate Activity Data from Strava into Home Assistant.
 
-This is a fork from Codingcyclist <https://github.com/codingcyclist/ha_strava> in an attempt to keep the integration alive - I take no credit for his hard work. I'm not a coder and the best you'll get from me is copy + paste, but happy to accept contributions and help from the community.
+Originally forked from @codingcyclist <https://github.com/codingcyclist/ha_strava> in an attempt to keep the integration alive - I take no credit for his hard work. I'm not a coder and the best you'll get from me is copy + paste, but happy to accept contributions and help from the community.
 
 ## Features
 
