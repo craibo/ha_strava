@@ -1,24 +1,23 @@
 import logging
-from homeassistant.components.camera import Camera
-import requests
 import os
 import pickle
-from homeassistant.components.local_file.camera import LocalFile
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from datetime import timedelta
+from hashlib import md5
+
+import requests
+from homeassistant.components.camera import Camera
+from homeassistant.helpers.event import async_track_time_interval
+
 from .const import (
     DOMAIN,
     CONF_PHOTOS_ENTITY,
     CONF_PHOTOS,
     CONF_IMG_UPDATE_EVENT,
-    CONF_IMG_ROTATE_EVENT,
     CONF_IMG_UPDATE_INTERVAL_SECONDS,
     CONF_IMG_UPDATE_INTERVAL_SECONDS_DEFAULT,
     CONF_MAX_NB_IMAGES,
     CONFIG_URL_DUMP_FILENAME,
 )
-from hashlib import md5
-from homeassistant.helpers.event import async_track_time_interval
-# from homeassistant.const import EVENT_TIME_CHANGED
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -53,11 +52,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         if event.data["now"].second % img_update_interval_seconds == 0:
             camera.rotate_img()
 
-    # hass.data[DOMAIN]["remove_update_listener"].append(
-    #     hass.bus.async_listen(EVENT_TIME_CHANGED, image_update_listener)
-    # )
-
-    async_track_time_interval(image_update_listener, 10000)
+    async_track_time_interval(image_update_listener, timedelta(minutes=1))
 
     return
 
