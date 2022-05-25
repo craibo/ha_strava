@@ -16,6 +16,7 @@ from homeassistant import data_entry_flow
 from homeassistant.core import HomeAssistant
 from homeassistant.components.http.view import HomeAssistantView
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.network import get_url, NoURLAvailableError
 from homeassistant.config_entries import ConfigEntry, SOURCE_IMPORT
 from homeassistant.const import (
@@ -25,7 +26,6 @@ from homeassistant.const import (
     EVENT_COMPONENT_LOADED,
     EVENT_CORE_CONFIG_UPDATE,
     EVENT_HOMEASSISTANT_START,
-    EVENT_TIME_CHANGED,
 )
 from homeassistant.helpers import (
     aiohttp_client,
