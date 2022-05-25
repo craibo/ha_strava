@@ -7,7 +7,7 @@
     "abort": {
       "already_configured": "A Strava Home Assistant Integration has already been installed. You can only have one installation at a time",
       "no_public_url": "Your Home Assistant Instance does not seem to have a public URL. The Strava Home Assistant integration requires a public URL",
-      "webhook_fail": "Strava Home Assistant faild to subscribe to Strava Webhook"
+      "webhook_fail": "Strava Home Assistant failed to subscribe to Strava Webhook"
     },
     "step": {
       "get_oauth_info": {
