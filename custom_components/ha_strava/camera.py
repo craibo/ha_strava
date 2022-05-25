@@ -35,7 +35,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     async_add_entities([camera])
 
-    def image_update_listener():
+    def image_update_listener(now):
         if len(ha_strava_config_entries) != 1:
             return -1
 
