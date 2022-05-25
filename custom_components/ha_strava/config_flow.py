@@ -1,34 +1,26 @@
 """Config flow for Strava Home Assistant."""
 # generic imports
 import logging
-import asyncio
-import aiohttp
-import json
-import voluptuous as vol
 
+import voluptuous as vol
 # HASS imports
 from homeassistant import config_entries
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from homeassistant.core import callback
-from homeassistant.helpers import config_entry_oauth2_flow, config_validation as cv
-from homeassistant.helpers.network import get_url, NoURLAvailableError
+from homeassistant.helpers import config_entry_oauth2_flow
 from homeassistant.helpers.entity_registry import (
     async_get_registry,
     async_entries_for_config_entry,
     RegistryEntryDisabler,
 )
+from homeassistant.helpers.network import get_url, NoURLAvailableError
 
 # custom module imports
-from .sensor import StravaSummaryStatsSensor
 from .const import (
     DOMAIN,
     OAUTH2_AUTHORIZE,
     OAUTH2_TOKEN,
-    WEBHOOK_SUBSCRIPTION_URL,
     CONF_PHOTOS,
-    CONF_PHOTOS_ENTITY,
-    CONF_STRAVA_RELOAD_EVENT,
-    CONF_WEBHOOK_ID,
     CONF_CALLBACK_URL,
     CONF_NB_ACTIVITIES,
     DEFAULT_NB_ACTIVITIES,
@@ -51,10 +43,12 @@ from .const import (
     CONF_ACTIVITY_TYPE_RUN,
     CONF_ACTIVITY_TYPE_RIDE,
     CONF_ACTIVITY_TYPE_HIKE,
+    CONF_ACTIVITY_TYPE_SWIM,
     CONF_ACTIVITY_TYPE_OTHER,
     CONF_SENSOR_DEFAULT,
     CONF_IMG_UPDATE_INTERVAL_SECONDS,
     CONF_IMG_UPDATE_INTERVAL_SECONDS_DEFAULT,
+    CONFIG_ENTRY_TITLE,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -74,7 +68,7 @@ SENSOR_OPTIONS = [
 
 class OptionsFlowHandler(config_entries.OptionsFlow):
     """
-    Data Entry flow to allow runntime changes to the Strava Home Assistant Config
+    Data Entry flow to allow runtime changes to the Strava Home Assistant Config
     """
 
     def __init__(self):
@@ -147,6 +141,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         [
                             CONF_ACTIVITY_TYPE_RUN,
                             CONF_ACTIVITY_TYPE_RIDE,
+                            CONF_ACTIVITY_TYPE_SWIM,
                             CONF_ACTIVITY_TYPE_HIKE,
                             CONF_ACTIVITY_TYPE_OTHER,
                         ]
@@ -358,7 +353,7 @@ class OAuth2FlowHandler(
         data[CONF_CLIENT_SECRET] = self.flow_impl.client_secret
         data[CONF_PHOTOS] = self._import_photos_from_strava
 
-        return self.async_create_entry(title=self.flow_impl.name, data=data)
+        return self.async_create_entry(title=CONFIG_ENTRY_TITLE, data=data)
 
     async_step_user = async_step_get_oauth_info
 

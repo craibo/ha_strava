@@ -1,6 +1,7 @@
 """Constants for the Strava Home Assistant integration."""
 
 DOMAIN = "ha_strava"
+CONFIG_ENTRY_TITLE = "Strava"
 
 # OAuth Specs
 AUTH_CALLBACK_PATH = "/auth/external/callback"
