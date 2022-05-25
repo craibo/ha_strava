@@ -35,24 +35,21 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     async_add_entities([camera])
 
-    def image_update_listener(event):
-        """listen for time update event (every second) and update images if appropriate"""
-        ha_strava_config_entries = hass.config_entries.async_entries(domain=DOMAIN)
-
+    def image_update_listener():
         if len(ha_strava_config_entries) != 1:
             return -1
 
-        img_update_interval_seconds = int(
-            ha_strava_config_entries[0].options.get(
-                CONF_IMG_UPDATE_INTERVAL_SECONDS,
-                CONF_IMG_UPDATE_INTERVAL_SECONDS_DEFAULT,
-            )
+        camera.rotate_img()
+
+    ha_strava_config_entries = hass.config_entries.async_entries(domain=DOMAIN)
+    img_update_interval_seconds = int(
+        ha_strava_config_entries[0].options.get(
+            CONF_IMG_UPDATE_INTERVAL_SECONDS,
+            CONF_IMG_UPDATE_INTERVAL_SECONDS_DEFAULT,
         )
+    )
 
-        if event.data["now"].second % img_update_interval_seconds == 0:
-            camera.rotate_img()
-
-    async_track_time_interval(image_update_listener, timedelta(minutes=1))
+    async_track_time_interval(hass, image_update_listener, timedelta(seconds=img_update_interval_seconds))
 
     return
 
