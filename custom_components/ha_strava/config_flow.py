@@ -48,7 +48,6 @@ from .const import (
     CONF_SENSOR_DEFAULT,
     CONF_IMG_UPDATE_INTERVAL_SECONDS,
     CONF_IMG_UPDATE_INTERVAL_SECONDS_DEFAULT,
-    CONFIG_ENTRY_TITLE,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -353,7 +352,7 @@ class OAuth2FlowHandler(
         data[CONF_CLIENT_SECRET] = self.flow_impl.client_secret
         data[CONF_PHOTOS] = self._import_photos_from_strava
 
-        return self.async_create_entry(title=CONFIG_ENTRY_TITLE, data=data)
+        return self.async_create_entry(title=self.flow_impl.name, data=data)
 
     async_step_user = async_step_get_oauth_info
 
