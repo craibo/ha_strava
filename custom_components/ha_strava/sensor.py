@@ -1,12 +1,8 @@
 """Sensor platform for HA Strava"""
+import logging
 # generic imports
 from datetime import datetime as dt
-from aiohttp import ClientSession
-import logging
 
-# HASS imports
-from homeassistant.helpers.entity import Entity
-from homeassistant.helpers.network import get_url
 from homeassistant.const import (
     LENGTH_MILES,
     LENGTH_KILOMETERS,
@@ -16,6 +12,8 @@ from homeassistant.const import (
     SPEED_MILES_PER_HOUR,
     TIME_MINUTES,
 )
+# HASS imports
+from homeassistant.helpers.entity import Entity
 
 # custom module imports
 from .const import (
@@ -29,11 +27,8 @@ from .const import (
     CONF_SENSOR_SPEED,
     CONF_SENSOR_DISTANCE,
     CONF_SENSOR_ACTIVITY_COUNT,
-    CONF_SENSOR_KUDOS,
-    CONF_SENSOR_CALORIES,
     CONF_SENSOR_ELEVATION,
     CONF_SENSOR_POWER,
-    CONF_SENSOR_TROPHIES,
     CONF_SENSOR_TITLE,
     CONF_SENSOR_CITY,
     CONF_SENSOR_MOVING_TIME,
@@ -197,7 +192,7 @@ class StravaSummaryStatsSensor(Entity):
         return False
 
     def strava_data_update_event_handler(self, event):
-        """Handle Strava API data which is emmitted from a Strava Update Event"""
+        """Handle Strava API data which is emitted from a Strava Update Event"""
         summary_stats = event.data.get("summary_stats", None)
         if not summary_stats:
             return
@@ -402,7 +397,7 @@ class StravaStatsSensor(Entity):
         return False
 
     def strava_data_update_event_handler(self, event):
-        """Handle Strava API data which is emmitted from a Strava Update Event"""
+        """Handle Strava API data which is emitted from a Strava Update Event"""
         self._data = event.data["activities"][self._activity_index]
         self.async_write_ha_state()
 
@@ -412,8 +407,5 @@ class StravaStatsSensor(Entity):
         )
 
     async def async_will_remove_from_hass(self):
-        self.hass.bus._async_remove_listener(
-            event_type=CONF_STRAVA_DATA_UPDATE_EVENT,
-            listener=self.strava_data_update_event_handler,
-        )
+        super().async_will_remove_from_hass(self)
 
