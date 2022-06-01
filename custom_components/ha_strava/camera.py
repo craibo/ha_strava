@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 import os
 import pickle
@@ -92,16 +94,18 @@ class UrlCam(Camera):
         return img_response.content
 
     def is_url_valid(self, url):
-        """test wethere a n image URL returns a valid resonse"""
+        """test whether an image URL returns a valid response"""
         img_response = requests.get(url=url)
         if img_response.status_code == 200:
             return True
         _LOGGER.error(
-            f"{url} did not return a valid imgage | Response: {img_response.status_code}"
+            f"{url} did not return a valid image | Response: {img_response.status_code}"
         )
         return False
 
-    def camera_image(self):
+    def camera_image(
+            self, width: int | None = None, height: int | None = None
+    ) -> bytes | None:
         """Return image response."""
         if len(self._urls) == self._url_index:
             _LOGGER.debug("No custom image urls....serving default image")
@@ -114,7 +118,7 @@ class UrlCam(Camera):
             return img_response.content
         else:
             _LOGGER.error(
-                f"{self._urls[list(self._urls.keys())[self._url_index]]['url']} did not return a valid imgage | Response: {img_response.status_code}"
+                f"{self._urls[list(self._urls.keys())[self._url_index]]['url']} did not return a valid image. Response: {img_response.status_code}"
             )
             return self._return_default_img()
 
