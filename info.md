@@ -1,8 +1,8 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/craibo/ha_strava?color=41BDF5&style=for-the-badge)
+
 # Picking up the Pieces
 A project which needs a home, so hopefully I can keep it alive for a little longer.
-
-This is a fork from @madmic1314 <https://github.com/madmic1314/ha_strava> after they abandoned the project
 
 # Strava Home Assistant Integration
 
@@ -10,7 +10,9 @@ NOTE: You MUST remove the HA_Strava integration from Home Assistant integration,
 
 Custom Component to integrate Activity Data from Strava into Home Assistant.
 
-Originally forked from Codingcyclist <https://github.com/codingcyclist/ha_strava> in an attempt to keep the integration alive - I take no credit for his hard work. I'm not a coder and the best you'll get from me is copy + paste, but happy to accept contributions and help from the community.
+This is a fork from @madmic1314 <https://github.com/madmic1314/ha_strava> after they abandoned the project.
+Originally forked from @codingcyclist <https://github.com/codingcyclist/ha_strava>. 
+I take no credit for thier hard work and am happy to accept contributions and help from the community.
 
 ## Features
 * Gives you access to statistics for **up to 10 of your most recent activities** in Strava.
@@ -43,4 +45,4 @@ The Strava Home Assistant Integration also creates a **device entity** for both 
 ...for **Ride, Run, and Swim** activities
 
 ## Installation
-For much more detailed guidelines on how to configure Strava Home Assistant, check out the (README) https://github.com/craibo/ha_strava
+For more detailed guidelines on how to configure Strava Home Assistant, check out the (README) https://github.com/craibo/ha_strava
