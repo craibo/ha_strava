@@ -1,8 +1,8 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/craibo/ha_strava?color=41BDF5&style=for-the-badge)
+
 # Picking up the Pieces
 A project which needs a home, so hopefully I can keep it alive for a little longer.
-
-This is a fork from @madmic1314 <https://github.com/madmic1314/ha_strava> after they abandoned the project
 
 # Strava Home Assistant Integration
 
@@ -10,7 +10,9 @@ NOTE: You MUST remove the HA_Strava integration from Home Assistant integration,
 
 Custom Component to integrate Activity Data from Strava into Home Assistant.
 
-Originally forked from @codingcyclist <https://github.com/codingcyclist/ha_strava> in an attempt to keep the integration alive - I take no credit for his hard work. I'm not a coder and the best you'll get from me is copy + paste, but happy to accept contributions and help from the community.
+This is a fork from @madmic1314 <https://github.com/madmic1314/ha_strava> after they abandoned the project.
+Originally forked from @codingcyclist <https://github.com/codingcyclist/ha_strava>. 
+I take no credit for thier hard work and am happy to accept contributions and help from the community.
 
 ## Features
 
@@ -50,7 +52,7 @@ _If you use NabuCasa (and I strongly advise you to support this project!) then d
 
 After you've set up remote access and configured the External URL for your Home Assistant instance, head over to your **Strava Profile**. Under "**Settings**", go to "**My API Application**", follow the steps in the configuration wizard, and eventually obtain your Strava API credentials (ID + secret). We need those credentials during the final installation step.
 
-**!!! IMPORTANT !!!** It is essential that the **Authorization Callback Domain** which you set for your Strava API matches the domain of your **Home Assistant External URL**
+**!!! IMPORTANT !!!** Set the **Authorization Callback Domain** to "**my.home-assistant.io**"
 
 ### Third, add the Strava Home Assistant Integration to your Home Assistant Installation
 
@@ -146,8 +148,4 @@ views:
 * [@codingcyclist](https://github.com/codingcyclist)
 * [@madmic1314](https://github.com/madmic1314/ha_strava)
 * [@craibo](https://github.com/craibo/ha_strava)
-
-## TODO
-
---- NONE PLANNED ---
 
