@@ -407,5 +407,5 @@ class StravaStatsSensor(Entity):
         )
 
     async def async_will_remove_from_hass(self):
-        super().async_will_remove_from_hass(self)
+        await super().async_will_remove_from_hass()
 

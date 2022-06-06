@@ -182,7 +182,5 @@ class UrlCam(Camera):
         self.hass.bus.async_listen(CONF_IMG_UPDATE_EVENT, self.img_update_handler)
 
     async def async_will_remove_from_hass(self):
-        self.hass.bus._async_remove_listener(
-            event_type=CONF_IMG_UPDATE_EVENT, listener=self.img_update_handler,
-        )
+        await super().async_will_remove_from_hass()
 
