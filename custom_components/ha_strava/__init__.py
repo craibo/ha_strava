@@ -1,37 +1,30 @@
 """Strava Home Assistant Custom Component"""
 # generic imports
 import asyncio
-import logging
 import json
-from json import JSONDecodeError
-from typing import Callable
-import voluptuous as vol
-from aiohttp import ClientSession
-from aiohttp.web import json_response, Response, Request
+import logging
 from datetime import datetime as dt
 from http import HTTPStatus
+from json import JSONDecodeError
+from typing import Callable
 
-# HASS imports
-from homeassistant import data_entry_flow
-from homeassistant.core import HomeAssistant
+from aiohttp.web import json_response, Response, Request
 from homeassistant.components.http.view import HomeAssistantView
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.event import async_track_time_interval
-from homeassistant.helpers.network import get_url, NoURLAvailableError
-from homeassistant.config_entries import ConfigEntry, SOURCE_IMPORT
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     CONF_CLIENT_ID,
     CONF_CLIENT_SECRET,
     CONF_WEBHOOK_ID,
-    EVENT_COMPONENT_LOADED,
     EVENT_CORE_CONFIG_UPDATE,
     EVENT_HOMEASSISTANT_START,
 )
+# HASS imports
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers import (
-    aiohttp_client,
     config_entry_oauth2_flow,
-    config_validation as cv,
 )
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.network import get_url, NoURLAvailableError
 
 # custom module imports
 from .config_flow import OAuth2FlowHandler
@@ -127,16 +120,25 @@ class StravaWebhookView(HomeAssistantView):
             for activity in activities:
                 new_activity_ids.append(activity.get("id"))
                 athlete_id = int(activity["athlete"]["id"])
-                geo_location_response = await self.oauth_websession.async_request(
-                    method="GET",
-                    url=f'https://geocode.xyz/{activity.get("start_latitude", 0)},{activity.get("start_longitude", 0)}?geoit=json',
-                )
-                geo_location = json.loads(await geo_location_response.text())
-                city = geo_location.get("city", None)
-                if city:
-                    cities.append(city)
+
+                if activity.get("location_city", None):
+                    cities.append(activity.get("location_city"))
+                elif activity.get("location_state", None):
+                    cities.append(activity.get("location_state"))
+                elif activity.get("start_latlng", None):
+                    start_latlng = activity.get("start_latlng")
+                    geo_location_response = await self.oauth_websession.async_request(
+                        method="GET",
+                        url=f'https://geocode.xyz/{start_latlng[0]},{start_latlng[1]}?geoit=json',
+                    )
+                    geo_location = json.loads(await geo_location_response.text())
+                    city = geo_location.get("city", None)
+                    if city:
+                        cities.append(city)
+                    else:
+                        cities.append(geo_location.get("region", "Unknown Area"))
                 else:
-                    cities.append(geo_location.get("name", "Paradise City"))
+                    cities.append("Unknown Area")
 
             activities = sorted(
                 [
