@@ -36,7 +36,7 @@ For every Strava activity, the Strava Home Assistant Integration creates a **dev
 * Power (Watts)
 * \# Trophies
 
-**One additional sensor entity** will be available for every Strava activity to display Date & Title of the underlying activity. To map a name to an activities's GPS start location, Strava Home Assistant relies on the free API at [geocode.xyz](https://geocode.xyz). In the event that Strava Home Assistant cannot fetch a location name from geocode.xyz, it'll put "Paradise City" as the default location.
+**One additional sensor entity** will be available for every Strava activity to display Date & Title of the underlying activity. 
 
 Since every Strava activity gets its own virtual device, you can use the underlying sensor data in your **Dashboards and Automations**, just as you'd use any other sensor data in Home Assistant. To learn how to display information about your most recent Strava Activities, please reference the **UI-configuration example** below.
 
