@@ -376,7 +376,7 @@ class StravaWebhookView(HomeAssistantView):
         """Handle incoming post request"""
         request_host = request.headers.get("Host", None)
         _LOGGER.debug(
-            f"Strava Webhook Endppoint received a POST request from: {request_host}"
+            f"Strava Webhook Endpoint received a POST request from: {request_host}"
         )
 
         try:
@@ -398,7 +398,7 @@ async def renew_webhook_subscription(
 ):
 
     """
-    Function to check whether HASS has already subscribed to Strava Webhook with it's public URL
+    Function to check whether HASS has already subscribed to Strava Webhook with its public URL
     Re-creates a subscription if there was none before or if the public URL has changed
     """
     config_data = {
