@@ -205,10 +205,7 @@ class StravaSummaryStatsSensor(Entity):
         )
 
     async def async_will_remove_from_hass(self):
-        self.hass.bus._async_remove_listener(
-            event_type=CONF_STRAVA_DATA_UPDATE_EVENT,
-            listener=self.strava_data_update_event_handler,
-        )
+        await super().async_will_remove_from_hass()
 
 
 class StravaStatsSensor(Entity):
