@@ -196,7 +196,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             return self.async_abort(reason="no_config")
 
         if user_input is not None:
-            _entity_registry = await async_get(hass=self.hass)
+            _entity_registry = async_get(hass=self.hass)
             entities = async_entries_for_config_entry(
                 registry=_entity_registry,
                 config_entry_id=ha_strava_config_entries[0].entry_id,
