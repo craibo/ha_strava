@@ -108,7 +108,7 @@ class StravaSummaryStatsSensor(Entity):
 
     @property
     def available(self):
-        return True
+        return bool(self._data)
 
     @property
     def unique_id(self):
@@ -126,9 +126,6 @@ class StravaSummaryStatsSensor(Entity):
 
     @property
     def state(self):
-        if not self._data:
-            return -1
-
         if self._metric == CONF_SENSOR_MOVING_TIME:
             days = int(self._data[CONF_SENSOR_MOVING_TIME] // (3600 * 24))
             hours = int(
@@ -232,7 +229,7 @@ class StravaStatsSensor(Entity):
 
     @property
     def available(self):
-        return True
+        return bool(self._data)
 
     @property
     def unique_id(self):
@@ -265,9 +262,6 @@ class StravaStatsSensor(Entity):
 
     @property
     def state(self):
-        if not self._data:
-            return -1
-
         ha_strava_config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
 
         if len(ha_strava_config_entries) != 1:
