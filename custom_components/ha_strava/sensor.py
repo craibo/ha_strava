@@ -89,11 +89,15 @@ class StravaSummaryStatsSensor(Entity):
     _data = None  # Strava activity data
     _activity_type = None
 
+    _attr_should_poll = False
+
     def __init__(self, activity_type, metric, summary_type):
         self._metric = metric
         self._activity_type = activity_type
         self._summary_type = summary_type
         self.entity_id = f"{DOMAIN}.strava_stats_{self._summary_type}_{self._activity_type}_{self._metric}"
+
+        self._attr_unique_id = f"strava_stats_{self._summary_type}_{self._activity_type}_{self._metric}"
 
     @property
     def device_info(self):
@@ -109,10 +113,6 @@ class StravaSummaryStatsSensor(Entity):
     @property
     def available(self):
         return bool(self._data)
-
-    @property
-    def unique_id(self):
-        return f"strava_stats_{self._summary_type}_{self._activity_type}_{self._metric}"
 
     @property
     def icon(self):
@@ -184,10 +184,6 @@ class StravaSummaryStatsSensor(Entity):
             )
         )
 
-    @property
-    def should_poll(self):
-        return False
-
     def strava_data_update_event_handler(self, event):
         """Handle Strava API data which is emitted from a Strava Update Event"""
         summary_stats = event.data.get("summary_stats", None)
@@ -209,10 +205,14 @@ class StravaStatsSensor(Entity):
     _data = None  # Strava activity data
     _activity_index = None
 
+    _attr_should_poll = False
+
     def __init__(self, activity_index, sensor_index):
         self._sensor_index = sensor_index
         self._activity_index = int(activity_index)
         self.entity_id = f"{DOMAIN}.strava_{self._activity_index}_{self._sensor_index}"
+
+        self._attr_unique_id = f"strava_{self._activity_index}_{self._sensor_index}"
 
     @property
     def device_info(self):
@@ -230,10 +230,6 @@ class StravaStatsSensor(Entity):
     @property
     def available(self):
         return bool(self._data)
-
-    @property
-    def unique_id(self):
-        return f"strava_{self._activity_index}_{self._sensor_index}"
 
     @property
     def icon(self):
@@ -382,10 +378,6 @@ class StravaStatsSensor(Entity):
             metric = sensor_metrics[self._sensor_index]
 
         return "" + str.upper(metric[0]) + metric[1:]
-
-    @property
-    def should_poll(self):
-        return False
 
     def strava_data_update_event_handler(self, event):
         """Handle Strava API data which is emitted from a Strava Update Event"""
