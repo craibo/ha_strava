@@ -160,16 +160,15 @@ class UrlCam(Camera):
     def img_update_handler(self, event):
         """handle new urls of Strava images"""
 
+        # Append new images to the urls dict, keyed by a url hash.
         for img_url in event.data["img_urls"]:
             if self.is_url_valid(url=img_url["url"]):
                 self._urls[md5(img_url["url"].encode()).hexdigest()] = {**img_url}
 
-        self._urls = {
-            k: v
-            for (k, v) in sorted(
-                list(self._urls.items()), key=lambda k_v: k_v[1]["date"]
-            )
-        }[-self._max_images :]
+        # Ensure the urls dict is sorted by date and truncated to max # images.
+        self._urls = dict(
+                [url for url in sorted(self._urls.items(), key=lambda k_v:
+                                       k_v[1]["date"])][-self._max_images :])
 
         self._pickle_urls()
         return
