@@ -62,9 +62,6 @@ class UrlCam(Camera):
     Image URLs are fetched from the strava API and the URLs come as payload of the strava data update event
     Up to 100 URLs are stored in the Camera object
     """
-    _attr_name = CONF_PHOTOS_ENTITY
-    _attr_should_poll = False
-    _attr_unique_id = CONF_PHOTOS_ENTITY
 
     def __init__(self, default_enabled=True):
         """Initialize Camera component."""
@@ -139,6 +136,19 @@ class UrlCam(Camera):
         if len(self._urls) == self._url_index:
             return self._default_url
         return self._urls[list(self._urls.keys())[self._url_index]]["url"]
+
+    @property
+    def unique_id(self):
+        return CONF_PHOTOS_ENTITY
+
+    @property
+    def name(self):
+        """Return the name of this camera."""
+        return CONF_PHOTOS_ENTITY
+
+    @property
+    def should_poll(self):
+        return False
 
     @property
     def extra_state_attributes(self):
