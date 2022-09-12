@@ -13,7 +13,7 @@ from homeassistant.const import (
     TIME_MINUTES,
 )
 # HASS imports
-from homeassistant.helpers.entity import Entity
+from homeassistant.components.sensor import SensorEntity, SensorStateClass
 
 # custom module imports
 from .const import (
@@ -85,15 +85,20 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     return
 
 
-class StravaSummaryStatsSensor(Entity):
+class StravaSummaryStatsSensor(SensorEntity):
     _data = None  # Strava activity data
     _activity_type = None
+
+    _attr_should_poll = False
+    _attr_state_class = SensorStateClass.TOTAL
 
     def __init__(self, activity_type, metric, summary_type):
         self._metric = metric
         self._activity_type = activity_type
         self._summary_type = summary_type
         self.entity_id = f"{DOMAIN}.strava_stats_{self._summary_type}_{self._activity_type}_{self._metric}"
+
+        self._attr_unique_id = f"strava_stats_{self._summary_type}_{self._activity_type}_{self._metric}"
 
     @property
     def device_info(self):
@@ -108,11 +113,7 @@ class StravaSummaryStatsSensor(Entity):
 
     @property
     def available(self):
-        return True
-
-    @property
-    def unique_id(self):
-        return f"strava_stats_{self._summary_type}_{self._activity_type}_{self._metric}"
+        return bool(self._data)
 
     @property
     def icon(self):
@@ -125,10 +126,7 @@ class StravaSummaryStatsSensor(Entity):
         return CONF_SENSORS[self._metric]["icon"]
 
     @property
-    def state(self):
-        if not self._data:
-            return -1
-
+    def native_value(self):
         if self._metric == CONF_SENSOR_MOVING_TIME:
             days = int(self._data[CONF_SENSOR_MOVING_TIME] // (3600 * 24))
             hours = int(
@@ -187,10 +185,6 @@ class StravaSummaryStatsSensor(Entity):
             )
         )
 
-    @property
-    def should_poll(self):
-        return False
-
     def strava_data_update_event_handler(self, event):
         """Handle Strava API data which is emitted from a Strava Update Event"""
         summary_stats = event.data.get("summary_stats", None)
@@ -208,14 +202,19 @@ class StravaSummaryStatsSensor(Entity):
         await super().async_will_remove_from_hass()
 
 
-class StravaStatsSensor(Entity):
+class StravaStatsSensor(SensorEntity):
     _data = None  # Strava activity data
     _activity_index = None
+
+    _attr_should_poll = False
+    _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(self, activity_index, sensor_index):
         self._sensor_index = sensor_index
         self._activity_index = int(activity_index)
         self.entity_id = f"{DOMAIN}.strava_{self._activity_index}_{self._sensor_index}"
+
+        self._attr_unique_id = f"strava_{self._activity_index}_{self._sensor_index}"
 
     @property
     def device_info(self):
@@ -232,11 +231,7 @@ class StravaStatsSensor(Entity):
 
     @property
     def available(self):
-        return True
-
-    @property
-    def unique_id(self):
-        return f"strava_{self._activity_index}_{self._sensor_index}"
+        return bool(self._data)
 
     @property
     def icon(self):
@@ -264,10 +259,7 @@ class StravaStatsSensor(Entity):
         return CONF_SENSORS[metric]["icon"]
 
     @property
-    def state(self):
-        if not self._data:
-            return -1
-
+    def native_value(self):
         ha_strava_config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
 
         if len(ha_strava_config_entries) != 1:
@@ -388,10 +380,6 @@ class StravaStatsSensor(Entity):
             metric = sensor_metrics[self._sensor_index]
 
         return "" + str.upper(metric[0]) + metric[1:]
-
-    @property
-    def should_poll(self):
-        return False
 
     def strava_data_update_event_handler(self, event):
         """Handle Strava API data which is emitted from a Strava Update Event"""
