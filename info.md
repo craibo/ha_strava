@@ -1,20 +1,13 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/craibo/ha_strava?color=41BDF5&style=for-the-badge)
 
-# Picking up the Pieces
-A project which needed a home, so hopefully I can keep it alive.
-
 # Strava Home Assistant Integration
-
-**Important NOTES:**
-1. You MUST remove the HA_Strava integration from Home Assistant integration, HACS Integration, HACS Custom Repository and reboot HA before adding this.
-2. When configuring the Strava API, the **Authorization Callback Domain** must be set to: **my.home-assistant.io**
 
 Custom Component to integrate Activity Data from Strava into Home Assistant.
 
-This is a fork from @madmic1314 <https://github.com/madmic1314/ha_strava> after they abandoned the project.
-Originally forked from @codingcyclist <https://github.com/codingcyclist/ha_strava>. 
-I take no credit for their hard work and am happy to accept contributions and help from the community.
+## Important Notes:
+1. You MUST remove the HA_Strava integration from Home Assistant integration, HACS Integration, HACS Custom Repository and reboot HA before adding this.
+2. When configuring the Strava API, the **Authorization Callback Domain** must be set to: **my.home-assistant.io**
 
 ## Features
 * Gives you access to statistics for **up to 10 of your most recent activities** in Strava.
@@ -48,3 +41,11 @@ The Strava Home Assistant Integration also creates a **device entity** for both 
 
 ## Installation
 For more detailed guidelines on how to configure Strava Home Assistant, check out the (README) https://github.com/craibo/ha_strava
+
+## Acknowledgements
+
+This is a fork from @madmic1314 <https://github.com/madmic1314/ha_strava> after they abandoned the project.
+
+Originally forked from @codingcyclist <https://github.com/codingcyclist/ha_strava>. 
+
+I take no credit for their hard work and I am happy to accept suggestions, contributions and help from the community.
