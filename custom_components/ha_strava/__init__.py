@@ -8,7 +8,7 @@ from http import HTTPStatus
 from json import JSONDecodeError
 from typing import Callable
 
-from aiohttp.web import json_response, Response, Request
+from aiohttp.web import Request, Response, json_response
 from homeassistant.components.http.view import HomeAssistantView
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -18,50 +18,49 @@ from homeassistant.const import (
     EVENT_CORE_CONFIG_UPDATE,
     EVENT_HOMEASSISTANT_START,
 )
+
 # HASS imports
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import (
-    config_entry_oauth2_flow,
-)
+from homeassistant.helpers import config_entry_oauth2_flow
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.network import get_url, NoURLAvailableError
+from homeassistant.helpers.network import NoURLAvailableError, get_url
 
 # custom module imports
 from .config_flow import OAuth2FlowHandler
 from .const import (
-    DOMAIN,
-    OAUTH2_AUTHORIZE,
-    OAUTH2_TOKEN,
-    CONFIG_IMG_SIZE,
-    CONF_IMG_UPDATE_EVENT,
-    CONF_IMG_ROTATE_EVENT,
-    WEBHOOK_SUBSCRIPTION_URL,
-    CONF_CALLBACK_URL,
     AUTH_CALLBACK_PATH,
-    CONF_SENSOR_DATE,
-    CONF_SENSOR_ACTIVITY_COUNT,
-    CONF_SENSOR_DURATION,
-    CONF_SENSOR_PACE,
-    CONF_SENSOR_DISTANCE,
-    CONF_SENSOR_KUDOS,
-    CONF_SENSOR_CALORIES,
-    CONF_SENSOR_ELEVATION,
-    CONF_SENSOR_POWER,
-    CONF_SENSOR_TROPHIES,
-    CONF_SENSOR_TITLE,
-    CONF_SENSOR_CITY,
-    CONF_SENSOR_MOVING_TIME,
-    CONF_SENSOR_ACTIVITY_TYPE,
-    CONF_ACTIVITY_TYPE_RUN,
     CONF_ACTIVITY_TYPE_RIDE,
+    CONF_ACTIVITY_TYPE_RUN,
     CONF_ACTIVITY_TYPE_SWIM,
-    CONF_SUMMARY_YTD,
-    CONF_SUMMARY_ALL,
-    CONF_STRAVA_DATA_UPDATE_EVENT,
+    CONF_CALLBACK_URL,
+    CONF_IMG_ROTATE_EVENT,
+    CONF_IMG_UPDATE_EVENT,
+    CONF_SENSOR_ACTIVITY_COUNT,
+    CONF_SENSOR_ACTIVITY_TYPE,
+    CONF_SENSOR_CALORIES,
+    CONF_SENSOR_CITY,
+    CONF_SENSOR_DATE,
+    CONF_SENSOR_DISTANCE,
+    CONF_SENSOR_DURATION,
+    CONF_SENSOR_ELEVATION,
+    CONF_SENSOR_KUDOS,
+    CONF_SENSOR_MOVING_TIME,
+    CONF_SENSOR_PACE,
+    CONF_SENSOR_POWER,
+    CONF_SENSOR_TITLE,
+    CONF_SENSOR_TROPHIES,
     CONF_STRAVA_CONFIG_UPDATE_EVENT,
+    CONF_STRAVA_DATA_UPDATE_EVENT,
     CONF_STRAVA_RELOAD_EVENT,
+    CONF_SUMMARY_ALL,
+    CONF_SUMMARY_YTD,
+    CONFIG_IMG_SIZE,
+    DOMAIN,
     FACTOR_KILOJOULES_TO_KILOCALORIES,
     MAX_NB_ACTIVITIES,
+    OAUTH2_AUTHORIZE,
+    OAUTH2_TOKEN,
+    WEBHOOK_SUBSCRIPTION_URL,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -129,7 +128,7 @@ class StravaWebhookView(HomeAssistantView):
                     start_latlng = activity.get("start_latlng")
                     geo_location_response = await self.oauth_websession.async_request(
                         method="GET",
-                        url=f'https://geocode.xyz/{start_latlng[0]},{start_latlng[1]}?geoit=json',
+                        url=f"https://geocode.xyz/{start_latlng[0]},{start_latlng[1]}?geoit=json",
                     )
                     geo_location = json.loads(await geo_location_response.text())
                     city = geo_location.get("city", None)
@@ -191,7 +190,8 @@ class StravaWebhookView(HomeAssistantView):
                 img_request_url = f"https://www.strava.com/api/v3/activities/{activity_id}/photos?size={CONFIG_IMG_SIZE}"
 
                 img_response = await self.oauth_websession.async_request(
-                    method="GET", url=img_request_url,
+                    method="GET",
+                    url=img_request_url,
                 )
 
                 if img_response.status == 200:
@@ -222,7 +222,8 @@ class StravaWebhookView(HomeAssistantView):
                 )
 
                 summary_stats_response = await self.oauth_websession.async_request(
-                    method="GET", url=summary_stats_url,
+                    method="GET",
+                    url=summary_stats_url,
                 )
 
                 sumary_stats = json.loads(await summary_stats_response.text())
@@ -367,7 +368,8 @@ class StravaWebhookView(HomeAssistantView):
         webhook_subscription_challenge = request.query.get("hub.challenge", None)
         if webhook_subscription_challenge:
             return json_response(
-                status=HTTPStatus.OK, data={"hub.challenge": webhook_subscription_challenge}
+                status=HTTPStatus.OK,
+                data={"hub.challenge": webhook_subscription_challenge},
             )
 
         return Response(status=HTTPStatus.OK)
@@ -523,8 +525,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     # OAuth Stuff
     try:
-        implementation = await config_entry_oauth2_flow.async_get_config_entry_implementation(
-            hass=hass, config_entry=entry
+        implementation = (
+            await config_entry_oauth2_flow.async_get_config_entry_implementation(
+                hass=hass, config_entry=entry
+            )
         )
     except ValueError:
         implementation = config_entry_oauth2_flow.LocalOAuth2Implementation(
@@ -638,8 +642,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Unload a config entry."""
 
-    implementation = await config_entry_oauth2_flow.async_get_config_entry_implementation(
-        hass, entry
+    implementation = (
+        await config_entry_oauth2_flow.async_get_config_entry_implementation(
+            hass, entry
+        )
     )
 
     for remove_listener in hass.data[DOMAIN]["remove_update_listener"]:

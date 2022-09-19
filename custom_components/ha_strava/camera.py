@@ -11,14 +11,14 @@ from homeassistant.components.camera import Camera
 from homeassistant.helpers.event import async_track_time_interval
 
 from .const import (
-    DOMAIN,
-    CONF_PHOTOS_ENTITY,
-    CONF_PHOTOS,
     CONF_IMG_UPDATE_EVENT,
     CONF_IMG_UPDATE_INTERVAL_SECONDS,
     CONF_IMG_UPDATE_INTERVAL_SECONDS_DEFAULT,
     CONF_MAX_NB_IMAGES,
+    CONF_PHOTOS,
+    CONF_PHOTOS_ENTITY,
     CONFIG_URL_DUMP_FILENAME,
+    DOMAIN,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -51,7 +51,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         )
     )
 
-    async_track_time_interval(hass, image_update_listener, timedelta(seconds=img_update_interval_seconds))
+    async_track_time_interval(
+        hass, image_update_listener, timedelta(seconds=img_update_interval_seconds)
+    )
 
     return
 
@@ -62,6 +64,7 @@ class UrlCam(Camera):
     Image URLs are fetched from the strava API and the URLs come as payload of the strava data update event
     Up to 100 URLs are stored in the Camera object
     """
+
     _attr_name = CONF_PHOTOS_ENTITY
     _attr_should_poll = False
     _attr_unique_id = CONF_PHOTOS_ENTITY
@@ -107,7 +110,7 @@ class UrlCam(Camera):
         return False
 
     def camera_image(
-            self, width: int | None = None, height: int | None = None
+        self, width: int | None = None, height: int | None = None
     ) -> bytes | None:
         """Return image response."""
         if len(self._urls) == self._url_index:
@@ -157,8 +160,10 @@ class UrlCam(Camera):
 
         # Ensure the urls dict is sorted by date and truncated to max # images.
         self._urls = dict(
-                [url for url in sorted(self._urls.items(), key=lambda k_v:
-                                       k_v[1]["date"])][-self._max_images :])
+            [url for url in sorted(self._urls.items(), key=lambda k_v: k_v[1]["date"])][
+                -self._max_images :
+            ]
+        )
 
         self._pickle_urls()
         return
@@ -172,4 +177,3 @@ class UrlCam(Camera):
 
     async def async_will_remove_from_hass(self):
         await super().async_will_remove_from_hass()
-

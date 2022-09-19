@@ -1,48 +1,49 @@
 """Sensor platform for HA Strava"""
 import logging
+
 # generic imports
 from datetime import datetime as dt
 
+# HASS imports
+from homeassistant.components.sensor import SensorEntity, SensorStateClass
 from homeassistant.const import (
-    LENGTH_MILES,
+    LENGTH_FEET,
     LENGTH_KILOMETERS,
     LENGTH_METERS,
-    LENGTH_FEET,
+    LENGTH_MILES,
     SPEED_KILOMETERS_PER_HOUR,
     SPEED_MILES_PER_HOUR,
     TIME_MINUTES,
 )
-# HASS imports
-from homeassistant.components.sensor import SensorEntity, SensorStateClass
 
 # custom module imports
 from .const import (
-    DOMAIN,
-    CONF_STRAVA_DATA_UPDATE_EVENT,
-    CONF_STRAVA_RELOAD_EVENT,
-    CONF_SENSORS,
-    CONF_SENSOR_DATE,
-    CONF_SENSOR_DURATION,
-    CONF_SENSOR_PACE,
-    CONF_SENSOR_SPEED,
-    CONF_SENSOR_DISTANCE,
-    CONF_SENSOR_ACTIVITY_COUNT,
-    CONF_SENSOR_ELEVATION,
-    CONF_SENSOR_POWER,
-    CONF_SENSOR_TITLE,
-    CONF_SENSOR_CITY,
-    CONF_SENSOR_MOVING_TIME,
-    CONF_SENSOR_ACTIVITY_TYPE,
+    CONF_ACTIVITY_TYPE_RIDE,
     CONF_ACTIVITY_TYPE_RUN,
     CONF_ACTIVITY_TYPE_SWIM,
-    CONF_ACTIVITY_TYPE_RIDE,
-    CONF_SUMMARY_YTD,
-    CONF_SUMMARY_ALL,
-    FACTOR_METER_TO_MILE,
-    FACTOR_METER_TO_FEET,
-    DEFAULT_NB_ACTIVITIES,
-    MAX_NB_ACTIVITIES,
+    CONF_SENSOR_ACTIVITY_COUNT,
+    CONF_SENSOR_ACTIVITY_TYPE,
+    CONF_SENSOR_CITY,
+    CONF_SENSOR_DATE,
     CONF_SENSOR_DEFAULT,
+    CONF_SENSOR_DISTANCE,
+    CONF_SENSOR_DURATION,
+    CONF_SENSOR_ELEVATION,
+    CONF_SENSOR_MOVING_TIME,
+    CONF_SENSOR_PACE,
+    CONF_SENSOR_POWER,
+    CONF_SENSOR_SPEED,
+    CONF_SENSOR_TITLE,
+    CONF_SENSORS,
+    CONF_STRAVA_DATA_UPDATE_EVENT,
+    CONF_STRAVA_RELOAD_EVENT,
+    CONF_SUMMARY_ALL,
+    CONF_SUMMARY_YTD,
+    DEFAULT_NB_ACTIVITIES,
+    DOMAIN,
+    FACTOR_METER_TO_FEET,
+    FACTOR_METER_TO_MILE,
+    MAX_NB_ACTIVITIES,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -98,7 +99,9 @@ class StravaSummaryStatsSensor(SensorEntity):
         self._summary_type = summary_type
         self.entity_id = f"{DOMAIN}.strava_stats_{self._summary_type}_{self._activity_type}_{self._metric}"
 
-        self._attr_unique_id = f"strava_stats_{self._summary_type}_{self._activity_type}_{self._metric}"
+        self._attr_unique_id = (
+            f"strava_stats_{self._summary_type}_{self._activity_type}_{self._metric}"
+        )
 
     @property
     def device_info(self):
@@ -393,4 +396,3 @@ class StravaStatsSensor(SensorEntity):
 
     async def async_will_remove_from_hass(self):
         await super().async_will_remove_from_hass()
-

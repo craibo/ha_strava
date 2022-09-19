@@ -3,52 +3,53 @@
 import logging
 
 import voluptuous as vol
+
 # HASS imports
 from homeassistant import config_entries
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from homeassistant.core import callback
 from homeassistant.helpers import config_entry_oauth2_flow
 from homeassistant.helpers.entity_registry import (
-    async_get,
-    async_entries_for_config_entry,
     RegistryEntryDisabler,
+    async_entries_for_config_entry,
+    async_get,
 )
-from homeassistant.helpers.network import get_url, NoURLAvailableError
+from homeassistant.helpers.network import NoURLAvailableError, get_url
 
 # custom module imports
 from .const import (
-    DOMAIN,
-    OAUTH2_AUTHORIZE,
-    OAUTH2_TOKEN,
-    CONF_PHOTOS,
+    CONF_ACTIVITY_TYPE_HIKE,
+    CONF_ACTIVITY_TYPE_OTHER,
+    CONF_ACTIVITY_TYPE_RIDE,
+    CONF_ACTIVITY_TYPE_RUN,
+    CONF_ACTIVITY_TYPE_SWIM,
     CONF_CALLBACK_URL,
+    CONF_IMG_UPDATE_INTERVAL_SECONDS,
+    CONF_IMG_UPDATE_INTERVAL_SECONDS_DEFAULT,
     CONF_NB_ACTIVITIES,
-    DEFAULT_NB_ACTIVITIES,
-    MAX_NB_ACTIVITIES,
-    CONF_SENSOR_ACTIVITY_TYPE,
-    CONF_SENSOR_DURATION,
-    CONF_SENSOR_PACE,
-    CONF_SENSOR_SPEED,
-    CONF_SENSOR_DISTANCE,
-    CONF_SENSOR_KUDOS,
-    CONF_SENSOR_CALORIES,
-    CONF_SENSOR_ELEVATION,
-    CONF_SENSOR_POWER,
-    CONF_SENSOR_TROPHIES,
+    CONF_PHOTOS,
     CONF_SENSOR_1,
     CONF_SENSOR_2,
     CONF_SENSOR_3,
     CONF_SENSOR_4,
     CONF_SENSOR_5,
-    CONF_ACTIVITY_TYPE_RUN,
-    CONF_ACTIVITY_TYPE_RIDE,
-    CONF_ACTIVITY_TYPE_HIKE,
-    CONF_ACTIVITY_TYPE_SWIM,
-    CONF_ACTIVITY_TYPE_OTHER,
+    CONF_SENSOR_ACTIVITY_TYPE,
+    CONF_SENSOR_CALORIES,
     CONF_SENSOR_DEFAULT,
-    CONF_IMG_UPDATE_INTERVAL_SECONDS,
-    CONF_IMG_UPDATE_INTERVAL_SECONDS_DEFAULT,
+    CONF_SENSOR_DISTANCE,
+    CONF_SENSOR_DURATION,
+    CONF_SENSOR_ELEVATION,
+    CONF_SENSOR_KUDOS,
+    CONF_SENSOR_PACE,
+    CONF_SENSOR_POWER,
+    CONF_SENSOR_SPEED,
+    CONF_SENSOR_TROPHIES,
     CONFIG_ENTRY_TITLE,
+    DEFAULT_NB_ACTIVITIES,
+    DOMAIN,
+    MAX_NB_ACTIVITIES,
+    OAUTH2_AUTHORIZE,
+    OAUTH2_TOKEN,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -109,7 +110,11 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         ),
                     ): vol.All(
                         vol.Coerce(int),
-                        vol.Range(min=1, max=60, msg=f"max = 60 seconds",),
+                        vol.Range(
+                            min=1,
+                            max=60,
+                            msg=f"max = 60 seconds",
+                        ),
                     ),
                     vol.Required(
                         CONF_PHOTOS,
@@ -210,7 +215,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     ):
                         _LOGGER.debug(f"disabling entity {entity}")
                         _entity_registry.async_update_entity(
-                            entity.entity_id, disabled_by=RegistryEntryDisabler.INTEGRATION
+                            entity.entity_id,
+                            disabled_by=RegistryEntryDisabler.INTEGRATION,
                         )
                     else:
                         _entity_registry.async_update_entity(
@@ -223,7 +229,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         )
                     else:
                         _entity_registry.async_update_entity(
-                            entity_id=entity.entity_id, disabled_by=RegistryEntryDisabler.INTEGRATION
+                            entity_id=entity.entity_id,
+                            disabled_by=RegistryEntryDisabler.INTEGRATION,
                         )
 
             self._nb_activities = user_input[CONF_NB_ACTIVITIES]
@@ -276,7 +283,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
         _LOGGER.debug(f"Strava Config Options: {ha_strava_options}")
         return self.async_create_entry(
-            title=self._config_entry_title, data=ha_strava_options,
+            title=self._config_entry_title,
+            data=ha_strava_options,
         )
 
 
