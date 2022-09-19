@@ -75,6 +75,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     def __init__(self):
         self._nb_activities = None
         self._config_entry_title = None
+        self._import_strava_images = None
+        self._img_update_interval_seconds = None
 
     async def show_form_init(self):
         """
@@ -193,7 +195,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
     async def async_step_init(self, user_input=None):
         """
-        Initial OptionsFlow step - asks for the number of Strava activities to track in HASS
+        Initial OptionsFlow step - asks for the number of Strava activities to
+        track in HASS
         """
         ha_strava_config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
 
@@ -252,7 +255,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         if len(ha_strava_config_entries) != 1:
             return self.async_abort(reason="no_config")
 
-        ha_strava_options = {
+        ha_strava_options = {  # pylint: disable=unnecessary-comprehension
             k: v for k, v in ha_strava_config_entries[0].options.items()
         }
 
@@ -311,7 +314,9 @@ class OAuth2FlowHandler(
             "response_type": "code",
         }
 
-    async def async_step_renew_webhook_subscription(self, data):
+    async def async_step_renew_webhook_subscription(
+        self, data
+    ):  # pylint: disable=missing-function-docstring,disable=unused-argument
         _LOGGER.debug("renew webhook subscription")
         return
 
@@ -356,7 +361,7 @@ class OAuth2FlowHandler(
     async def async_oauth_create_entry(self, data: dict) -> dict:
         data[
             CONF_CALLBACK_URL
-        ] = f"{get_url(self.hass, allow_internal=False, allow_ip=False)}/api/strava/webhook"
+        ] = f"{get_url(self.hass, allow_internal=False, allow_ip=False)}/api/strava/webhook"  # noqa: E501
         data[CONF_CLIENT_ID] = self.flow_impl.client_id
         data[CONF_CLIENT_SECRET] = self.flow_impl.client_secret
         data[CONF_PHOTOS] = self._import_photos_from_strava

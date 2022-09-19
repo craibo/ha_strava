@@ -49,7 +49,9 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(hass, config_entry, async_add_entities):
+async def async_setup_entry(
+    hass, config_entry, async_add_entities
+):  # pylint: disable=unused-argument
     """
     create 5+1 sensor entities for 10 devices
     all sensor entities are hidden by default
@@ -86,7 +88,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     return
 
 
-class StravaSummaryStatsSensor(SensorEntity):
+class StravaSummaryStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstring
     _data = None  # Strava activity data
     _activity_type = None
 
@@ -97,7 +99,7 @@ class StravaSummaryStatsSensor(SensorEntity):
         self._metric = metric
         self._activity_type = activity_type
         self._summary_type = summary_type
-        self.entity_id = f"{DOMAIN}.strava_stats_{self._summary_type}_{self._activity_type}_{self._metric}"
+        self.entity_id = f"{DOMAIN}.strava_stats_{self._summary_type}_{self._activity_type}_{self._metric}"  # noqa: E501
 
         self._attr_unique_id = (
             f"strava_stats_{self._summary_type}_{self._activity_type}_{self._metric}"
@@ -164,7 +166,7 @@ class StravaSummaryStatsSensor(SensorEntity):
             )
 
             if not self.hass.config.units.is_metric:
-                distance = f"{round(self._data[CONF_SENSOR_DISTANCE]*FACTOR_METER_TO_MILE,2)} {LENGTH_MILES}"
+                distance = f"{round(self._data[CONF_SENSOR_DISTANCE]*FACTOR_METER_TO_MILE,2)} {LENGTH_MILES}"  # noqa: E501
 
             return distance
 
@@ -205,7 +207,7 @@ class StravaSummaryStatsSensor(SensorEntity):
         await super().async_will_remove_from_hass()
 
 
-class StravaStatsSensor(SensorEntity):
+class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstring
     _data = None  # Strava activity data
     _activity_index = None
 
@@ -247,7 +249,7 @@ class StravaStatsSensor(SensorEntity):
             return "mdi:run"
 
         _LOGGER.debug(
-            f"Activity Index: {self._activity_index} | Activity Type: {self._data[CONF_SENSOR_ACTIVITY_TYPE]}"
+            f"Activity Index: {self._activity_index} | Activity Type: {self._data[CONF_SENSOR_ACTIVITY_TYPE]}"  # noqa: E501
         )
         sensor_options = ha_strava_config_entries[0].options.get(
             self._data[CONF_SENSOR_ACTIVITY_TYPE], CONF_SENSOR_DEFAULT
@@ -262,7 +264,9 @@ class StravaStatsSensor(SensorEntity):
         return CONF_SENSORS[metric]["icon"]
 
     @property
-    def native_value(self):
+    def native_value(
+        self,
+    ):  # pylint: disable=too-many-return-statements,too-many-branches
         ha_strava_config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
 
         if len(ha_strava_config_entries) != 1:
@@ -313,7 +317,7 @@ class StravaStatsSensor(SensorEntity):
             )
 
             if not self.hass.config.units.is_metric:
-                distance = f"{round(self._data[CONF_SENSOR_DISTANCE]*FACTOR_METER_TO_MILE,2)} {LENGTH_MILES}"
+                distance = f"{round(self._data[CONF_SENSOR_DISTANCE]*FACTOR_METER_TO_MILE,2)} {LENGTH_MILES}"  # noqa: E501
 
             return distance
 
@@ -338,10 +342,10 @@ class StravaStatsSensor(SensorEntity):
             )
 
         if metric == CONF_SENSOR_SPEED:
-            speed = f"{round((self._data[CONF_SENSOR_DISTANCE]/1000)/(self._data[CONF_SENSOR_MOVING_TIME]/3600),2)} {SPEED_KILOMETERS_PER_HOUR}"
+            speed = f"{round((self._data[CONF_SENSOR_DISTANCE]/1000)/(self._data[CONF_SENSOR_MOVING_TIME]/3600),2)} {SPEED_KILOMETERS_PER_HOUR}"  # noqa: E501
 
             if not self.hass.config.units.is_metric:
-                speed = f"{round((self._data[CONF_SENSOR_DISTANCE]*FACTOR_METER_TO_MILE)/(self._data[CONF_SENSOR_MOVING_TIME]/3600),2)} {SPEED_MILES_PER_HOUR}"
+                speed = f"{round((self._data[CONF_SENSOR_DISTANCE]*FACTOR_METER_TO_MILE)/(self._data[CONF_SENSOR_MOVING_TIME]/3600),2)} {SPEED_MILES_PER_HOUR}"  # noqa: E501
             return speed
 
         if metric == CONF_SENSOR_POWER:
@@ -350,7 +354,7 @@ class StravaStatsSensor(SensorEntity):
         if metric == CONF_SENSOR_ELEVATION:
             elevation = f"{round(self._data[CONF_SENSOR_ELEVATION],0)} {LENGTH_METERS}"
             if not self.hass.config.units.is_metric:
-                elevation = f"{round(self._data[CONF_SENSOR_ELEVATION]*FACTOR_METER_TO_FEET,0)} {LENGTH_FEET}"
+                elevation = f"{round(self._data[CONF_SENSOR_ELEVATION]*FACTOR_METER_TO_FEET,0)} {LENGTH_FEET}"  # noqa: E501
             return elevation
 
         return str(self._data[metric])
