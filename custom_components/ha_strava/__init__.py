@@ -206,7 +206,7 @@ class StravaWebhookView(HomeAssistantView):
                     self.image_updates[activity_id] = dt.now()
 
                 elif activities_response.status == 429:
-                    _LOGGER.warn(f"Strava API rate limit has been reached")
+                    _LOGGER.warning(f"Strava API rate limit has been reached")
                     return
 
                 else:
@@ -339,7 +339,7 @@ class StravaWebhookView(HomeAssistantView):
                 }
 
         elif activities_response.status == 429:
-            _LOGGER.warn(f"Strava API rate limit has been reached")
+            _LOGGER.warning(f"Strava API rate limit has been reached")
             return
 
         else:
