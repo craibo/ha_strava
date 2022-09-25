@@ -3,52 +3,53 @@
 import logging
 
 import voluptuous as vol
+
 # HASS imports
 from homeassistant import config_entries
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from homeassistant.core import callback
 from homeassistant.helpers import config_entry_oauth2_flow
 from homeassistant.helpers.entity_registry import (
-    async_get,
-    async_entries_for_config_entry,
     RegistryEntryDisabler,
+    async_entries_for_config_entry,
+    async_get,
 )
-from homeassistant.helpers.network import get_url, NoURLAvailableError
+from homeassistant.helpers.network import NoURLAvailableError, get_url
 
 # custom module imports
 from .const import (
-    DOMAIN,
-    OAUTH2_AUTHORIZE,
-    OAUTH2_TOKEN,
-    CONF_PHOTOS,
+    CONF_ACTIVITY_TYPE_HIKE,
+    CONF_ACTIVITY_TYPE_OTHER,
+    CONF_ACTIVITY_TYPE_RIDE,
+    CONF_ACTIVITY_TYPE_RUN,
+    CONF_ACTIVITY_TYPE_SWIM,
     CONF_CALLBACK_URL,
+    CONF_IMG_UPDATE_INTERVAL_SECONDS,
+    CONF_IMG_UPDATE_INTERVAL_SECONDS_DEFAULT,
     CONF_NB_ACTIVITIES,
-    DEFAULT_NB_ACTIVITIES,
-    MAX_NB_ACTIVITIES,
-    CONF_SENSOR_ACTIVITY_TYPE,
-    CONF_SENSOR_DURATION,
-    CONF_SENSOR_PACE,
-    CONF_SENSOR_SPEED,
-    CONF_SENSOR_DISTANCE,
-    CONF_SENSOR_KUDOS,
-    CONF_SENSOR_CALORIES,
-    CONF_SENSOR_ELEVATION,
-    CONF_SENSOR_POWER,
-    CONF_SENSOR_TROPHIES,
+    CONF_PHOTOS,
     CONF_SENSOR_1,
     CONF_SENSOR_2,
     CONF_SENSOR_3,
     CONF_SENSOR_4,
     CONF_SENSOR_5,
-    CONF_ACTIVITY_TYPE_RUN,
-    CONF_ACTIVITY_TYPE_RIDE,
-    CONF_ACTIVITY_TYPE_HIKE,
-    CONF_ACTIVITY_TYPE_SWIM,
-    CONF_ACTIVITY_TYPE_OTHER,
+    CONF_SENSOR_ACTIVITY_TYPE,
+    CONF_SENSOR_CALORIES,
     CONF_SENSOR_DEFAULT,
-    CONF_IMG_UPDATE_INTERVAL_SECONDS,
-    CONF_IMG_UPDATE_INTERVAL_SECONDS_DEFAULT,
+    CONF_SENSOR_DISTANCE,
+    CONF_SENSOR_DURATION,
+    CONF_SENSOR_ELEVATION,
+    CONF_SENSOR_KUDOS,
+    CONF_SENSOR_PACE,
+    CONF_SENSOR_POWER,
+    CONF_SENSOR_SPEED,
+    CONF_SENSOR_TROPHIES,
     CONFIG_ENTRY_TITLE,
+    DEFAULT_NB_ACTIVITIES,
+    DOMAIN,
+    MAX_NB_ACTIVITIES,
+    OAUTH2_AUTHORIZE,
+    OAUTH2_TOKEN,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -74,6 +75,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     def __init__(self):
         self._nb_activities = None
         self._config_entry_title = None
+        self._import_strava_images = None
+        self._img_update_interval_seconds = None
 
     async def show_form_init(self):
         """
@@ -109,7 +112,11 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         ),
                     ): vol.All(
                         vol.Coerce(int),
-                        vol.Range(min=1, max=60, msg=f"max = 60 seconds",),
+                        vol.Range(
+                            min=1,
+                            max=60,
+                            msg=f"max = 60 seconds",
+                        ),
                     ),
                     vol.Required(
                         CONF_PHOTOS,
@@ -188,7 +195,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
     async def async_step_init(self, user_input=None):
         """
-        Initial OptionsFlow step - asks for the number of Strava activities to track in HASS
+        Initial OptionsFlow step - asks for the number of Strava activities to
+        track in HASS
         """
         ha_strava_config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
 
@@ -210,7 +218,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     ):
                         _LOGGER.debug(f"disabling entity {entity}")
                         _entity_registry.async_update_entity(
-                            entity.entity_id, disabled_by=RegistryEntryDisabler.INTEGRATION
+                            entity.entity_id,
+                            disabled_by=RegistryEntryDisabler.INTEGRATION,
                         )
                     else:
                         _entity_registry.async_update_entity(
@@ -223,7 +232,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         )
                     else:
                         _entity_registry.async_update_entity(
-                            entity_id=entity.entity_id, disabled_by=RegistryEntryDisabler.INTEGRATION
+                            entity_id=entity.entity_id,
+                            disabled_by=RegistryEntryDisabler.INTEGRATION,
                         )
 
             self._nb_activities = user_input[CONF_NB_ACTIVITIES]
@@ -245,7 +255,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         if len(ha_strava_config_entries) != 1:
             return self.async_abort(reason="no_config")
 
-        ha_strava_options = {
+        ha_strava_options = {  # pylint: disable=unnecessary-comprehension
             k: v for k, v in ha_strava_config_entries[0].options.items()
         }
 
@@ -276,7 +286,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
         _LOGGER.debug(f"Strava Config Options: {ha_strava_options}")
         return self.async_create_entry(
-            title=self._config_entry_title, data=ha_strava_options,
+            title=self._config_entry_title,
+            data=ha_strava_options,
         )
 
 
@@ -303,7 +314,9 @@ class OAuth2FlowHandler(
             "response_type": "code",
         }
 
-    async def async_step_renew_webhook_subscription(self, data):
+    async def async_step_renew_webhook_subscription(
+        self, data
+    ):  # pylint: disable=missing-function-docstring,disable=unused-argument
         _LOGGER.debug("renew webhook subscription")
         return
 
@@ -348,7 +361,7 @@ class OAuth2FlowHandler(
     async def async_oauth_create_entry(self, data: dict) -> dict:
         data[
             CONF_CALLBACK_URL
-        ] = f"{get_url(self.hass, allow_internal=False, allow_ip=False)}/api/strava/webhook"
+        ] = f"{get_url(self.hass, allow_internal=False, allow_ip=False)}/api/strava/webhook"  # noqa: E501
         data[CONF_CLIENT_ID] = self.flow_impl.client_id
         data[CONF_CLIENT_SECRET] = self.flow_impl.client_secret
         data[CONF_PHOTOS] = self._import_photos_from_strava

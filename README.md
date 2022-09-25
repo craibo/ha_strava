@@ -6,32 +6,33 @@
 Custom Component to integrate Activity Data from Strava into Home Assistant.
 
 ## Important Notes:
+
 1. You MUST remove the HA_Strava integration from Home Assistant integration, HACS Integration, HACS Custom Repository and reboot HA before adding this.
 2. When configuring the Strava API, the **Authorization Callback Domain** must be set to: **my.home-assistant.io**
 
 ## Features
 
-* Gives you access to **up to 10 of your most recent activities** in Strava.
-* Supports both the **metric and the imperial** unit system
-* Activity data in Home Assistant **auto-updates** whenever you add, modify, or delete activities on Strava
-* Exposes **5 customizable sensor entities** for each Strava activity
-* **Easy set-up**: only enter your Strava Client-ID and -secret and you're ready to go
+- Gives you access to **up to 10 of your most recent activities** in Strava.
+- Supports both the **metric and the imperial** unit system
+- Activity data in Home Assistant **auto-updates** whenever you add, modify, or delete activities on Strava
+- Exposes **5 customizable sensor entities** for each Strava activity
+- **Easy set-up**: only enter your Strava Client-ID and -secret and you're ready to go
 
 ![sensor_overview image](sensor_overview.png)
 
 For every Strava activity, the Strava Home Assistant Integration creates a **device entity** in Home Assistant (max 10 activities). Each of these virtual device entities exposes **five sensor entities** which you can customize to display one of the following **activity KPIs**:
 
-* Duration (Minutes),
-* Pace (Minutes/Mile ; Minutes/Km)
-* Speed (Miles/Hour; Km/Hour)
-* Distance (Miles; Km)
-* \# Kudos
-* Calories (kcal),
-* Elevation Gain (Feet, Meter)
-* Power (Watts)
-* \# Trophies
+- Duration (Minutes),
+- Pace (Minutes/Mile ; Minutes/Km)
+- Speed (Miles/Hour; Km/Hour)
+- Distance (Miles; Km)
+- \# Kudos
+- Calories (kcal),
+- Elevation Gain (Feet, Meter)
+- Power (Watts)
+- \# Trophies
 
-**One additional sensor entity** will be available for every Strava activity to display Date & Title of the underlying activity. 
+**One additional sensor entity** will be available for every Strava activity to display Date & Title of the underlying activity.
 
 Since every Strava activity gets its own virtual device, you can use the underlying sensor data in your **Dashboards and Automations**, just as you'd use any other sensor data in Home Assistant. To learn how to display information about your most recent Strava Activities, please reference the **UI-configuration example** below.
 
@@ -45,7 +46,7 @@ _If you use NabuCasa (It's strongly advised that you support this project!) then
 
 ### 2. Obtain your Strava API credentials
 
-After you've set up remote access for your Home Assistant instance, click [here](https://www.strava.com/settings/api) OR head over to your **Strava Profile**. Under "**Settings**", go to "**My API Application**". 
+After you've set up remote access for your Home Assistant instance, click [here](https://www.strava.com/settings/api) OR head over to your **Strava Profile**. Under "**Settings**", go to "**My API Application**".
 
 Follow the steps in the configuration wizard, and eventually obtain your Strava API credentials (ID + secret). We need those credentials during the final installation step.
 
@@ -99,9 +100,9 @@ Below, you can find an example UI-configuration, which adds metrics from your tw
 title: Home
 views:
   - title: Strava
-    icon: 'mdi:strava'
+    icon: "mdi:strava"
     path: strava
-    theme: ''
+    theme: ""
     badges: []
     cards:
       - cards:
@@ -130,7 +131,7 @@ views:
         aspect_ratio: 0%
         camera_image: camera.strava_cam
         entities: []
-        image: 'https://demo.home-assistant.io/stub_config/kitchen.png'
+        image: "https://demo.home-assistant.io/stub_config/kitchen.png"
       - entities:
           - entity: sensor.strava_stats_summary_ytd_ride_distance
           - entity: sensor.strava_stats_summary_ytd_ride_moving_time
@@ -139,18 +140,18 @@ views:
         title: Strava - Year to Date
         type: entities
 ```
+
 ## Acknowledgments
 
 This is a fork from [@madmic1314](https://github.com/madmic1314) <https://github.com/madmic1314/ha_strava> after they abandoned the project.
 
-Originally forked from [@codingcyclist](https://github.com/codingcyclist) <https://github.com/codingcyclist/ha_strava>. 
+Originally forked from [@codingcyclist](https://github.com/codingcyclist) <https://github.com/codingcyclist/ha_strava>.
 
 I take no credit for their hard work and I am happy to accept suggestions, contributions and help from the community.
 
 ## Contributors
 
-* [@codingcyclist](https://github.com/codingcyclist)
-* [@madmic1314](https://github.com/madmic1314)
-* [@craibo](https://github.com/craibo)
-* [@jlapenna](https://github.com/jlapenna)
-
+- [@codingcyclist](https://github.com/codingcyclist)
+- [@madmic1314](https://github.com/madmic1314)
+- [@craibo](https://github.com/craibo)
+- [@jlapenna](https://github.com/jlapenna)

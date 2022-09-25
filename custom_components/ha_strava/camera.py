@@ -1,3 +1,5 @@
+"""Camera for Strava."""
+
 from __future__ import annotations
 
 import logging
@@ -11,14 +13,14 @@ from homeassistant.components.camera import Camera
 from homeassistant.helpers.event import async_track_time_interval
 
 from .const import (
-    DOMAIN,
-    CONF_PHOTOS_ENTITY,
-    CONF_PHOTOS,
     CONF_IMG_UPDATE_EVENT,
     CONF_IMG_UPDATE_INTERVAL_SECONDS,
     CONF_IMG_UPDATE_INTERVAL_SECONDS_DEFAULT,
     CONF_MAX_NB_IMAGES,
+    CONF_PHOTOS,
+    CONF_PHOTOS_ENTITY,
     CONFIG_URL_DUMP_FILENAME,
+    DOMAIN,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -37,7 +39,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     async_add_entities([camera])
 
-    def image_update_listener(now):
+    def image_update_listener(  # pylint: disable=inconsistent-return-statements
+        now,
+    ):  # pylint: disable=unused-argument
         if len(ha_strava_config_entries) != 1:
             return -1
 
@@ -51,7 +55,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         )
     )
 
-    async_track_time_interval(hass, image_update_listener, timedelta(seconds=img_update_interval_seconds))
+    async_track_time_interval(
+        hass, image_update_listener, timedelta(seconds=img_update_interval_seconds)
+    )
 
     return
 
@@ -59,9 +65,11 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 class UrlCam(Camera):
     """
     Representation of a camera entity that can display images from Strava Image URL.
-    Image URLs are fetched from the strava API and the URLs come as payload of the strava data update event
+    Image URLs are fetched from the strava API and the URLs come as payload of
+    the strava data update event.
     Up to 100 URLs are stored in the Camera object
     """
+
     _attr_name = CONF_PHOTOS_ENTITY
     _attr_should_poll = False
     _attr_unique_id = CONF_PHOTOS_ENTITY
@@ -83,7 +91,7 @@ class UrlCam(Camera):
             self._pickle_urls()
 
         self._url_index = 0
-        self._default_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/No_image_available_600_x_450.svg/1280px-No_image_available_600_x_450.svg.png"
+        self._default_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/No_image_available_600_x_450.svg/1280px-No_image_available_600_x_450.svg.png"  # noqa: E501
         self._max_images = CONF_MAX_NB_IMAGES
         self._default_enabled = default_enabled
 
@@ -93,12 +101,16 @@ class UrlCam(Camera):
             pickle.dump(self._urls, file)
 
     def _return_default_img(self):
-        img_response = requests.get(url=self._default_url)
+        img_response = requests.get(  # pylint: disable=unused-argument,missing-timeout
+            url=self._default_url
+        )
         return img_response.content
 
     def is_url_valid(self, url):
         """test whether an image URL returns a valid response"""
-        img_response = requests.get(url=url)
+        img_response = requests.get(  # pylint: disable=unused-argument,missing-timeout
+            url=url
+        )
         if img_response.status_code == 200:
             return True
         _LOGGER.error(
@@ -107,25 +119,24 @@ class UrlCam(Camera):
         return False
 
     def camera_image(
-            self, width: int | None = None, height: int | None = None
+        self, width: int | None = None, height: int | None = None
     ) -> bytes | None:
         """Return image response."""
         if len(self._urls) == self._url_index:
             _LOGGER.debug("No custom image urls....serving default image")
             return self._return_default_img()
 
-        img_response = requests.get(
+        img_response = requests.get(  # pylint: disable=unused-argument,missing-timeout
             url=self._urls[list(self._urls.keys())[self._url_index]]["url"]
         )
         if img_response.status_code == 200:
             return img_response.content
-        else:
-            _LOGGER.error(
-                f"{self._urls[list(self._urls.keys())[self._url_index]]['url']} did not return a valid image. Response: {img_response.status_code}"
-            )
-            return self._return_default_img()
+        _LOGGER.error(
+            f"{self._urls[list(self._urls.keys())[self._url_index]]['url']} did not return a valid image. Response: {img_response.status_code}"  # noqa: E501
+        )
+        return self._return_default_img()
 
-    def rotate_img(self):
+    def rotate_img(self):  # pylint: disable=missing-function-docstring
         _LOGGER.debug(f"Number of images available from Strava: {len(self._urls)}")
         if len(self._urls) == 0:
             return
@@ -135,7 +146,7 @@ class UrlCam(Camera):
         # self.schedule_update_ha_state()
 
     @property
-    def state(self):
+    def state(self):  # pylint: disable=overridden-final-method
         if len(self._urls) == self._url_index:
             return self._default_url
         return self._urls[list(self._urls.keys())[self._url_index]]["url"]
@@ -157,11 +168,15 @@ class UrlCam(Camera):
 
         # Ensure the urls dict is sorted by date and truncated to max # images.
         self._urls = dict(
-                [url for url in sorted(self._urls.items(), key=lambda k_v:
-                                       k_v[1]["date"])][-self._max_images :])
+            [  # pylint: disable=unnecessary-comprehension
+                url
+                for url in sorted(self._urls.items(), key=lambda k_v: k_v[1]["date"])
+            ][  # pylint: disable=unnecessary-comprehension
+                -self._max_images :
+            ]
+        )
 
         self._pickle_urls()
-        return
 
     @property
     def entity_registry_enabled_default(self) -> bool:
@@ -172,4 +187,3 @@ class UrlCam(Camera):
 
     async def async_will_remove_from_hass(self):
         await super().async_will_remove_from_hass()
-

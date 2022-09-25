@@ -8,7 +8,7 @@ from http import HTTPStatus
 from json import JSONDecodeError
 from typing import Callable
 
-from aiohttp.web import json_response, Response, Request
+from aiohttp.web import Request, Response, json_response
 from homeassistant.components.http.view import HomeAssistantView
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
@@ -18,50 +18,49 @@ from homeassistant.const import (
     EVENT_CORE_CONFIG_UPDATE,
     EVENT_HOMEASSISTANT_START,
 )
+
 # HASS imports
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import (
-    config_entry_oauth2_flow,
-)
+from homeassistant.helpers import config_entry_oauth2_flow
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.network import get_url, NoURLAvailableError
+from homeassistant.helpers.network import NoURLAvailableError, get_url
 
 # custom module imports
 from .config_flow import OAuth2FlowHandler
-from .const import (
-    DOMAIN,
-    OAUTH2_AUTHORIZE,
-    OAUTH2_TOKEN,
-    CONFIG_IMG_SIZE,
-    CONF_IMG_UPDATE_EVENT,
-    CONF_IMG_ROTATE_EVENT,
-    WEBHOOK_SUBSCRIPTION_URL,
-    CONF_CALLBACK_URL,
+from .const import (  # noqa: F401
     AUTH_CALLBACK_PATH,
-    CONF_SENSOR_DATE,
-    CONF_SENSOR_ACTIVITY_COUNT,
-    CONF_SENSOR_DURATION,
-    CONF_SENSOR_PACE,
-    CONF_SENSOR_DISTANCE,
-    CONF_SENSOR_KUDOS,
-    CONF_SENSOR_CALORIES,
-    CONF_SENSOR_ELEVATION,
-    CONF_SENSOR_POWER,
-    CONF_SENSOR_TROPHIES,
-    CONF_SENSOR_TITLE,
-    CONF_SENSOR_CITY,
-    CONF_SENSOR_MOVING_TIME,
-    CONF_SENSOR_ACTIVITY_TYPE,
-    CONF_ACTIVITY_TYPE_RUN,
     CONF_ACTIVITY_TYPE_RIDE,
+    CONF_ACTIVITY_TYPE_RUN,
     CONF_ACTIVITY_TYPE_SWIM,
-    CONF_SUMMARY_YTD,
-    CONF_SUMMARY_ALL,
-    CONF_STRAVA_DATA_UPDATE_EVENT,
+    CONF_CALLBACK_URL,
+    CONF_IMG_ROTATE_EVENT,
+    CONF_IMG_UPDATE_EVENT,
+    CONF_SENSOR_ACTIVITY_COUNT,
+    CONF_SENSOR_ACTIVITY_TYPE,
+    CONF_SENSOR_CALORIES,
+    CONF_SENSOR_CITY,
+    CONF_SENSOR_DATE,
+    CONF_SENSOR_DISTANCE,
+    CONF_SENSOR_DURATION,
+    CONF_SENSOR_ELEVATION,
+    CONF_SENSOR_KUDOS,
+    CONF_SENSOR_MOVING_TIME,
+    CONF_SENSOR_PACE,
+    CONF_SENSOR_POWER,
+    CONF_SENSOR_TITLE,
+    CONF_SENSOR_TROPHIES,
     CONF_STRAVA_CONFIG_UPDATE_EVENT,
+    CONF_STRAVA_DATA_UPDATE_EVENT,
     CONF_STRAVA_RELOAD_EVENT,
+    CONF_SUMMARY_ALL,
+    CONF_SUMMARY_YTD,
+    CONFIG_IMG_SIZE,
+    DOMAIN,
     FACTOR_KILOJOULES_TO_KILOCALORIES,
     MAX_NB_ACTIVITIES,
+    OAUTH2_AUTHORIZE,
+    OAUTH2_TOKEN,
+    WEBHOOK_SUBSCRIPTION_URL,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -96,7 +95,9 @@ class StravaWebhookView(HomeAssistantView):
         self.host = host
         self.hass = hass
 
-    async def fetch_strava_data(self):
+    async def fetch_strava_data(
+        self,
+    ):  # pylint: disable=too-many-statements,too-many-branches,too-many-locals
         """
         Fetches data for the latest activities from the Strava API
         Fetches location data for these activities from https://geocode.xyz
@@ -107,7 +108,7 @@ class StravaWebhookView(HomeAssistantView):
 
         activities_response = await self.oauth_websession.async_request(
             method="GET",
-            url=f"https://www.strava.com/api/v3/athlete/activities?per_page={MAX_NB_ACTIVITIES}",
+            url=f"https://www.strava.com/api/v3/athlete/activities?per_page={MAX_NB_ACTIVITIES}",  # noqa: E501
         )
 
         summary_stats_obj = None
@@ -129,7 +130,7 @@ class StravaWebhookView(HomeAssistantView):
                     start_latlng = activity.get("start_latlng")
                     geo_location_response = await self.oauth_websession.async_request(
                         method="GET",
-                        url=f'https://geocode.xyz/{start_latlng[0]},{start_latlng[1]}?geoit=json',
+                        url=f"https://geocode.xyz/{start_latlng[0]},{start_latlng[1]}?geoit=json",  # noqa: E501
                     )
                     geo_location = json.loads(await geo_location_response.text())
                     city = geo_location.get("city", None)
@@ -188,10 +189,11 @@ class StravaWebhookView(HomeAssistantView):
                 for id in self.image_updates.keys()
                 if (dt.now() - self.image_updates[id]).days > 0
             ]:
-                img_request_url = f"https://www.strava.com/api/v3/activities/{activity_id}/photos?size={CONFIG_IMG_SIZE}"
+                img_request_url = f"https://www.strava.com/api/v3/activities/{activity_id}/photos?size={CONFIG_IMG_SIZE}"  # noqa: E501
 
                 img_response = await self.oauth_websession.async_request(
-                    method="GET", url=img_request_url,
+                    method="GET",
+                    url=img_request_url,
                 )
 
                 if img_response.status == 200:
@@ -206,12 +208,12 @@ class StravaWebhookView(HomeAssistantView):
                     self.image_updates[activity_id] = dt.now()
 
                 elif activities_response.status == 429:
-                    _LOGGER.warn(f"Strava API rate limit has been reached")
+                    _LOGGER.warning(f"Strava API rate limit has been reached")
                     return
 
                 else:
                     _LOGGER.error(
-                        f"Could not fetch strava image urls from {img_request_url} (response code: {img_response.status}): {await img_response.text()}"
+                        f"Could not fetch strava image urls from {img_request_url} (response code: {img_response.status}): {await img_response.text()}"  # noqa: E501
                     )
                     return
 
@@ -222,7 +224,8 @@ class StravaWebhookView(HomeAssistantView):
                 )
 
                 summary_stats_response = await self.oauth_websession.async_request(
-                    method="GET", url=summary_stats_url,
+                    method="GET",
+                    url=summary_stats_url,
                 )
 
                 sumary_stats = json.loads(await summary_stats_response.text())
@@ -338,12 +341,12 @@ class StravaWebhookView(HomeAssistantView):
                 }
 
         elif activities_response.status == 429:
-            _LOGGER.warn(f"Strava API rate limit has been reached")
+            _LOGGER.warning(f"Strava API rate limit has been reached")
             return
 
         else:
             _LOGGER.error(
-                f"Could not fetch strava activities (response code: {activities_response.status}): {await activities_response.text()}"
+                f"Could not fetch strava activities (response code: {activities_response.status}): {await activities_response.text()}"  # noqa: E501
             )
             return
 
@@ -362,12 +365,13 @@ class StravaWebhookView(HomeAssistantView):
     async def get(self, request):
         """Handle the incoming webhook challenge"""
         _LOGGER.debug(
-            f"Strava Endpoint got a GET request from {request.headers.get('Host', None)}"
+            f"Strava Endpoint got a GET request from {request.headers.get('Host', None)}"  # noqa: E501
         )
         webhook_subscription_challenge = request.query.get("hub.challenge", None)
         if webhook_subscription_challenge:
             return json_response(
-                status=HTTPStatus.OK, data={"hub.challenge": webhook_subscription_challenge}
+                status=HTTPStatus.OK,
+                data={"hub.challenge": webhook_subscription_challenge},
             )
 
         return Response(status=HTTPStatus.OK)
@@ -394,12 +398,15 @@ class StravaWebhookView(HomeAssistantView):
 
 
 async def renew_webhook_subscription(
-    hass: HomeAssistant, entry: ConfigEntry, webhook_view: StravaWebhookView
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    webhook_view: StravaWebhookView,  # pylint: disable=unused-argument
 ):
 
     """
-    Function to check whether HASS has already subscribed to Strava Webhook with its public URL
-    Re-creates a subscription if there was none before or if the public URL has changed
+    Function to check whether HASS has already subscribed to Strava Webhook with
+    its public URL Re-creates a subscription if there was none before or if the
+    public URL has changed
     """
     config_data = {
         **entry.data,
@@ -409,7 +416,8 @@ async def renew_webhook_subscription(
         ha_host = get_url(hass, allow_internal=False, allow_ip=False)
     except NoURLAvailableError:
         _LOGGER.error(
-            "Your Home Assistant Instance does not seem to have a public URL. The Strava Home Assistant integration requires a public URL"
+            "Your Home Assistant Instance does not seem to have a public URL."
+            " The Strava Home Assistant integration requires a public URL"
         )
         return
 
@@ -420,7 +428,7 @@ async def renew_webhook_subscription(
 
     if callback_response.status != 200:
         _LOGGER.error(
-            f"HA Callback URL for Strava Webhook not available: {await callback_response.text()}"
+            f"HA Callback URL for Strava Webhook not available: {await callback_response.text()}"  # noqa:E501
         )
         return
 
@@ -438,7 +446,7 @@ async def renew_webhook_subscription(
 
     if len(existing_webhook_subscriptions) > 1:
         _LOGGER.error(
-            f"Expected 1 existing Strava Webhook subscription for {config_data[CONF_CALLBACK_URL]}: Found {len(existing_webhook_subscriptions)}"
+            f"Expected 1 existing Strava Webhook subscription for {config_data[CONF_CALLBACK_URL]}: Found {len(existing_webhook_subscriptions)}"  # noqa:E501
         )
         return
 
@@ -451,7 +459,7 @@ async def renew_webhook_subscription(
             != existing_webhook_subscriptions[0][CONF_CALLBACK_URL]
         ):
             _LOGGER.debug(
-                f"Deleting outdated Strava Webhook Subscription for {existing_webhook_subscriptions[0][CONF_CALLBACK_URL]}"
+                f"Deleting outdated Strava Webhook Subscription for {existing_webhook_subscriptions[0][CONF_CALLBACK_URL]}"  # noqa:E501
             )
 
             delete_response = await websession.delete(
@@ -469,13 +477,13 @@ async def renew_webhook_subscription(
                 existing_webhook_subscriptions = []
             else:
                 _LOGGER.error(
-                    f"Unexpected response (status code: {delete_response.status}) while deleting Strava Webhook Subscription: {await delete_response.text()}"
+                    f"Unexpected response (status code: {delete_response.status}) while deleting Strava Webhook Subscription: {await delete_response.text()}"  # noqa:E501
                 )
                 return
 
     if len(existing_webhook_subscriptions) == 0:
         _LOGGER.debug(
-            f"Creating a new Strava Webhook subscription for {config_data[CONF_CALLBACK_URL]}"
+            f"Creating a new Strava Webhook subscription for {config_data[CONF_CALLBACK_URL]}"  # noqa:E501
         )
         post_response = await websession.post(
             url=WEBHOOK_SUBSCRIPTION_URL,
@@ -491,7 +499,7 @@ async def renew_webhook_subscription(
             config_data[CONF_WEBHOOK_ID] = post_response_content["id"]
         else:
             _LOGGER.error(
-                f"Unexpected response (status code: {post_response.status}) while creating Strava Webhook Subscription: {await post_response.text()}"
+                f"Unexpected response (status code: {post_response.status}) while creating Strava Webhook Subscription: {await post_response.text()}"  # noqa:E501
             )
             return
 
@@ -500,15 +508,21 @@ async def renew_webhook_subscription(
     return True
 
 
-async def async_setup(hass: HomeAssistant, config: dict):
+async def async_setup(
+    hass: HomeAssistant, config: dict
+):  # pylint: disable=unused-argument  # pylint: disable=unused-argument
     """
-    configuration.yaml-based config will be deprecated. Hence, only support for UI-based config > see config_flow.py
+    configuration.yaml-based config will be deprecated. Hence, only support for
+    UI-based config > see config_flow.py
     """
     return True
 
 
 async def strava_config_update_helper(hass, event):
-    """helper function to handle updates to the integration-specific config options (i.e. OptionsFlow)"""
+    """
+    helper function to handle updates to the integration-specific config
+    options (i.e. OptionsFlow)
+    """
     _LOGGER.debug(f"Strava Config Update Handler fired: {event.data}")
     hass.bus.fire(CONF_STRAVA_CONFIG_UPDATE_EVENT, {})
     return
@@ -523,8 +537,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     # OAuth Stuff
     try:
-        implementation = await config_entry_oauth2_flow.async_get_config_entry_implementation(
-            hass=hass, config_entry=entry
+        implementation = (
+            await config_entry_oauth2_flow.async_get_config_entry_implementation(
+                hass=hass, config_entry=entry
+            )
         )
     except ValueError:
         implementation = config_entry_oauth2_flow.LocalOAuth2Implementation(
@@ -565,14 +581,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         await strava_webhook_view.fetch_strava_data()
         return True
 
-    def ha_start_handler(event):
+    def ha_start_handler(event):  # pylint: disable=unused-argument
         """
         called when HA rebooted
         i.e. after all webhook views have been registered and are available
         """
         hass.async_create_task(strava_startup_functions())
 
-    def component_reload_handler(event):
+    def component_reload_handler(event):  # pylint: disable=unused-argument
         """called when the component reloads"""
         hass.async_create_task(strava_startup_functions())
 
@@ -581,7 +597,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         await strava_webhook_view.fetch_strava_data()
         return
 
-    def strava_config_update_handler(event):
+    def strava_config_update_handler(event):  # pylint: disable=unused-argument
         hass.async_create_task(async_strava_config_update_handler())
 
     def core_config_update_handler(event):
@@ -638,8 +654,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Unload a config entry."""
 
-    implementation = await config_entry_oauth2_flow.async_get_config_entry_implementation(
-        hass, entry
+    implementation = (  # noqa: F841
+        await config_entry_oauth2_flow.async_get_config_entry_implementation(
+            hass, entry
+        )
     )
 
     for remove_listener in hass.data[DOMAIN]["remove_update_listener"]:
@@ -671,16 +689,16 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         if delete_response.status == 204:
             _LOGGER.debug(
-                f"Successfully deleted strava webhook subscription for {entry.data[CONF_CALLBACK_URL]}"
+                f"Successfully deleted strava webhook subscription for {entry.data[CONF_CALLBACK_URL]}"  # noqa:E501
             )
         else:
             _LOGGER.error(
-                f"Strava webhook for {entry.data[CONF_CALLBACK_URL]} could not be deleted: {await delete_response.text()}"
+                f"Strava webhook for {entry.data[CONF_CALLBACK_URL]} could not be deleted: {await delete_response.text()}"  # noqa:E501
             )
             return False
     else:
         _LOGGER.error(
-            f"Expected 1 webhook subscription for {entry.data[CONF_CALLBACK_URL]}; found: {len(existing_webhook_subscriptions)}"
+            f"Expected 1 webhook subscription for {entry.data[CONF_CALLBACK_URL]}; found: {len(existing_webhook_subscriptions)}"  # noqa:E501
         )
         return False
 
@@ -701,8 +719,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     return unload_ok
 
 
-class StravaOAuth2Imlementation(config_entry_oauth2_flow.LocalOAuth2Implementation):
+class StravaOAuth2Imlementation(
+    config_entry_oauth2_flow.LocalOAuth2Implementation
+):  # pylint: disable=missing-class-docstring
     @property
     def redirect_uri(self) -> str:
         """Return the redirect uri."""
-        return f"{get_url(self.hass, allow_internal=False, allow_ip=False)}{AUTH_CALLBACK_PATH}"
+        return f"{get_url(self.hass, allow_internal=False, allow_ip=False)}{AUTH_CALLBACK_PATH}"  # noqa:E501

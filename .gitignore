@@ -1,2 +1,17 @@
-__pycache__
 .DS_Store
+
+# Visual Studio Code
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# Environments
+.env
+.venv
+
+# Build artifacts
+build/
+__pycache__/
+*.py[cod]
+*.egg-info/
