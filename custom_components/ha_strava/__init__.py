@@ -18,7 +18,6 @@ from homeassistant.const import (
     EVENT_CORE_CONFIG_UPDATE,
     EVENT_HOMEASSISTANT_START,
 )
-
 # HASS imports
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_entry_oauth2_flow
@@ -54,6 +53,7 @@ from .const import (  # noqa: F401
     CONF_STRAVA_RELOAD_EVENT,
     CONF_SUMMARY_ALL,
     CONF_SUMMARY_YTD,
+    CONF_SUMMARY_RECENT,
     CONFIG_IMG_SIZE,
     DOMAIN,
     FACTOR_KILOJOULES_TO_KILOCALORIES,
@@ -231,6 +231,23 @@ class StravaWebhookView(HomeAssistantView):
                 sumary_stats = json.loads(await summary_stats_response.text())
                 summary_stats_obj = {
                     CONF_ACTIVITY_TYPE_RIDE: {
+                        CONF_SUMMARY_RECENT: {
+                            CONF_SENSOR_DISTANCE: float(
+                                sumary_stats.get(
+                                    "recent_ride_totals", {"distance": 0}
+                                ).get("distance", 0)
+                            ),
+                            CONF_SENSOR_ACTIVITY_COUNT: int(
+                                sumary_stats.get("recent_ride_totals", {"count": 0}).get(
+                                    "count", 0
+                                )
+                            ),
+                            CONF_SENSOR_MOVING_TIME: float(
+                                sumary_stats.get(
+                                    "recent_ride_totals", {"moving_time": 0}
+                                ).get("moving_time", 0)
+                            ),
+                        },
                         CONF_SUMMARY_YTD: {
                             CONF_SENSOR_DISTANCE: float(
                                 sumary_stats.get(
@@ -267,6 +284,23 @@ class StravaWebhookView(HomeAssistantView):
                         },
                     },
                     CONF_ACTIVITY_TYPE_RUN: {
+                        CONF_SUMMARY_RECENT: {
+                            CONF_SENSOR_DISTANCE: float(
+                                sumary_stats.get(
+                                    "recent_run_totals", {"distance": 0}
+                                ).get("distance", 0)
+                            ),
+                            CONF_SENSOR_ACTIVITY_COUNT: int(
+                                sumary_stats.get("recent_run_totals", {"count": 0}).get(
+                                    "count", 0
+                                )
+                            ),
+                            CONF_SENSOR_MOVING_TIME: float(
+                                sumary_stats.get(
+                                    "recent_run_totals", {"moving_time": 0}
+                                ).get("moving_time", 0)
+                            ),
+                        },
                         CONF_SUMMARY_YTD: {
                             CONF_SENSOR_DISTANCE: float(
                                 sumary_stats.get("ytd_run_totals", {"distance": 0}).get(
@@ -303,6 +337,23 @@ class StravaWebhookView(HomeAssistantView):
                         },
                     },
                     CONF_ACTIVITY_TYPE_SWIM: {
+                        CONF_SUMMARY_RECENT: {
+                            CONF_SENSOR_DISTANCE: float(
+                                sumary_stats.get(
+                                    "recent_swim_totals", {"distance": 0}
+                                ).get("distance", 0)
+                            ),
+                            CONF_SENSOR_ACTIVITY_COUNT: int(
+                                sumary_stats.get("recent_swim_totals", {"count": 0}).get(
+                                    "count", 0
+                                )
+                            ),
+                            CONF_SENSOR_MOVING_TIME: float(
+                                sumary_stats.get(
+                                    "recent_swim_totals", {"moving_time": 0}
+                                ).get("moving_time", 0)
+                            ),
+                        },
                         CONF_SUMMARY_YTD: {
                             CONF_SENSOR_DISTANCE: float(
                                 sumary_stats.get(

@@ -1,6 +1,5 @@
 """Sensor platform for HA Strava"""
 import logging
-
 # generic imports
 from datetime import datetime as dt
 
@@ -38,6 +37,7 @@ from .const import (
     CONF_STRAVA_DATA_UPDATE_EVENT,
     CONF_STRAVA_RELOAD_EVENT,
     CONF_SUMMARY_ALL,
+    CONF_SUMMARY_RECENT,
     CONF_SUMMARY_YTD,
     DEFAULT_NB_ACTIVITIES,
     DOMAIN,
@@ -72,7 +72,7 @@ async def async_setup_entry(
             CONF_SENSOR_MOVING_TIME,
             CONF_SENSOR_ACTIVITY_COUNT,
         ]:
-            for summary_type in [CONF_SUMMARY_YTD, CONF_SUMMARY_ALL]:
+            for summary_type in [CONF_SUMMARY_RECENT, CONF_SUMMARY_YTD, CONF_SUMMARY_ALL]:
                 entries.append(
                     StravaSummaryStatsSensor(
                         activity_type=activity_type,
@@ -177,6 +177,8 @@ class StravaSummaryStatsSensor(SensorEntity):  # pylint: disable=missing-class-d
         ret = ""
         if self._summary_type == CONF_SUMMARY_YTD:
             ret += "YTD "
+        elif self._summary_type == CONF_SUMMARY_RECENT:
+            ret += "RECENT "
         else:
             ret += "ALL "
 
