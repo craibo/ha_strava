@@ -54,6 +54,7 @@ CONF_ACTIVITY_TYPE_RIDE = "ride"
 CONF_ACTIVITY_TYPE_SWIM = "swim"
 CONF_ACTIVITY_TYPE_HIKE = "hike"
 CONF_ACTIVITY_TYPE_OTHER = "other"
+CONF_SUMMARY_RECENT = "summary_recent"
 CONF_SUMMARY_YTD = "summary_ytd"
 CONF_SUMMARY_ALL = "summary_all"
 
