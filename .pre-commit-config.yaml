@@ -15,6 +15,10 @@ repos:
     hooks:
       - id: isort
         name: isort (python)
+  - repo: https://github.com/jumanjihouse/pre-commit-hooks
+    rev: 3.0.0
+    hooks:
+      - id: shfmt
   - repo: local
     hooks:
       - id: black
