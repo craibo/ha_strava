@@ -22,7 +22,7 @@
       "type": "python",
       "request": "attach",
       "port": 5678,
-      "host": "homeassistant.local",
+      "host": "${config:ha_strava.remote_host}",
       "pathMappings": [
         {
           "localRoot": "${workspaceFolder}",

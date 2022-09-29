@@ -30,6 +30,12 @@
       "type": "shell",
       "command": "pre-commit",
       "problemMatcher": []
+    },
+    {
+      "label": "Push Component to Remote Host",
+      "type": "shell",
+      "command": "tools/push_remote.sh ${config:ha_strava.remote_host}",
+      "problemMatcher": []
     }
   ]
 }
