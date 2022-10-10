@@ -159,26 +159,24 @@ class StravaWebhookView(HomeAssistantView):
                 url=img_request_url,
             )
 
-            if img_response.status == 200:
-                images = json.loads(await img_response.text())
-                for image in images:
-                    img_date = dt.strptime(
-                        image.get("created_at_local", "2000-01-01T00:00:00Z"),
-                        "%Y-%m-%dT%H:%M:%SZ",
-                    )
-                    img_url = list(image.get("urls").values())[0]
-                    img_urls.append({"date": img_date, "url": img_url})
-                self.image_updates[activity_id] = dt.now()
-
-            elif activities_response.status == 429:
+            if img_response.status == 429:
                 _LOGGER.warning(f"Strava API rate limit has been reached")
-                return
+                break
 
-            else:
-                _LOGGER.error(
-                    f"Could not fetch strava image urls from {img_request_url} (response code: {img_response.status}): {await img_response.text()}"  # noqa: E501
+            if img_response.status != 200:
+                text = await img_response.text()
+                _LOGGER.error(f"Photos Fetch Failed: {img_response.status}: {text}")
+                continue
+
+            images = json.loads(await img_response.text())
+            for image in images:
+                img_date = dt.strptime(
+                    image.get("created_at_local", "2000-01-01T00:00:00Z"),
+                    "%Y-%m-%dT%H:%M:%SZ",
                 )
-                return
+                img_url = list(image.get("urls").values())[0]
+                img_urls.append({"date": img_date, "url": img_url})
+            self.image_updates[activity_id] = dt.now()
 
         if len(newly_added_activity_ids) > 0:
             summary_stats = await self._fetch_summary_stats(athlete_id)
