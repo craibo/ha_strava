@@ -123,29 +123,28 @@ class StravaWebhookView(HomeAssistantView):
             )
             return
 
-        activities = json.loads(await activities_response.text())
-
-        new_activity_ids = []
         athlete_id = None
-        for activity in activities:
-            new_activity_ids.append(activity.get("id"))
+        activity_ids = []
+        activities = []
+        for activity in json.loads(await activities_response.text()):
             athlete_id = int(activity["athlete"]["id"])
+            activity_ids.append(activity.get("id"))
+            activities.append(
+                self._sensor_activity(activity, await self._geocode_activity(activity))
+            )
 
         activities = sorted(
-            [
-                self._sensor_activity(activity, await self._geocode_activity(activity))
-                for activity in activities
-            ],
+            activities,
             key=lambda activity: activity[CONF_SENSOR_DATE],
             reverse=True,
         )
 
         newly_added_activity_ids = [
-            id for id in new_activity_ids if id not in self.image_updates.keys()
+            id for id in activity_ids if id not in self.image_updates.keys()
         ]
         img_urls = []
         self.image_updates = {
-            id: self.image_updates.get(id, dt(1990, 1, 1)) for id in new_activity_ids
+            id: self.image_updates.get(id, dt(1990, 1, 1)) for id in activity_ids
         }
         # only update images once a day per activity
         for activity_id in [
