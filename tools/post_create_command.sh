@@ -2,6 +2,7 @@
 
 set -e
 
-pip install pre-commit
+pip install -r requirements_dev.txt
+pip install -r requirements_test.txt
 
 pre-commit install
