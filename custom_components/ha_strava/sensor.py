@@ -1,5 +1,6 @@
 """Sensor platform for HA Strava"""
 import logging
+
 # generic imports
 from datetime import datetime as dt
 
@@ -72,7 +73,11 @@ async def async_setup_entry(
             CONF_SENSOR_MOVING_TIME,
             CONF_SENSOR_ACTIVITY_COUNT,
         ]:
-            for summary_type in [CONF_SUMMARY_RECENT, CONF_SUMMARY_YTD, CONF_SUMMARY_ALL]:
+            for summary_type in [
+                CONF_SUMMARY_RECENT,
+                CONF_SUMMARY_YTD,
+                CONF_SUMMARY_ALL,
+            ]:
                 entries.append(
                     StravaSummaryStatsSensor(
                         activity_type=activity_type,

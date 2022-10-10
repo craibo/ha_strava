@@ -18,6 +18,7 @@ from homeassistant.const import (
     EVENT_CORE_CONFIG_UPDATE,
     EVENT_HOMEASSISTANT_START,
 )
+
 # HASS imports
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_entry_oauth2_flow
@@ -52,8 +53,8 @@ from .const import (  # noqa: F401
     CONF_STRAVA_DATA_UPDATE_EVENT,
     CONF_STRAVA_RELOAD_EVENT,
     CONF_SUMMARY_ALL,
-    CONF_SUMMARY_YTD,
     CONF_SUMMARY_RECENT,
+    CONF_SUMMARY_YTD,
     CONFIG_IMG_SIZE,
     DOMAIN,
     FACTOR_KILOJOULES_TO_KILOCALORIES,
@@ -238,9 +239,9 @@ class StravaWebhookView(HomeAssistantView):
                                 ).get("distance", 0)
                             ),
                             CONF_SENSOR_ACTIVITY_COUNT: int(
-                                sumary_stats.get("recent_ride_totals", {"count": 0}).get(
-                                    "count", 0
-                                )
+                                sumary_stats.get(
+                                    "recent_ride_totals", {"count": 0}
+                                ).get("count", 0)
                             ),
                             CONF_SENSOR_MOVING_TIME: float(
                                 sumary_stats.get(
@@ -344,9 +345,9 @@ class StravaWebhookView(HomeAssistantView):
                                 ).get("distance", 0)
                             ),
                             CONF_SENSOR_ACTIVITY_COUNT: int(
-                                sumary_stats.get("recent_swim_totals", {"count": 0}).get(
-                                    "count", 0
-                                )
+                                sumary_stats.get(
+                                    "recent_swim_totals", {"count": 0}
+                                ).get("count", 0)
                             ),
                             CONF_SENSOR_MOVING_TIME: float(
                                 sumary_stats.get(
