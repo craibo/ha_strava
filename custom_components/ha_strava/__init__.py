@@ -57,6 +57,8 @@ from .const import (  # noqa: F401
     CONF_SUMMARY_YTD,
     CONFIG_IMG_SIZE,
     DOMAIN,
+    EVENT_ACTIVITIES_UPDATE,
+    EVENT_SUMMARY_STATS_UPDATE,
     FACTOR_KILOJOULES_TO_KILOCALORIES,
     MAX_NB_ACTIVITIES,
     OAUTH2_AUTHORIZE,
@@ -102,7 +104,7 @@ class StravaWebhookView(HomeAssistantView):
         """
         Fetches data for the latest activities from the Strava API
         Fetches location data for these activities from https://geocode.xyz
-        Fires a Strava Update Event for Sensors to listen to
+        Fires events for Sensors to listen to
         """
 
         _LOGGER.debug("Fetching Data from Strava API")
@@ -132,16 +134,29 @@ class StravaWebhookView(HomeAssistantView):
             activities.append(
                 self._sensor_activity(activity, await self._geocode_activity(activity))
             )
-
-        activities = sorted(
-            activities,
-            key=lambda activity: activity[CONF_SENSOR_DATE],
-            reverse=True,
+        self.event_factory(
+            data={
+                "activities": sorted(
+                    activities,
+                    key=lambda activity: activity[CONF_SENSOR_DATE],
+                    reverse=True,
+                ),
+            },
+            event_type=EVENT_ACTIVITIES_UPDATE,
         )
 
         newly_added_activity_ids = [
             id for id in activity_ids if id not in self.image_updates.keys()
         ]
+        if len(newly_added_activity_ids) > 0:
+            summary_stats = await self._fetch_summary_stats(athlete_id)
+            self.event_factory(
+                data={
+                    "summary_stats": summary_stats,
+                },
+                event_type=EVENT_SUMMARY_STATS_UPDATE,
+            )
+
         img_urls = []
         self.image_updates = {
             id: self.image_updates.get(id, dt(1990, 1, 1)) for id in activity_ids
@@ -178,17 +193,6 @@ class StravaWebhookView(HomeAssistantView):
                 img_urls.append({"date": img_date, "url": img_url})
             self.image_updates[activity_id] = dt.now()
 
-        if len(newly_added_activity_ids) > 0:
-            summary_stats = await self._fetch_summary_stats(athlete_id)
-        else:
-            summary_stats = None
-
-        self.event_factory(
-            data={
-                "activities": activities,
-                "summary_stats": summary_stats,
-            }
-        )
         if len(img_urls) > 0:
             self.event_factory(
                 data={"img_urls": img_urls}, event_type=CONF_IMG_UPDATE_EVENT

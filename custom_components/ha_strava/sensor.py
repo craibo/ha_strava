@@ -35,13 +35,14 @@ from .const import (
     CONF_SENSOR_SPEED,
     CONF_SENSOR_TITLE,
     CONF_SENSORS,
-    CONF_STRAVA_DATA_UPDATE_EVENT,
     CONF_STRAVA_RELOAD_EVENT,
     CONF_SUMMARY_ALL,
     CONF_SUMMARY_RECENT,
     CONF_SUMMARY_YTD,
     DEFAULT_NB_ACTIVITIES,
     DOMAIN,
+    EVENT_ACTIVITIES_UPDATE,
+    EVENT_SUMMARY_STATS_UPDATE,
     FACTOR_METER_TO_FEET,
     FACTOR_METER_TO_MILE,
     MAX_NB_ACTIVITIES,
@@ -207,7 +208,7 @@ class StravaSummaryStatsSensor(SensorEntity):  # pylint: disable=missing-class-d
 
     async def async_added_to_hass(self):
         self.hass.bus.async_listen(
-            CONF_STRAVA_DATA_UPDATE_EVENT, self.strava_data_update_event_handler
+            EVENT_SUMMARY_STATS_UPDATE, self.strava_data_update_event_handler
         )
 
     async def async_will_remove_from_hass(self):
@@ -402,7 +403,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
 
     async def async_added_to_hass(self):
         self.hass.bus.async_listen(
-            CONF_STRAVA_DATA_UPDATE_EVENT, self.strava_data_update_event_handler
+            EVENT_ACTIVITIES_UPDATE, self.strava_data_update_event_handler
         )
 
     async def async_will_remove_from_hass(self):
