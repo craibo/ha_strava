@@ -21,9 +21,16 @@ from .const import (
     CONF_PHOTOS_ENTITY,
     CONFIG_URL_DUMP_FILENAME,
     DOMAIN,
+    EVENT_ACTIVITY_IMAGES_UPDATE,
+    MAX_NB_ACTIVITIES,
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+_DEFAULT_IMAGE_URL = (
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/"
+    "No_image_available_600_x_450.svg/1280px-No_image_available_600_x_450.svg.png"
+)
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
@@ -31,13 +38,22 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     Set up the Camera that displays images from Strava.
     Works via image-URLs, not via local file storage
     """
-
-    if not config_entry.data.get(CONF_PHOTOS, False):
-        camera = UrlCam(default_enabled=False)
-    else:
-        camera = UrlCam(default_enabled=True)
-
-    async_add_entities([camera])
+    default_enabled = config_entry.data.get(CONF_PHOTOS, False)
+    cameras = [UrlCam(default_enabled=default_enabled)]
+    for i in range(MAX_NB_ACTIVITIES):
+        cameras.append(
+            ActivityCamera(
+                device_info={
+                    "identifiers": {(DOMAIN, f"strava_activity_{i}")},
+                    "name": f"Strava Activity {i}",
+                    "manufacturer": "Strava",
+                    "model": "Activity",
+                },
+                activity_index=0,
+                default_enabled=default_enabled,
+            )
+        )
+    async_add_entities(cameras)
 
     def image_update_listener(  # pylint: disable=inconsistent-return-statements
         now,
@@ -45,7 +61,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         if len(ha_strava_config_entries) != 1:
             return -1
 
-        camera.rotate_img()
+        for camera in cameras:
+            camera.rotate_img()
 
     ha_strava_config_entries = hass.config_entries.async_entries(domain=DOMAIN)
     img_update_interval_seconds = int(
@@ -59,7 +76,74 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         hass, image_update_listener, timedelta(seconds=img_update_interval_seconds)
     )
 
-    return
+
+class ActivityCamera(Camera):  # pylint: disable=too-many-instance-attributes
+    """
+    Rotates through all images for an activity.
+
+    Up to 100 URLs are stored in the Camera object.
+    """
+
+    _attr_should_poll = False
+
+    def __init__(self, device_info, activity_index, default_enabled=True):
+        """Initialize Camera component."""
+        super().__init__()
+        self._attr_device_info = device_info
+        self._attr_name = f"{device_info['name']} Photos"
+        self._attr_unique_id = f"strava_{activity_index}_photos"
+        self._attr_entity_registry_enabled_default = default_enabled
+
+        self._device_id = (
+            list(device_info["identifiers"])[0][1] if device_info else None
+        )
+        self._activity_index = int(activity_index)
+
+        self._url_index = 0
+        self._urls = []
+
+    @property
+    def state(self):  # pylint: disable=overridden-final-method
+        if len(self._urls) == 0:
+            return _DEFAULT_IMAGE_URL
+        return self._urls[self._url_index]["url"]
+
+    def camera_image(
+        self, width: int | None = None, height: int | None = None
+    ) -> bytes | None:
+        """Return image response."""
+        if len(self._urls) == 0:
+            _LOGGER.debug(f"{self._device_id}: serving default image")
+            return _return_default_img()
+
+        url = self._urls[self._url_index]["url"]
+        response = requests.get(url=url)  # pylint: disable=missing-timeout
+        if response.status_code != 200:
+            _LOGGER.error(
+                f"{self._device_id}: Invalid Image: {response.status_code}: {url}"
+            )
+            return _return_default_img()
+        return response.content
+
+    def rotate_img(self):  # pylint: disable=missing-function-docstring
+        _LOGGER.debug(f"{self._device_id}: Strava Image Count: {len(self._urls)}")
+        if len(self._urls) == 0:
+            return
+        self._url_index = (self._url_index + 1) % len(self._urls)
+        self.async_write_ha_state()
+
+    def img_update_handler(self, event):
+        """handle new urls of Strava images"""
+        _LOGGER.debug(f"{self._device_id}: Received image update: {event}")
+        if event.data["activity_index"] != self._activity_index:
+            return
+        self._urls = event.data["img_urls"]
+        self._url_index = self._url_index if self._url_index < len(self._urls) else 0
+
+    async def async_added_to_hass(self):
+        self.hass.bus.async_listen(
+            EVENT_ACTIVITY_IMAGES_UPDATE, self.img_update_handler
+        )
 
 
 class UrlCam(Camera):
@@ -187,3 +271,9 @@ class UrlCam(Camera):
 
     async def async_will_remove_from_hass(self):
         await super().async_will_remove_from_hass()
+
+
+def _return_default_img():
+    return requests.get(  # pylint: disable=unused-argument,missing-timeout
+        url=_DEFAULT_IMAGE_URL
+    ).content

@@ -31,8 +31,9 @@ CONF_STRAVA_CONFIG_UPDATE_EVENT = "strava_config_update"
 CONF_STRAVA_RELOAD_EVENT = "ha_strava_reload"
 CONF_IMG_UPDATE_EVENT = "ha_strava_new_images"
 CONF_IMG_ROTATE_EVENT = "ha_strava_rotate_images"
-EVENT_SUMMARY_STATS_UPDATE = "ha_strava_stats_update"
 EVENT_ACTIVITIES_UPDATE = "ha_strava_activities_update"
+EVENT_ACTIVITY_IMAGES_UPDATE = "ha_strava_activity_images_update"
+EVENT_SUMMARY_STATS_UPDATE = "ha_strava_stats_update"
 
 # Sensor Specs
 CONF_SENSOR_ID = "id"

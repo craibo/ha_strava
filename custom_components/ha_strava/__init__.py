@@ -58,6 +58,7 @@ from .const import (  # noqa: F401
     CONFIG_IMG_SIZE,
     DOMAIN,
     EVENT_ACTIVITIES_UPDATE,
+    EVENT_ACTIVITY_IMAGES_UPDATE,
     EVENT_SUMMARY_STATS_UPDATE,
     FACTOR_KILOJOULES_TO_KILOCALORIES,
     MAX_NB_ACTIVITIES,
@@ -197,18 +198,13 @@ class StravaWebhookView(HomeAssistantView):
 
     async def _fetch_images(self, activities: list[dict]):
         _LOGGER.debug("Fetching images")
-        # only update images once a day per activity
-        activity_ids = (activity[CONF_SENSOR_ID] for activity in activities)
-        for activity_id in activity_ids:
-            self.image_updates[activity_id] = self.image_updates.get(
-                activity_id, dt(1990, 1, 1)
-            )
         img_urls = []
-        for activity_id in [
-            activity_id
-            for activity_id, date in self.image_updates.items()
-            if (dt.now() - date).days > 0
-        ]:
+        for idx, activity in enumerate(activities):
+            activity_id = activity.get(CONF_SENSOR_ID)
+            # only update images once a day per activity
+            date = self.image_updates.get(activity_id, dt(1990, 1, 1))
+            if (dt.now() - date).days <= 0:
+                continue
             response = await self.oauth_websession.async_request(
                 method="GET", url=_PHOTOS_URL_TEMPLATE % (activity_id,)
             )
@@ -224,14 +220,27 @@ class StravaWebhookView(HomeAssistantView):
 
             self.image_updates[activity_id] = dt.now()
 
-            images = await response.json()
-            for image in images:
+            activity_img_urls = []
+            for image in await response.json():
                 img_date = dt.strptime(
                     image.get("created_at_local", "2000-01-01T00:00:00Z"),
                     "%Y-%m-%dT%H:%M:%SZ",
                 )
                 img_url = list(image.get("urls").values())[0]
                 img_urls.append({"date": img_date, "url": img_url})
+                activity_img_urls.append({"date": img_date, "url": img_url})
+
+            if len(activity_img_urls) > 0:
+                _LOGGER.debug(
+                    f"Publishing {len(activity_img_urls)} images for {idx} event"
+                )
+                self.event_factory(
+                    data={
+                        "activity_index": idx,
+                        "img_urls": activity_img_urls,
+                    },
+                    event_type=EVENT_ACTIVITY_IMAGES_UPDATE,
+                )
 
         if len(img_urls) > 0:
             _LOGGER.debug("Publishing images event")
@@ -504,8 +513,8 @@ async def renew_webhook_subscription(
         },
     )
 
-    existing_webhook_subscriptions = await json.loads(
-        existing_webhook_subscriptions_response.text()
+    existing_webhook_subscriptions = json.loads(
+        await existing_webhook_subscriptions_response.text()
     )
 
     if len(existing_webhook_subscriptions) > 1:
