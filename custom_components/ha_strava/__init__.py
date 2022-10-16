@@ -5,7 +5,6 @@ import json
 import logging
 from datetime import datetime as dt
 from http import HTTPStatus
-from json import JSONDecodeError
 from typing import Callable
 
 from aiohttp.web import Request, Response, json_response
@@ -128,7 +127,7 @@ class StravaWebhookView(HomeAssistantView):
         athlete_id = None
         activity_ids = []
         activities = []
-        for activity in json.loads(await activities_response.text()):
+        for activity in await activities_response.json():
             athlete_id = int(activity["athlete"]["id"])
             activity_ids.append(activity.get("id"))
             activities.append(
@@ -186,7 +185,7 @@ class StravaWebhookView(HomeAssistantView):
                 _LOGGER.error(f"Photos Fetch Failed: {img_response.status}: {text}")
                 continue
 
-            images = json.loads(await img_response.text())
+            images = await img_response.json()
             for image in images:
                 img_date = dt.strptime(
                     image.get("created_at_local", "2000-01-01T00:00:00Z"),
@@ -214,7 +213,7 @@ class StravaWebhookView(HomeAssistantView):
                 method="GET",
                 url=f"https://geocode.xyz/{start_latlng[0]},{start_latlng[1]}?geoit=json",  # noqa: E501
             )
-            geo_location = json.loads(await geo_location_response.text())
+            geo_location = await geo_location_response.json()
             city = geo_location.get("city", None)
             if city:
                 return city
@@ -250,9 +249,7 @@ class StravaWebhookView(HomeAssistantView):
             method="GET",
             url=summary_stats_url,
         )
-        return self._sensor_summary_stats(
-            json.loads(await summary_stats_response.text())
-        )
+        return self._sensor_summary_stats(await summary_stats_response.json())
 
     def _sensor_summary_stats(self, summary_stats: dict) -> dict:
         return {
@@ -441,7 +438,7 @@ class StravaWebhookView(HomeAssistantView):
         try:
             data = await request.json()
             webhook_id = int(data.get("subscription_id", -1))
-        except JSONDecodeError:
+        except json.JSONDecodeError:
             webhook_id = -1
 
         if webhook_id == self.webhook_id or request_host in self.host:
@@ -482,8 +479,9 @@ async def renew_webhook_subscription(
     callback_response = await websession.get(url=config_data[CONF_CALLBACK_URL])
 
     if callback_response.status != 200:
+        text = await callback_response.text()
         _LOGGER.error(
-            f"HA Callback URL for Strava Webhook not available: {await callback_response.text()}"  # noqa:E501
+            f"HA Callback URL for Strava Webhook not available: {text}"  # noqa:E501
         )
         return
 
@@ -495,8 +493,8 @@ async def renew_webhook_subscription(
         },
     )
 
-    existing_webhook_subscriptions = json.loads(
-        await existing_webhook_subscriptions_response.text()
+    existing_webhook_subscriptions = await json.loads(
+        existing_webhook_subscriptions_response.text()
     )
 
     if len(existing_webhook_subscriptions) > 1:
@@ -550,7 +548,7 @@ async def renew_webhook_subscription(
             },
         )
         if post_response.status == 201:
-            post_response_content = json.loads(await post_response.text())
+            post_response_content = await post_response.json()
             config_data[CONF_WEBHOOK_ID] = post_response_content["id"]
         else:
             _LOGGER.error(
@@ -728,8 +726,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
         },
     )
 
-    existing_webhook_subscriptions = json.loads(
-        await existing_webhook_subscriptions_response.text()
+    existing_webhook_subscriptions = (
+        await existing_webhook_subscriptions_response.json()
     )
 
     if len(existing_webhook_subscriptions) == 1:
