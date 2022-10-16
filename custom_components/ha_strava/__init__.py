@@ -70,6 +70,11 @@ _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = ["sensor", "camera"]
 
+_PHOTOS_URL_TEMPLATE = (
+    f"https://www.strava.com/api/v3/activities/%s/photos?size={CONFIG_IMG_SIZE}"
+)
+_STATS_URL_TEMPLATE = "https://www.strava.com/api/v3/athletes/%s/stats"
+
 
 class StravaWebhookView(HomeAssistantView):
     """
@@ -168,10 +173,8 @@ class StravaWebhookView(HomeAssistantView):
 
     async def _fetch_summary_stats(self, athlete_id: str) -> dict:
         _LOGGER.debug("Fetching summary stats")
-        summary_stats_url = f"https://www.strava.com/api/v3/athletes/{athlete_id}/stats"
         response = await self.oauth_websession.async_request(
-            method="GET",
-            url=summary_stats_url,
+            method="GET", url=_STATS_URL_TEMPLATE % (athlete_id,)
         )
 
         if response.status == 429:
@@ -206,11 +209,8 @@ class StravaWebhookView(HomeAssistantView):
             for activity_id in self.image_updates.keys()
             if (dt.now() - self.image_updates[activity_id]).days > 0
         ]:
-            img_request_url = f"https://www.strava.com/api/v3/activities/{activity_id}/photos?size={CONFIG_IMG_SIZE}"  # noqa: E501
-
             response = await self.oauth_websession.async_request(
-                method="GET",
-                url=img_request_url,
+                method="GET", url=_PHOTOS_URL_TEMPLATE % (activity_id,)
             )
 
             if response.status == 429:
