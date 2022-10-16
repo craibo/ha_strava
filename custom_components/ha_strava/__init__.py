@@ -5,7 +5,7 @@ import json
 import logging
 from datetime import datetime as dt
 from http import HTTPStatus
-from typing import Callable
+from typing import Callable, Tuple
 
 from aiohttp.web import Request, Response, json_response
 from homeassistant.components.http.view import HomeAssistantView
@@ -42,6 +42,7 @@ from .const import (  # noqa: F401
     CONF_SENSOR_DISTANCE,
     CONF_SENSOR_DURATION,
     CONF_SENSOR_ELEVATION,
+    CONF_SENSOR_ID,
     CONF_SENSOR_KUDOS,
     CONF_SENSOR_MOVING_TIME,
     CONF_SENSOR_PACE,
@@ -105,34 +106,35 @@ class StravaWebhookView(HomeAssistantView):
         Fetches location data for these activities from https://geocode.xyz
         Fires events for Sensors to listen to
         """
-
         _LOGGER.debug("Fetching Data from Strava API")
+        athlete_id, activities = await self._fetch_activities()
+        self.hass.async_create_task(self._fetch_summary_stats(athlete_id))
+        self.hass.async_create_task(self._fetch_images(activities))
 
-        activities_response = await self.oauth_websession.async_request(
+    async def _fetch_activities(self) -> Tuple[str, list[dict]]:
+        _LOGGER.debug("Fetching activities")
+        response = await self.oauth_websession.async_request(
             method="GET",
             url=f"https://www.strava.com/api/v3/athlete/activities?per_page={MAX_NB_ACTIVITIES}",  # noqa: E501
         )
 
-        if activities_response.status == 429:
+        if response.status == 429:
             _LOGGER.warning(f"Strava API rate limit has been reached")
             return
 
-        if activities_response.status != 200:
-            text = await activities_response.text()
-            _LOGGER.error(
-                f"Activities Fetch Failed: {activities_response.status}: {text}"
-            )
+        if response.status != 200:
+            text = await response.text()
+            _LOGGER.error(f"Activities Fetch Failed: {response.status}: {text}")
             return
 
         athlete_id = None
-        activity_ids = []
         activities = []
-        for activity in await activities_response.json():
+        for activity in await response.json():
             athlete_id = int(activity["athlete"]["id"])
-            activity_ids.append(activity.get("id"))
             activities.append(
                 self._sensor_activity(activity, await self._geocode_activity(activity))
             )
+        _LOGGER.debug("Publishing activities event")
         self.event_factory(
             data={
                 "activities": sorted(
@@ -143,63 +145,7 @@ class StravaWebhookView(HomeAssistantView):
             },
             event_type=EVENT_ACTIVITIES_UPDATE,
         )
-
-        newly_added_activity_ids = [
-            activity_id
-            for activity_id in activity_ids
-            if activity_id not in self.image_updates.keys()
-        ]
-        if len(newly_added_activity_ids) > 0:
-            summary_stats = await self._fetch_summary_stats(athlete_id)
-            self.event_factory(
-                data={
-                    "summary_stats": summary_stats,
-                },
-                event_type=EVENT_SUMMARY_STATS_UPDATE,
-            )
-
-        img_urls = []
-        self.image_updates = {
-            activity_id: self.image_updates.get(activity_id, dt(1990, 1, 1))
-            for activity_id in activity_ids
-        }
-        # only update images once a day per activity
-        for activity_id in [
-            activity_id
-            for activity_id in self.image_updates.keys()
-            if (dt.now() - self.image_updates[activity_id]).days > 0
-        ]:
-            img_request_url = f"https://www.strava.com/api/v3/activities/{activity_id}/photos?size={CONFIG_IMG_SIZE}"  # noqa: E501
-
-            img_response = await self.oauth_websession.async_request(
-                method="GET",
-                url=img_request_url,
-            )
-
-            if img_response.status == 429:
-                _LOGGER.warning(f"Strava API rate limit has been reached")
-                break
-
-            if img_response.status != 200:
-                text = await img_response.text()
-                _LOGGER.error(f"Photos Fetch Failed: {img_response.status}: {text}")
-                continue
-
-            images = await img_response.json()
-            for image in images:
-                img_date = dt.strptime(
-                    image.get("created_at_local", "2000-01-01T00:00:00Z"),
-                    "%Y-%m-%dT%H:%M:%SZ",
-                )
-                img_url = list(image.get("urls").values())[0]
-                img_urls.append({"date": img_date, "url": img_url})
-            self.image_updates[activity_id] = dt.now()
-
-        if len(img_urls) > 0:
-            self.event_factory(
-                data={"img_urls": img_urls}, event_type=CONF_IMG_UPDATE_EVENT
-            )
-        return
+        return athlete_id, activities
 
     async def _geocode_activity(self, activity: dict) -> str:
         """Fetch the best geocode possible from the activity's start location."""
@@ -220,8 +166,81 @@ class StravaWebhookView(HomeAssistantView):
             return geo_location.get("region", "Unknown Area")
         return "Unknown Area"
 
+    async def _fetch_summary_stats(self, athlete_id: str) -> dict:
+        _LOGGER.debug("Fetching summary stats")
+        summary_stats_url = f"https://www.strava.com/api/v3/athletes/{athlete_id}/stats"
+        response = await self.oauth_websession.async_request(
+            method="GET",
+            url=summary_stats_url,
+        )
+
+        if response.status == 429:
+            _LOGGER.warning(f"Strava API rate limit has been reached")
+            return
+
+        if response.status != 200:
+            text = await response.text()
+            _LOGGER.error(f"Stats Fetch Failed: {response.status}: {text}")
+            return
+
+        _LOGGER.debug("Publishing Summary Stats event")
+        summary_stats = self._sensor_summary_stats(await response.json())
+        self.event_factory(
+            data={
+                "summary_stats": summary_stats,
+            },
+            event_type=EVENT_SUMMARY_STATS_UPDATE,
+        )
+
+    async def _fetch_images(self, activities: list[dict]):
+        _LOGGER.debug("Fetching images")
+        activity_ids = (activity[CONF_SENSOR_ID] for activity in activities)
+        self.image_updates = {
+            activity_id: self.image_updates.get(activity_id, dt(1990, 1, 1))
+            for activity_id in activity_ids
+        }
+        # only update images once a day per activity
+        img_urls = []
+        for activity_id in [
+            activity_id
+            for activity_id in self.image_updates.keys()
+            if (dt.now() - self.image_updates[activity_id]).days > 0
+        ]:
+            img_request_url = f"https://www.strava.com/api/v3/activities/{activity_id}/photos?size={CONFIG_IMG_SIZE}"  # noqa: E501
+
+            response = await self.oauth_websession.async_request(
+                method="GET",
+                url=img_request_url,
+            )
+
+            if response.status == 429:
+                _LOGGER.warning(f"Strava API rate limit has been reached")
+                break
+
+            if response.status != 200:
+                text = await response.text()
+                _LOGGER.error(f"Photos Fetch Failed: {response.status}: {text}")
+                continue
+
+            images = await response.json()
+            for image in images:
+                img_date = dt.strptime(
+                    image.get("created_at_local", "2000-01-01T00:00:00Z"),
+                    "%Y-%m-%dT%H:%M:%SZ",
+                )
+                img_url = list(image.get("urls").values())[0]
+                img_urls.append({"date": img_date, "url": img_url})
+            self.image_updates[activity_id] = dt.now()
+
+        if len(img_urls) > 0:
+            _LOGGER.debug("Publishing images event")
+            self.event_factory(
+                data={"img_urls": img_urls}, event_type=CONF_IMG_UPDATE_EVENT
+            )
+
     def _sensor_activity(self, activity: dict, geocode: str) -> dict:
         return {
+            CONF_SENSOR_ID: activity.get("id"),
             CONF_SENSOR_TITLE: activity.get("name", "Strava Activity"),
             CONF_SENSOR_CITY: geocode,
             CONF_SENSOR_ACTIVITY_TYPE: activity.get("type", "Ride").lower(),
@@ -241,15 +260,6 @@ class StravaWebhookView(HomeAssistantView):
             CONF_SENSOR_POWER: float(activity.get("average_watts", -1)),
             CONF_SENSOR_TROPHIES: int(activity.get("achievement_count", -1)),
         }
-
-    async def _fetch_summary_stats(self, athlete_id: str) -> dict:
-        summary_stats_url = f"https://www.strava.com/api/v3/athletes/{athlete_id}/stats"
-
-        summary_stats_response = await self.oauth_websession.async_request(
-            method="GET",
-            url=summary_stats_url,
-        )
-        return self._sensor_summary_stats(await summary_stats_response.json())
 
     def _sensor_summary_stats(self, summary_stats: dict) -> dict:
         return {

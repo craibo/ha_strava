@@ -35,6 +35,7 @@ EVENT_SUMMARY_STATS_UPDATE = "ha_strava_stats_update"
 EVENT_ACTIVITIES_UPDATE = "ha_strava_activities_update"
 
 # Sensor Specs
+CONF_SENSOR_ID = "id"
 CONF_SENSOR_DATE = "date"
 CONF_SENSOR_DURATION = "duration"
 CONF_SENSOR_ACTIVITY_COUNT = "activity_count"
