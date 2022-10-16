@@ -197,17 +197,17 @@ class StravaWebhookView(HomeAssistantView):
 
     async def _fetch_images(self, activities: list[dict]):
         _LOGGER.debug("Fetching images")
-        activity_ids = (activity[CONF_SENSOR_ID] for activity in activities)
-        self.image_updates = {
-            activity_id: self.image_updates.get(activity_id, dt(1990, 1, 1))
-            for activity_id in activity_ids
-        }
         # only update images once a day per activity
+        activity_ids = (activity[CONF_SENSOR_ID] for activity in activities)
+        for activity_id in activity_ids:
+            self.image_updates[activity_id] = self.image_updates.get(
+                activity_id, dt(1990, 1, 1)
+            )
         img_urls = []
         for activity_id in [
             activity_id
-            for activity_id in self.image_updates.keys()
-            if (dt.now() - self.image_updates[activity_id]).days > 0
+            for activity_id, date in self.image_updates.items()
+            if (dt.now() - date).days > 0
         ]:
             response = await self.oauth_websession.async_request(
                 method="GET", url=_PHOTOS_URL_TEMPLATE % (activity_id,)
@@ -222,6 +222,8 @@ class StravaWebhookView(HomeAssistantView):
                 _LOGGER.error(f"Photos Fetch Failed: {response.status}: {text}")
                 continue
 
+            self.image_updates[activity_id] = dt.now()
+
             images = await response.json()
             for image in images:
                 img_date = dt.strptime(
@@ -230,7 +232,6 @@ class StravaWebhookView(HomeAssistantView):
                 )
                 img_url = list(image.get("urls").values())[0]
                 img_urls.append({"date": img_date, "url": img_url})
-            self.image_updates[activity_id] = dt.now()
 
         if len(img_urls) > 0:
             _LOGGER.debug("Publishing images event")
