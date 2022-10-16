@@ -146,7 +146,9 @@ class StravaWebhookView(HomeAssistantView):
         )
 
         newly_added_activity_ids = [
-            id for id in activity_ids if id not in self.image_updates.keys()
+            activity_id
+            for activity_id in activity_ids
+            if activity_id not in self.image_updates.keys()
         ]
         if len(newly_added_activity_ids) > 0:
             summary_stats = await self._fetch_summary_stats(athlete_id)
@@ -159,13 +161,14 @@ class StravaWebhookView(HomeAssistantView):
 
         img_urls = []
         self.image_updates = {
-            id: self.image_updates.get(id, dt(1990, 1, 1)) for id in activity_ids
+            activity_id: self.image_updates.get(activity_id, dt(1990, 1, 1))
+            for activity_id in activity_ids
         }
         # only update images once a day per activity
         for activity_id in [
-            id
-            for id in self.image_updates.keys()
-            if (dt.now() - self.image_updates[id]).days > 0
+            activity_id
+            for activity_id in self.image_updates.keys()
+            if (dt.now() - self.image_updates[activity_id]).days > 0
         ]:
             img_request_url = f"https://www.strava.com/api/v3/activities/{activity_id}/photos?size={CONFIG_IMG_SIZE}"  # noqa: E501
 
