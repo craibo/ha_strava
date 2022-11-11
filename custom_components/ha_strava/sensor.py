@@ -15,6 +15,7 @@ from homeassistant.const import (
     SPEED_MILES_PER_HOUR,
     TIME_MINUTES,
 )
+from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
 
 # custom module imports
 from .const import (
@@ -171,7 +172,7 @@ class StravaSummaryStatsSensor(SensorEntity):  # pylint: disable=missing-class-d
                 f"{round(self._data[CONF_SENSOR_DISTANCE]/1000,2)} {LENGTH_KILOMETERS}"
             )
 
-            if not self.hass.config.units.is_metric:
+            if self.hass.config.units is US_CUSTOMARY_SYSTEM:
                 distance = f"{round(self._data[CONF_SENSOR_DISTANCE]*FACTOR_METER_TO_MILE,2)} {LENGTH_MILES}"  # noqa: E501
 
             return distance
@@ -324,7 +325,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
                 f"{round(self._data[CONF_SENSOR_DISTANCE]/1000,2)} {LENGTH_KILOMETERS}"
             )
 
-            if not self.hass.config.units.is_metric:
+            if self.hass.config.units is US_CUSTOMARY_SYSTEM:
                 distance = f"{round(self._data[CONF_SENSOR_DISTANCE]*FACTOR_METER_TO_MILE,2)} {LENGTH_MILES}"  # noqa: E501
 
             return distance
@@ -337,7 +338,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             else:
                 pace = 0
             unit = f"{TIME_MINUTES}/{LENGTH_KILOMETERS}"
-            if not self.hass.config.units.is_metric:
+            if self.hass.config.units is US_CUSTOMARY_SYSTEM:
                 pace = (self._data[CONF_SENSOR_MOVING_TIME]) / (
                     self._data[CONF_SENSOR_DISTANCE] * FACTOR_METER_TO_MILE
                 )
@@ -352,7 +353,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
         if metric == CONF_SENSOR_SPEED:
             speed = f"{round((self._data[CONF_SENSOR_DISTANCE]/1000)/(self._data[CONF_SENSOR_MOVING_TIME]/3600),2)} {SPEED_KILOMETERS_PER_HOUR}"  # noqa: E501
 
-            if not self.hass.config.units.is_metric:
+            if self.hass.config.units is US_CUSTOMARY_SYSTEM:
                 speed = f"{round((self._data[CONF_SENSOR_DISTANCE]*FACTOR_METER_TO_MILE)/(self._data[CONF_SENSOR_MOVING_TIME]/3600),2)} {SPEED_MILES_PER_HOUR}"  # noqa: E501
             return speed
 
@@ -361,7 +362,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
 
         if metric == CONF_SENSOR_ELEVATION:
             elevation = f"{round(self._data[CONF_SENSOR_ELEVATION],0)} {LENGTH_METERS}"
-            if not self.hass.config.units.is_metric:
+            if self.hass.config.units is US_CUSTOMARY_SYSTEM:
                 elevation = f"{round(self._data[CONF_SENSOR_ELEVATION]*FACTOR_METER_TO_FEET,0)} {LENGTH_FEET}"  # noqa: E501
             return elevation
 
