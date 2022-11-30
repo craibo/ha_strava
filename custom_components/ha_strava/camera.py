@@ -49,8 +49,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                     "manufacturer": "Strava",
                     "model": "Activity",
                 },
-                activity_index=0,
-                default_enabled=default_enabled,
+                activity_index=i,
+                default_enabled=default_enabled
             )
         )
     async_add_entities(cameras)
@@ -117,7 +117,7 @@ class ActivityCamera(Camera):  # pylint: disable=too-many-instance-attributes
             return _return_default_img()
 
         url = self._urls[self._url_index]["url"]
-        response = requests.get(url=url)  # pylint: disable=missing-timeout
+        response = requests.get(url=url, timeout=60000)
         if response.status_code != 200:
             _LOGGER.error(
                 f"{self._device_id}: Invalid Image: {response.status_code}: {url}"
@@ -185,15 +185,15 @@ class UrlCam(Camera):
             pickle.dump(self._urls, file)
 
     def _return_default_img(self):
-        img_response = requests.get(  # pylint: disable=unused-argument,missing-timeout
-            url=self._default_url
+        img_response = requests.get(  # pylint: disable=unused-argument
+            url=self._default_url, timeout=60000
         )
         return img_response.content
 
     def is_url_valid(self, url):
         """test whether an image URL returns a valid response"""
-        img_response = requests.get(  # pylint: disable=unused-argument,missing-timeout
-            url=url
+        img_response = requests.get(  # pylint: disable=unused-argument
+            url=url, timeout=60000
         )
         if img_response.status_code == 200:
             return True
@@ -210,8 +210,9 @@ class UrlCam(Camera):
             _LOGGER.debug("No custom image urls....serving default image")
             return self._return_default_img()
 
-        img_response = requests.get(  # pylint: disable=unused-argument,missing-timeout
-            url=self._urls[list(self._urls.keys())[self._url_index]]["url"]
+        img_response = requests.get(  # pylint: disable=unused-argument
+            url=self._urls[list(self._urls.keys())[self._url_index]]["url"],
+            timeout=60000
         )
         if img_response.status_code == 200:
             return img_response.content
@@ -274,6 +275,6 @@ class UrlCam(Camera):
 
 
 def _return_default_img():
-    return requests.get(  # pylint: disable=unused-argument,missing-timeout
-        url=_DEFAULT_IMAGE_URL
+    return requests.get(  # pylint: disable=unused-argument
+        url=_DEFAULT_IMAGE_URL, timeout=60000
     ).content
