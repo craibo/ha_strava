@@ -270,10 +270,11 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
     @property
     def native_value(self):
         # pylint: disable=too-many-return-statements,too-many-branches
-        metric = self.get_metric()
 
         if self._sensor_index == 0:
             return f"{self._data[CONF_SENSOR_TITLE]} | {self._data[CONF_SENSOR_CITY]}"
+
+        metric = self.get_metric()
 
         if metric == CONF_SENSOR_DURATION:
             days = int(self._data[CONF_SENSOR_MOVING_TIME] // (3600 * 24))
@@ -340,6 +341,9 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
 
     @property
     def native_unit_of_measurement(self):
+        if not self._data or self._sensor_index == 0:
+            return None
+
         metric = self.get_metric()
 
         if metric == CONF_SENSOR_POWER:
