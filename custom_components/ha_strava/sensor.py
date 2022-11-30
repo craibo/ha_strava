@@ -1,20 +1,18 @@
 """Sensor platform for HA Strava"""
 import logging
-
 # generic imports
 from datetime import datetime as dt
 
 # HASS imports
 from homeassistant.components.sensor import SensorEntity, SensorStateClass
 from homeassistant.const import (
-    LENGTH_FEET,
     LENGTH_KILOMETERS,
     LENGTH_METERS,
     LENGTH_MILES,
     SPEED_KILOMETERS_PER_HOUR,
-    SPEED_MILES_PER_HOUR,
-    TIME_MINUTES,
+    TIME_MINUTES, POWER_WATT,
 )
+from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
 
 # custom module imports
 from .const import (
@@ -43,7 +41,6 @@ from .const import (
     DOMAIN,
     EVENT_ACTIVITIES_UPDATE,
     EVENT_SUMMARY_STATS_UPDATE,
-    FACTOR_METER_TO_FEET,
     FACTOR_METER_TO_MILE,
     MAX_NB_ACTIVITIES,
 )
@@ -167,16 +164,16 @@ class StravaSummaryStatsSensor(SensorEntity):  # pylint: disable=missing-class-d
             )
 
         if self._metric == CONF_SENSOR_DISTANCE:
-            distance = (
-                f"{round(self._data[CONF_SENSOR_DISTANCE]/1000,2)} {LENGTH_KILOMETERS}"
-            )
-
-            if not self.hass.config.units.is_metric:
-                distance = f"{round(self._data[CONF_SENSOR_DISTANCE]*FACTOR_METER_TO_MILE,2)} {LENGTH_MILES}"  # noqa: E501
-
-            return distance
+            return f"{round(self._data[CONF_SENSOR_DISTANCE]/1000,2)}"
 
         return int(self._data[CONF_SENSOR_ACTIVITY_COUNT])
+
+    @property
+    def unit_of_measurement(self):
+        if self._metric == CONF_SENSOR_DISTANCE:
+            return LENGTH_KILOMETERS
+        else:
+            return None
 
     @property
     def name(self):
@@ -216,9 +213,9 @@ class StravaSummaryStatsSensor(SensorEntity):  # pylint: disable=missing-class-d
 
 
 class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstring
-    _data = None  # Strava activity data
+    _data = None
     _activity_index = None
-
+    _attr_unit_of_measurement = None
     _attr_should_poll = False
     _attr_state_class = SensorStateClass.MEASUREMENT
 
@@ -226,7 +223,6 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
         self._sensor_index = sensor_index
         self._activity_index = int(activity_index)
         self.entity_id = f"{DOMAIN}.strava_{self._activity_index}_{self._sensor_index}"
-
         self._attr_unique_id = f"strava_{self._activity_index}_{self._sensor_index}"
 
     @property
@@ -272,21 +268,8 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
         return CONF_SENSORS[metric]["icon"]
 
     @property
-    def native_value(
-        self,
-    ):  # pylint: disable=too-many-return-statements,too-many-branches
-        ha_strava_config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
-
-        if len(ha_strava_config_entries) != 1:
-            return -1
-
-        sensor_metrics = list(
-            ha_strava_config_entries[0]
-            .options.get(self._data[CONF_SENSOR_ACTIVITY_TYPE], CONF_SENSOR_DEFAULT)
-            .values()
-        )
-
-        metric = sensor_metrics[self._sensor_index]
+    def native_value(self,):  # pylint: disable=too-many-return-statements,too-many-branches
+        metric = self.get_metric(self)
 
         if self._sensor_index == 0:
             return f"{self._data[CONF_SENSOR_TITLE]} | {self._data[CONF_SENSOR_CITY]}"
@@ -320,52 +303,47 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             )
 
         if metric == CONF_SENSOR_DISTANCE:
-            distance = (
-                f"{round(self._data[CONF_SENSOR_DISTANCE]/1000,2)} {LENGTH_KILOMETERS}"
-            )
-
-            if not self.hass.config.units.is_metric:
-                distance = f"{round(self._data[CONF_SENSOR_DISTANCE]*FACTOR_METER_TO_MILE,2)} {LENGTH_MILES}"  # noqa: E501
-
-            return distance
+            return f"{round(self._data[CONF_SENSOR_DISTANCE]/1000,2)}"
 
         if metric == CONF_SENSOR_PACE:
             if self._data[CONF_SENSOR_DISTANCE] > 0:
-                pace = self._data[CONF_SENSOR_MOVING_TIME] / (
-                    self._data[CONF_SENSOR_DISTANCE] / 1000
-                )
+                pace = self._data[CONF_SENSOR_MOVING_TIME] / (self._data[CONF_SENSOR_DISTANCE] / 1000)
             else:
                 pace = 0
             unit = f"{TIME_MINUTES}/{LENGTH_KILOMETERS}"
-            if not self.hass.config.units.is_metric:
-                pace = (self._data[CONF_SENSOR_MOVING_TIME]) / (
-                    self._data[CONF_SENSOR_DISTANCE] * FACTOR_METER_TO_MILE
-                )
+            if self.hass.config.units is US_CUSTOMARY_SYSTEM:
+                pace = (self._data[CONF_SENSOR_MOVING_TIME]) / (self._data[CONF_SENSOR_DISTANCE] * FACTOR_METER_TO_MILE)
                 unit = f"{TIME_MINUTES}/{LENGTH_MILES}"
 
             minutes = int(pace // 60)
             seconds = int(pace - minutes * 60)
-            return "".join(
-                ["" if minutes == 0 else f"{minutes:02}:", f"{seconds:02}", " ", unit]
-            )
+            return "".join(["" if minutes == 0 else f"{minutes:02}:", f"{seconds:02}", " ", unit])
 
         if metric == CONF_SENSOR_SPEED:
-            speed = f"{round((self._data[CONF_SENSOR_DISTANCE]/1000)/(self._data[CONF_SENSOR_MOVING_TIME]/3600),2)} {SPEED_KILOMETERS_PER_HOUR}"  # noqa: E501
-
-            if not self.hass.config.units.is_metric:
-                speed = f"{round((self._data[CONF_SENSOR_DISTANCE]*FACTOR_METER_TO_MILE)/(self._data[CONF_SENSOR_MOVING_TIME]/3600),2)} {SPEED_MILES_PER_HOUR}"  # noqa: E501
-            return speed
+            return f"{round((self._data[CONF_SENSOR_DISTANCE]/1000)/(self._data[CONF_SENSOR_MOVING_TIME]/3600),2)}"
 
         if metric == CONF_SENSOR_POWER:
-            return f"{int(round(self._data[CONF_SENSOR_POWER],1))} W"
+            return f"{int(round(self._data[CONF_SENSOR_POWER],1))}"
 
         if metric == CONF_SENSOR_ELEVATION:
-            elevation = f"{round(self._data[CONF_SENSOR_ELEVATION],0)} {LENGTH_METERS}"
-            if not self.hass.config.units.is_metric:
-                elevation = f"{round(self._data[CONF_SENSOR_ELEVATION]*FACTOR_METER_TO_FEET,0)} {LENGTH_FEET}"  # noqa: E501
-            return elevation
+            return f"{round(self._data[CONF_SENSOR_ELEVATION],0)}"
 
         return str(self._data[metric])
+
+    @property
+    def unit_of_measurement(self):
+        metric = self.get_metric(self)
+
+        if metric == CONF_SENSOR_POWER:
+            return POWER_WATT
+        elif metric == CONF_SENSOR_ELEVATION:
+            return LENGTH_METERS
+        elif metric == CONF_SENSOR_SPEED:
+            return SPEED_KILOMETERS_PER_HOUR
+        elif metric == CONF_SENSOR_DISTANCE:
+            return LENGTH_KILOMETERS
+        else:
+            return None
 
     @property
     def name(self):
@@ -379,22 +357,23 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
         if not self._data:
             metric = list(CONF_SENSOR_DEFAULT.values())[self._sensor_index]
         else:
-            ha_strava_config_entries = self.hass.config_entries.async_entries(
-                domain=DOMAIN
-            )
-
-            if len(ha_strava_config_entries) != 1:
-                return -1
-
-            sensor_metrics = list(
-                ha_strava_config_entries[0]
-                .options.get(self._data[CONF_SENSOR_ACTIVITY_TYPE], CONF_SENSOR_DEFAULT)
-                .values()
-            )
-
-            metric = sensor_metrics[self._sensor_index]
+            metric = self.get_metric(self)
 
         return "" + str.upper(metric[0]) + metric[1:]
+
+    def get_metric(self):
+        ha_strava_config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
+
+        if len(ha_strava_config_entries) != 1:
+            return -1
+
+        sensor_metrics = list(
+            ha_strava_config_entries[0]
+            .options.get(self._data[CONF_SENSOR_ACTIVITY_TYPE], CONF_SENSOR_DEFAULT)
+            .values()
+        )
+
+        return sensor_metrics[self._sensor_index]
 
     def strava_data_update_event_handler(self, event):
         """Handle Strava API data which is emitted from a Strava Update Event"""
