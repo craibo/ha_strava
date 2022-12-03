@@ -31,6 +31,9 @@ from .const import (  # noqa: F401
     CONF_ACTIVITY_TYPE_RIDE,
     CONF_ACTIVITY_TYPE_RUN,
     CONF_ACTIVITY_TYPE_SWIM,
+    CONF_ATTR_END_LATLONG,
+    CONF_ATTR_SPORT_TYPE,
+    CONF_ATTR_START_LATLONG,
     CONF_CALLBACK_URL,
     CONF_IMG_ROTATE_EVENT,
     CONF_IMG_UPDATE_EVENT,
@@ -45,6 +48,8 @@ from .const import (  # noqa: F401
     CONF_SENSOR_ID,
     CONF_SENSOR_KUDOS,
     CONF_SENSOR_MOVING_TIME,
+    CONF_SENSOR_HEART_RATE_AVG,
+    CONF_SENSOR_HEART_RATE_MAX,
     CONF_SENSOR_PACE,
     CONF_SENSOR_POWER,
     CONF_SENSOR_TITLE,
@@ -269,6 +274,11 @@ class StravaWebhookView(HomeAssistantView):
             CONF_SENSOR_ELEVATION: int(activity.get("total_elevation_gain", -1)),
             CONF_SENSOR_POWER: float(activity.get("average_watts", -1)),
             CONF_SENSOR_TROPHIES: int(activity.get("achievement_count", -1)),
+            CONF_SENSOR_HEART_RATE_AVG: float(activity.get("average_heartrate", -1)),
+            CONF_SENSOR_HEART_RATE_MAX: float(activity.get("max_heartrate", -1)),
+            CONF_ATTR_START_LATLONG: activity.get("start_latlng"),
+            CONF_ATTR_END_LATLONG: activity.get("end_latlng"),
+            CONF_ATTR_SPORT_TYPE: activity.get("sport_type"),
         }
 
     def _sensor_summary_stats(self, summary_stats: dict) -> dict:

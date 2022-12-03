@@ -53,6 +53,11 @@ CONF_SENSOR_CITY = "city"
 CONF_SENSOR_MOVING_TIME = "moving_time"
 CONF_SENSOR_ELAPSED_TIME = "elapsed_time"
 CONF_SENSOR_ACTIVITY_TYPE = "activity_type"
+CONF_SENSOR_HEART_RATE_AVG = "average_heartrate"
+CONF_SENSOR_HEART_RATE_MAX = "max_heartrate"
+CONF_ATTR_START_LATLONG = "start_latlng"
+CONF_ATTR_END_LATLONG = "end_latlng"
+CONF_ATTR_SPORT_TYPE = "sport_type"
 CONF_ACTIVITY_TYPE_RUN = "run"
 CONF_ACTIVITY_TYPE_RIDE = "ride"
 CONF_ACTIVITY_TYPE_SWIM = "swim"
@@ -74,6 +79,8 @@ CONF_SENSORS = {
     CONF_SENSOR_ELEVATION: {"icon": "mdi:elevation-rise"},
     CONF_SENSOR_POWER: {"icon": "mdi:dumbbell"},
     CONF_SENSOR_TROPHIES: {"icon": "mdi:trophy"},
+    CONF_SENSOR_HEART_RATE_AVG: {"icon": "mdi:heart-pulse"},
+    CONF_SENSOR_HEART_RATE_MAX: {"icon": "mdi:heart-pulse"}
 }
 FACTOR_METER_TO_MILE = 0.000621371
 FACTOR_METER_TO_FEET = 3.28084
@@ -93,3 +100,7 @@ CONF_SENSOR_DEFAULT = {
     CONF_SENSOR_4: CONF_SENSOR_SPEED,
     CONF_SENSOR_5: CONF_SENSOR_ELEVATION,
 }
+
+UNIT_BEATS_PER_MINUTE = "bpm"
+UNIT_PACE_MINUTES_PER_KILOMETER = "min/km"
+UNIT_PACE_MINUTES_PER_MILE = "min/mi"
