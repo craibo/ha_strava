@@ -400,8 +400,8 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             attr[CONF_STATE_CLASS] = None
             attr[CONF_ATTR_SPORT_TYPE] = self._data[CONF_ATTR_SPORT_TYPE]
             if self._data[CONF_ATTR_START_LATLONG]:
-                attr[CONF_LATITUDE] = float(self._data[CONF_ATTR_START_LATLONG].get(0), 0)  # noqa: E501
-                attr[CONF_LONGITUDE] = float(self._data[CONF_ATTR_START_LATLONG].get(1), 0)  # noqa: E501
+                attr[CONF_LATITUDE] = float(self._data[CONF_ATTR_START_LATLONG][0], 0)  # noqa: E501
+                attr[CONF_LONGITUDE] = float(self._data[CONF_ATTR_START_LATLONG][1], 0)  # noqa: E501
             return attr
 
         metirc = self.get_metric()
