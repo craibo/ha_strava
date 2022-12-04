@@ -424,6 +424,9 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             .values()
         )
 
+        if len(sensor_metrics) >= self._sensor_index:
+            return -1
+
         return sensor_metrics[self._sensor_index]
 
     def strava_data_update_event_handler(self, event):
