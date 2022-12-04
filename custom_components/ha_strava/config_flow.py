@@ -33,12 +33,21 @@ from .const import (
     CONF_SENSOR_3,
     CONF_SENSOR_4,
     CONF_SENSOR_5,
+    CONF_SENSOR_6,
+    CONF_SENSOR_7,
+    CONF_SENSOR_8,
+    CONF_SENSOR_9,
+    CONF_SENSOR_10,
+    CONF_SENSOR_11,
+    CONF_SENSOR_12,
     CONF_SENSOR_ACTIVITY_TYPE,
     CONF_SENSOR_CALORIES,
     CONF_SENSOR_DEFAULT,
     CONF_SENSOR_DISTANCE,
     CONF_SENSOR_DURATION,
     CONF_SENSOR_ELEVATION,
+    CONF_SENSOR_HEART_RATE_AVG,
+    CONF_SENSOR_HEART_RATE_MAX,
     CONF_SENSOR_KUDOS,
     CONF_SENSOR_PACE,
     CONF_SENSOR_POWER,
@@ -64,6 +73,8 @@ SENSOR_OPTIONS = [
     CONF_SENSOR_ELEVATION,
     CONF_SENSOR_POWER,
     CONF_SENSOR_TROPHIES,
+    CONF_SENSOR_HEART_RATE_AVG,
+    CONF_SENSOR_HEART_RATE_MAX,
 ]
 
 
@@ -188,6 +199,48 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         default=current_options.get(
                             CONF_SENSOR_ACTIVITY_TYPE, CONF_SENSOR_DEFAULT
                         )[CONF_SENSOR_5],
+                    ): vol.In(SENSOR_OPTIONS),
+                    vol.Optional(
+                        CONF_SENSOR_6,
+                        default=current_options.get(
+                            CONF_SENSOR_ACTIVITY_TYPE, CONF_SENSOR_DEFAULT
+                        )[CONF_SENSOR_6],
+                    ): vol.In(SENSOR_OPTIONS),
+                    vol.Optional(
+                        CONF_SENSOR_7,
+                        default=current_options.get(
+                            CONF_SENSOR_ACTIVITY_TYPE, CONF_SENSOR_DEFAULT
+                        )[CONF_SENSOR_7],
+                    ): vol.In(SENSOR_OPTIONS),
+                    vol.Optional(
+                        CONF_SENSOR_8,
+                        default=current_options.get(
+                            CONF_SENSOR_ACTIVITY_TYPE, CONF_SENSOR_DEFAULT
+                        )[CONF_SENSOR_8],
+                    ): vol.In(SENSOR_OPTIONS),
+                    vol.Optional(
+                        CONF_SENSOR_9,
+                        default=current_options.get(
+                            CONF_SENSOR_ACTIVITY_TYPE, CONF_SENSOR_DEFAULT
+                        )[CONF_SENSOR_9],
+                    ): vol.In(SENSOR_OPTIONS),
+                    vol.Optional(
+                        CONF_SENSOR_10,
+                        default=current_options.get(
+                            CONF_SENSOR_ACTIVITY_TYPE, CONF_SENSOR_DEFAULT
+                        )[CONF_SENSOR_10],
+                    ): vol.In(SENSOR_OPTIONS),
+                    vol.Optional(
+                        CONF_SENSOR_11,
+                        default=current_options.get(
+                            CONF_SENSOR_ACTIVITY_TYPE, CONF_SENSOR_DEFAULT
+                        )[CONF_SENSOR_11],
+                    ): vol.In(SENSOR_OPTIONS),
+                    vol.Optional(
+                        CONF_SENSOR_12,
+                        default=current_options.get(
+                            CONF_SENSOR_ACTIVITY_TYPE, CONF_SENSOR_DEFAULT
+                        )[CONF_SENSOR_12],
                     ): vol.In(SENSOR_OPTIONS),
                 }
             ),
