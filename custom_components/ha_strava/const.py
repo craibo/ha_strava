@@ -70,7 +70,7 @@ CONF_SUMMARY_ALL = "summary_all"
 CONF_SENSORS = {
     CONF_SENSOR_DATE: {"icon": "mdi:run"},
     CONF_SENSOR_DURATION: {"icon": "mdi:speedometer"},
-    CONF_SENSOR_MOVING_TIME: {"icon": "mdi:speedometer"},
+    CONF_SENSOR_ELAPSED_TIME: {"icon": "mdi:speedometer"},
     CONF_SENSOR_PACE: {"icon": "mdi:clock-fast"},
     CONF_SENSOR_SPEED: {"icon": "mdi:clock-fast"},
     CONF_SENSOR_DISTANCE: {"icon": "mdi:ruler"},
@@ -110,7 +110,7 @@ CONF_SENSOR_DEFAULT = {
     CONF_SENSOR_7: CONF_SENSOR_CALORIES,
     CONF_SENSOR_8: CONF_SENSOR_HEART_RATE_AVG,
     CONF_SENSOR_9: CONF_SENSOR_HEART_RATE_MAX,
-    CONF_SENSOR_10: CONF_SENSOR_MOVING_TIME,
+    CONF_SENSOR_10: CONF_SENSOR_ELAPSED_TIME,
     CONF_SENSOR_11: CONF_SENSOR_TROPHIES,
     CONF_SENSOR_12: CONF_SENSOR_KUDOS,
 }
