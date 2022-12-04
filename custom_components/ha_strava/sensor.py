@@ -291,7 +291,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             return self.convert_to_display_time(self._data[CONF_SENSOR_MOVING_TIME])
 
         if metric == CONF_SENSOR_ELAPSED_TIME:
-            return self.convert_to_display_time(self._data[CONF_SENSOR_ELAPSED_TIME])
+            return self.convert_to_display_time(self._data[CONF_SENSOR_DURATION])
 
         if metric == CONF_SENSOR_DISTANCE:
             return f"{round(self._data[CONF_SENSOR_DISTANCE]/1000,2)}"
@@ -394,7 +394,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
 
         metirc = self.get_metric()
         if metirc == CONF_SENSOR_DURATION:
-            attr[CONF_SENSOR_ELAPSED_TIME] = self._data[CONF_SENSOR_ELAPSED_TIME]
+            attr[CONF_SENSOR_ELAPSED_TIME] = self._data[CONF_SENSOR_DURATION]
             attr[CONF_SENSOR_MOVING_TIME] = self._data[CONF_SENSOR_MOVING_TIME]
 
         return attr
