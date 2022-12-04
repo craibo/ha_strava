@@ -70,6 +70,7 @@ CONF_SUMMARY_ALL = "summary_all"
 CONF_SENSORS = {
     CONF_SENSOR_DATE: {"icon": "mdi:run"},
     CONF_SENSOR_DURATION: {"icon": "mdi:speedometer"},
+    CONF_SENSOR_MOVING_TIME: {"icon": "mdi:speedometer"},
     CONF_SENSOR_ELAPSED_TIME: {"icon": "mdi:speedometer"},
     CONF_SENSOR_PACE: {"icon": "mdi:clock-fast"},
     CONF_SENSOR_SPEED: {"icon": "mdi:clock-fast"},
