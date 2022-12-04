@@ -67,7 +67,7 @@ async def async_setup_entry(
     """
     entries = [
         StravaStatsSensor(activity_index=activity_index, sensor_index=sensor_index)
-        for sensor_index in range(6)
+        for sensor_index in range(13)
         for activity_index in range(MAX_NB_ACTIVITIES)
     ]
 
