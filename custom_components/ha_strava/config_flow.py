@@ -328,6 +328,13 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     CONF_SENSOR_3: user_input[CONF_SENSOR_3],
                     CONF_SENSOR_4: user_input[CONF_SENSOR_4],
                     CONF_SENSOR_5: user_input[CONF_SENSOR_5],
+                    CONF_SENSOR_6: user_input[CONF_SENSOR_6],
+                    CONF_SENSOR_7: user_input[CONF_SENSOR_7],
+                    CONF_SENSOR_8: user_input[CONF_SENSOR_8],
+                    CONF_SENSOR_9: user_input[CONF_SENSOR_9],
+                    CONF_SENSOR_10: user_input[CONF_SENSOR_10],
+                    CONF_SENSOR_11: user_input[CONF_SENSOR_11],
+                    CONF_SENSOR_12: user_input[CONF_SENSOR_12],
                 }
             )
 

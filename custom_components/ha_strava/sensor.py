@@ -32,6 +32,7 @@ from .const import (
     CONF_SENSOR_DEFAULT,
     CONF_SENSOR_DISTANCE,
     CONF_SENSOR_DURATION,
+    CONF_SENSOR_ELAPSED_TIME,
     CONF_SENSOR_ELEVATION,
     CONF_SENSOR_HEART_RATE_AVG,
     CONF_SENSOR_HEART_RATE_MAX,
@@ -62,12 +63,12 @@ async def async_setup_entry(
     hass, config_entry, async_add_entities
 ):  # pylint: disable=unused-argument
     """
-    create 5+1 sensor entities for 10 devices
+    create 12+1 sensor entities for 10 devices
     all sensor entities are hidden by default
     """
     entries = [
         StravaStatsSensor(activity_index=activity_index, sensor_index=sensor_index)
-        for sensor_index in range(6)
+        for sensor_index in range(13)
         for activity_index in range(MAX_NB_ACTIVITIES)
     ]
 
@@ -287,32 +288,10 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
         metric = self.get_metric()
 
         if metric == CONF_SENSOR_DURATION:
-            days = int(self._data[CONF_SENSOR_MOVING_TIME] // (3600 * 24))
-            hours = int(
-                (self._data[CONF_SENSOR_MOVING_TIME] - days * (3600 * 24)) // 3600
-            )
-            minutes = int(
-                (
-                    self._data[CONF_SENSOR_MOVING_TIME]
-                    - days * (3600 * 24)
-                    - hours * 3600
-                )
-                // 60
-            )
-            seconds = int(
-                self._data[CONF_SENSOR_MOVING_TIME]
-                - days * (3600 * 24)
-                - hours * 3600
-                - minutes * 60
-            )
-            return "".join(
-                [
-                    "" if days == 0 else f"{days} Day(s), ",
-                    "" if hours == 0 and days == 0 else f"{hours:02}:",
-                    "" if minutes == 0 and hours == 0 else f"{minutes:02}:",
-                    f"{seconds:02}",
-                ]
-            )
+            return self.convert_to_display_time(self._data[CONF_SENSOR_MOVING_TIME])
+
+        if metric == CONF_SENSOR_ELAPSED_TIME:
+            return self.convert_to_display_time(self._data[CONF_SENSOR_ELAPSED_TIME])
 
         if metric == CONF_SENSOR_DISTANCE:
             return f"{round(self._data[CONF_SENSOR_DISTANCE]/1000,2)}"
@@ -339,7 +318,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
 
         if metric == CONF_SENSOR_ELEVATION:
             return f"{round(self._data[CONF_SENSOR_ELEVATION],0)}"
-        
+    
         if metric == CONF_SENSOR_HEART_RATE_AVG:
             return f"{round(self._data[CONF_SENSOR_HEART_RATE_AVG],1)}"
 
@@ -386,6 +365,15 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
         else:
             metric = self.get_metric()
 
+        if metric == CONF_SENSOR_HEART_RATE_MAX:
+            return "Max Heart Rate"
+        elif metric == CONF_SENSOR_HEART_RATE_AVG:
+            return "Average Heart Rate"
+        elif metric == CONF_SENSOR_ELEVATION:
+            return "Elevation Gain"
+        elif metric == CONF_SENSOR_ELAPSED_TIME:
+            return "Elapsed Time"
+
         return "" + str.upper(metric[0]) + metric[1:]
 
     @property
@@ -406,10 +394,39 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
 
         metirc = self.get_metric()
         if metirc == CONF_SENSOR_DURATION:
-            attr[CONF_SENSOR_DURATION] = self._data[CONF_SENSOR_DURATION]
+            attr[CONF_SENSOR_ELAPSED_TIME] = self._data[CONF_SENSOR_ELAPSED_TIME]
             attr[CONF_SENSOR_MOVING_TIME] = self._data[CONF_SENSOR_MOVING_TIME]
 
         return attr
+
+    def convert_to_display_time(self, metric_value):
+        """Convrt seconds to days, hours, minutes, seconds display"""
+        days = int(metric_value // (3600 * 24))
+        hours = int(
+            (metric_value - days * (3600 * 24)) // 3600
+        )
+        minutes = int(
+            (
+                metric_value
+                - days * (3600 * 24)
+                - hours * 3600
+            )
+            // 60
+        )
+        seconds = int(
+            metric_value
+            - days * (3600 * 24)
+            - hours * 3600
+            - minutes * 60
+        )
+        return "".join(
+            [
+                "" if days == 0 else f"{days} Day(s), ",
+                "" if hours == 0 and days == 0 else f"{hours:02}:",
+                "" if minutes == 0 and hours == 0 else f"{minutes:02}:",
+                f"{seconds:02}",
+            ]
+        )
 
     def get_metric(self):
         """Retrive the mertric object from results"""
