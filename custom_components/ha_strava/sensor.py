@@ -67,7 +67,7 @@ async def async_setup_entry(
     """
     entries = [
         StravaStatsSensor(activity_index=activity_index, sensor_index=sensor_index)
-        for sensor_index in range(12)
+        for sensor_index in range(6)
         for activity_index in range(MAX_NB_ACTIVITIES)
     ]
 
@@ -423,9 +423,6 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             .options.get(self._data[CONF_SENSOR_ACTIVITY_TYPE], CONF_SENSOR_DEFAULT)
             .values()
         )
-
-        if len(sensor_metrics) >= self._sensor_index:
-            return -1
 
         return sensor_metrics[self._sensor_index]
 
