@@ -81,7 +81,7 @@ CONF_SENSORS = {
     CONF_SENSOR_POWER: {"icon": "mdi:dumbbell"},
     CONF_SENSOR_TROPHIES: {"icon": "mdi:trophy"},
     CONF_SENSOR_HEART_RATE_AVG: {"icon": "mdi:heart-pulse"},
-    CONF_SENSOR_HEART_RATE_MAX: {"icon": "mdi:heart-pulse"}
+    CONF_SENSOR_HEART_RATE_MAX: {"icon": "mdi:heart-pulse"},
 }
 FACTOR_METER_TO_MILE = 0.000621371
 FACTOR_METER_TO_FEET = 3.28084
@@ -119,3 +119,4 @@ CONF_SENSOR_DEFAULT = {
 UNIT_BEATS_PER_MINUTE = "bpm"
 UNIT_PACE_MINUTES_PER_KILOMETER = "min/km"
 UNIT_PACE_MINUTES_PER_MILE = "min/mi"
+UNIT_KILO_CALORIES = "kcal"
