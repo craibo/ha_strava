@@ -19,13 +19,21 @@ from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
 
 # custom module imports
 from .const import (
+    CONF_ACTIVITY_TYPE_CANOEING,
+    CONF_ACTIVITY_TYPE_GOLF,
+    CONF_ACTIVITY_TYPE_GYM,
+    CONF_ACTIVITY_TYPE_HIKE,
+    CONF_ACTIVITY_TYPE_KAYAKING,
+    CONF_ACTIVITY_TYPE_MTB_RIDE,
     CONF_ACTIVITY_TYPE_RIDE,
     CONF_ACTIVITY_TYPE_RUN,
+    CONF_ACTIVITY_TYPE_SNOWBOARD,
     CONF_ACTIVITY_TYPE_SWIM,
+    CONF_ACTIVITY_TYPE_WALK,
+    CONF_ACTIVITY_TYPE_WORKOUT,
     CONF_ATTR_SPORT_TYPE,
     CONF_ATTR_START_LATLONG,
     CONF_SENSOR_ACTIVITY_COUNT,
-    CONF_SENSOR_ACTIVITY_TYPE,
     CONF_SENSOR_CALORIES,
     CONF_SENSOR_CITY,
     CONF_SENSOR_DATE,
@@ -253,29 +261,39 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
         return bool(self._data)
 
     @property
-    def icon(self):
+    def icon(self):  # pylint: disable=too-many-return-statements
         if not self._data:
             return "mdi:run"
 
-        ha_strava_config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
+        if self._sensor_index == 0:
+            sport_type = self._data[CONF_ATTR_SPORT_TYPE].lower()
+            if sport_type in [CONF_ACTIVITY_TYPE_RIDE, CONF_ACTIVITY_TYPE_MTB_RIDE]:
+                return "mdi:bike"
 
-        if len(ha_strava_config_entries) != 1:
+            if sport_type == CONF_ACTIVITY_TYPE_SWIM:
+                return "mdi:swim"
+
+            if sport_type in [CONF_ACTIVITY_TYPE_HIKE, CONF_ACTIVITY_TYPE_WALK]:
+                return "mdi:walk"
+
+            if sport_type in [
+                CONF_ACTIVITY_TYPE_KAYAKING,
+                CONF_ACTIVITY_TYPE_CANOEING,
+            ]:
+                return "mdi:kayaking"
+
+            if sport_type == CONF_ACTIVITY_TYPE_GOLF:
+                return "mdi:golf"
+
+            if sport_type in [CONF_ACTIVITY_TYPE_GYM, CONF_ACTIVITY_TYPE_WORKOUT]:
+                return "mdi:weight-lifter"
+
+            if sport_type in [CONF_ACTIVITY_TYPE_SNOWBOARD]:
+                return "mdi:snowboard"
+
             return "mdi:run"
 
-        _LOGGER.debug(
-            f"Activity Index: {self._activity_index} | Activity Type: {self._data[CONF_SENSOR_ACTIVITY_TYPE]}"  # noqa: E501
-        )
-        sensor_options = ha_strava_config_entries[0].options.get(
-            self._data[CONF_SENSOR_ACTIVITY_TYPE], CONF_SENSOR_DEFAULT
-        )
-
-        _LOGGER.debug(f"Sensor Config: {sensor_options}")
-
-        if self._sensor_index == 0:
-            return sensor_options["icon"]
-
-        metric = list(sensor_options.values())[self._sensor_index]
-        return CONF_SENSORS[metric]["icon"]
+        return CONF_SENSORS[self.get_metric()]["icon"]
 
     @property
     def native_value(self):
@@ -364,10 +382,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
                 else f"{dt.strftime(self._data[CONF_SENSOR_DATE], '%d.%m.%y - %H:%M')}"
             )
 
-        if not self._data:
-            metric = list(CONF_SENSOR_DEFAULT.values())[self._sensor_index]
-        else:
-            metric = self.get_metric()
+        metric = self.get_metric()
 
         if metric == CONF_SENSOR_HEART_RATE_MAX:
             return "Max Heart Rate"
@@ -435,19 +450,8 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
         )
 
     def get_metric(self):
-        """Retrive the mertric object from results"""
-        ha_strava_config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
-
-        if len(ha_strava_config_entries) != 1:
-            return -1
-
-        sensor_metrics = list(
-            ha_strava_config_entries[0]
-            .options.get(self._data[CONF_SENSOR_ACTIVITY_TYPE], CONF_SENSOR_DEFAULT)
-            .values()
-        )
-
-        return sensor_metrics[self._sensor_index]
+        """Retrive the metric object"""
+        return list(CONF_SENSOR_DEFAULT.values())[self._sensor_index]
 
     def strava_data_update_event_handler(self, event):
         """Handle Strava API data which is emitted from a Strava Update Event"""

@@ -60,21 +60,29 @@ CONF_ATTR_END_LATLONG = "end_latlng"
 CONF_ATTR_SPORT_TYPE = "sport_type"
 CONF_ACTIVITY_TYPE_RUN = "run"
 CONF_ACTIVITY_TYPE_RIDE = "ride"
+CONF_ACTIVITY_TYPE_MTB_RIDE = "mountainbikeride"
 CONF_ACTIVITY_TYPE_SWIM = "swim"
 CONF_ACTIVITY_TYPE_HIKE = "hike"
+CONF_ACTIVITY_TYPE_WALK = "walk"
+CONF_ACTIVITY_TYPE_GOLF = "golf"
 CONF_ACTIVITY_TYPE_OTHER = "other"
+CONF_ACTIVITY_TYPE_KAYAKING = "kayaking"
+CONF_ACTIVITY_TYPE_CANOEING = "canoeing"
+CONF_ACTIVITY_TYPE_GYM = "weighttraining"
+CONF_ACTIVITY_TYPE_WORKOUT = "workout"
+CONF_ACTIVITY_TYPE_SNOWBOARD = "snowboard"
 CONF_SUMMARY_RECENT = "summary_recent"
 CONF_SUMMARY_YTD = "summary_ytd"
 CONF_SUMMARY_ALL = "summary_all"
 
 CONF_SENSORS = {
     CONF_SENSOR_DATE: {"icon": "mdi:run"},
-    CONF_SENSOR_DURATION: {"icon": "mdi:speedometer"},
-    CONF_SENSOR_MOVING_TIME: {"icon": "mdi:speedometer"},
-    CONF_SENSOR_ELAPSED_TIME: {"icon": "mdi:speedometer"},
+    CONF_SENSOR_DURATION: {"icon": "mdi:timer"},
+    CONF_SENSOR_MOVING_TIME: {"icon": "mdi:timer"},
+    CONF_SENSOR_ELAPSED_TIME: {"icon": "mdi:clock"},
     CONF_SENSOR_PACE: {"icon": "mdi:clock-fast"},
-    CONF_SENSOR_SPEED: {"icon": "mdi:clock-fast"},
-    CONF_SENSOR_DISTANCE: {"icon": "mdi:ruler"},
+    CONF_SENSOR_SPEED: {"icon": "mdi:speedometer"},
+    CONF_SENSOR_DISTANCE: {"icon": "mdi:map-marker-distance"},
     CONF_SENSOR_KUDOS: {"icon": "mdi:thumb-up-outline"},
     CONF_SENSOR_CALORIES: {"icon": "mdi:fire"},
     CONF_SENSOR_ELEVATION: {"icon": "mdi:elevation-rise"},
