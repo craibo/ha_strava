@@ -303,6 +303,8 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             return f"{self._data[CONF_SENSOR_TITLE]} | {self._data[CONF_SENSOR_CITY]}"
 
         metric = self.get_metric()
+        if str(self._data[metric]) == "-1":
+            return None
 
         if metric == CONF_SENSOR_DURATION:
             return self.convert_to_display_time(self._data[CONF_SENSOR_MOVING_TIME])
@@ -314,12 +316,13 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             return f"{round(self._data[CONF_SENSOR_DISTANCE]/1000,2)}"
 
         if metric == CONF_SENSOR_PACE:
-            if self._data[CONF_SENSOR_DISTANCE] > 0:
-                pace = self._data[CONF_SENSOR_MOVING_TIME] / (
-                    self._data[CONF_SENSOR_DISTANCE] / 1000
-                )
-            else:
-                pace = 0
+            distance = self._data[CONF_SENSOR_DISTANCE]
+            pace = (
+                0
+                if distance == 0
+                else self._data[CONF_SENSOR_MOVING_TIME]
+                / (self._data[CONF_SENSOR_DISTANCE] / 1000)
+            )
             minutes = int(pace // 60)
             seconds = int(pace - minutes * 60)
             return "".join(["" if minutes == 0 else f"{minutes:02}:", f"{seconds:02}"])
