@@ -303,8 +303,6 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             return f"{self._data[CONF_SENSOR_TITLE]} | {self._data[CONF_SENSOR_CITY]}"
 
         metric = self.get_metric()
-        if str(self._data[metric]) == "-1":
-            return None
 
         if metric == CONF_SENSOR_DURATION:
             return self.convert_to_display_time(self._data[CONF_SENSOR_MOVING_TIME])
