@@ -18,38 +18,19 @@ from homeassistant.helpers.network import NoURLAvailableError, get_url
 
 # custom module imports
 from .const import (
-    CONF_ACTIVITY_TYPE_HIKE,
-    CONF_ACTIVITY_TYPE_OTHER,
-    CONF_ACTIVITY_TYPE_RIDE,
-    CONF_ACTIVITY_TYPE_RUN,
-    CONF_ACTIVITY_TYPE_SWIM,
     CONF_CALLBACK_URL,
     CONF_IMG_UPDATE_INTERVAL_SECONDS,
     CONF_IMG_UPDATE_INTERVAL_SECONDS_DEFAULT,
     CONF_NB_ACTIVITIES,
     CONF_PHOTOS,
-    CONF_SENSOR_1,
-    CONF_SENSOR_2,
-    CONF_SENSOR_3,
-    CONF_SENSOR_4,
-    CONF_SENSOR_5,
-    CONF_SENSOR_6,
-    CONF_SENSOR_7,
-    CONF_SENSOR_8,
-    CONF_SENSOR_9,
-    CONF_SENSOR_10,
-    CONF_SENSOR_11,
-    CONF_SENSOR_12,
-    CONF_SENSOR_ACTIVITY_TYPE,
     CONF_SENSOR_CALORIES,
-    CONF_SENSOR_DEFAULT,
     CONF_SENSOR_DISTANCE,
     CONF_SENSOR_DURATION,
+    CONF_SENSOR_ELAPSED_TIME,
     CONF_SENSOR_ELEVATION,
     CONF_SENSOR_HEART_RATE_AVG,
     CONF_SENSOR_HEART_RATE_MAX,
     CONF_SENSOR_KUDOS,
-    CONF_SENSOR_ELAPSED_TIME,
     CONF_SENSOR_PACE,
     CONF_SENSOR_POWER,
     CONF_SENSOR_SPEED,
@@ -142,112 +123,6 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             ),
         )
 
-    async def show_form_sensor_options(self):
-        """
-        Show form to customize the sensor-KPI-mapping for particular types of activities
-        """
-        ha_strava_config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
-
-        if len(ha_strava_config_entries) != 1:
-            return self.async_abort(reason="no_config")
-
-        current_options = ha_strava_config_entries[0].options
-
-        return self.async_show_form(
-            step_id="sensor_options",
-            data_schema=vol.Schema(
-                {
-                    vol.Optional(CONF_SENSOR_ACTIVITY_TYPE): vol.In(
-                        [
-                            CONF_ACTIVITY_TYPE_RUN,
-                            CONF_ACTIVITY_TYPE_RIDE,
-                            CONF_ACTIVITY_TYPE_SWIM,
-                            CONF_ACTIVITY_TYPE_HIKE,
-                            CONF_ACTIVITY_TYPE_OTHER,
-                        ]
-                    ),
-                    vol.Optional(
-                        "icon",
-                        default=current_options.get(
-                            CONF_SENSOR_ACTIVITY_TYPE, CONF_SENSOR_DEFAULT
-                        )["icon"],
-                    ): str,
-                    vol.Optional(
-                        CONF_SENSOR_1,
-                        default=current_options.get(
-                            CONF_SENSOR_ACTIVITY_TYPE, CONF_SENSOR_DEFAULT
-                        )[CONF_SENSOR_1],
-                    ): vol.In(SENSOR_OPTIONS),
-                    vol.Optional(
-                        CONF_SENSOR_2,
-                        default=current_options.get(
-                            CONF_SENSOR_ACTIVITY_TYPE, CONF_SENSOR_DEFAULT
-                        )[CONF_SENSOR_2],
-                    ): vol.In(SENSOR_OPTIONS),
-                    vol.Optional(
-                        CONF_SENSOR_3,
-                        default=current_options.get(
-                            CONF_SENSOR_ACTIVITY_TYPE, CONF_SENSOR_DEFAULT
-                        )[CONF_SENSOR_3],
-                    ): vol.In(SENSOR_OPTIONS),
-                    vol.Optional(
-                        CONF_SENSOR_4,
-                        default=current_options.get(
-                            CONF_SENSOR_ACTIVITY_TYPE, CONF_SENSOR_DEFAULT
-                        )[CONF_SENSOR_4],
-                    ): vol.In(SENSOR_OPTIONS),
-                    vol.Optional(
-                        CONF_SENSOR_5,
-                        default=current_options.get(
-                            CONF_SENSOR_ACTIVITY_TYPE, CONF_SENSOR_DEFAULT
-                        )[CONF_SENSOR_5],
-                    ): vol.In(SENSOR_OPTIONS),
-                    vol.Optional(
-                        CONF_SENSOR_6,
-                        default=current_options.get(
-                            CONF_SENSOR_ACTIVITY_TYPE, CONF_SENSOR_DEFAULT
-                        )[CONF_SENSOR_6],
-                    ): vol.In(SENSOR_OPTIONS),
-                    vol.Optional(
-                        CONF_SENSOR_7,
-                        default=current_options.get(
-                            CONF_SENSOR_ACTIVITY_TYPE, CONF_SENSOR_DEFAULT
-                        )[CONF_SENSOR_7],
-                    ): vol.In(SENSOR_OPTIONS),
-                    vol.Optional(
-                        CONF_SENSOR_8,
-                        default=current_options.get(
-                            CONF_SENSOR_ACTIVITY_TYPE, CONF_SENSOR_DEFAULT
-                        )[CONF_SENSOR_8],
-                    ): vol.In(SENSOR_OPTIONS),
-                    vol.Optional(
-                        CONF_SENSOR_9,
-                        default=current_options.get(
-                            CONF_SENSOR_ACTIVITY_TYPE, CONF_SENSOR_DEFAULT
-                        )[CONF_SENSOR_9],
-                    ): vol.In(SENSOR_OPTIONS),
-                    vol.Optional(
-                        CONF_SENSOR_10,
-                        default=current_options.get(
-                            CONF_SENSOR_ACTIVITY_TYPE, CONF_SENSOR_DEFAULT
-                        )[CONF_SENSOR_10],
-                    ): vol.In(SENSOR_OPTIONS),
-                    vol.Optional(
-                        CONF_SENSOR_11,
-                        default=current_options.get(
-                            CONF_SENSOR_ACTIVITY_TYPE, CONF_SENSOR_DEFAULT
-                        )[CONF_SENSOR_11],
-                    ): vol.In(SENSOR_OPTIONS),
-                    vol.Optional(
-                        CONF_SENSOR_12,
-                        default=current_options.get(
-                            CONF_SENSOR_ACTIVITY_TYPE, CONF_SENSOR_DEFAULT
-                        )[CONF_SENSOR_12],
-                    ): vol.In(SENSOR_OPTIONS),
-                }
-            ),
-        )
-
     async def async_step_init(self, user_input=None):
         """
         Initial OptionsFlow step - asks for the number of Strava activities to
@@ -268,7 +143,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             for entity in entities:
 
                 try:
-                    if int(entity.entity_id.split("_")[1]) >= int(
+                    entity_id_1 = entity.entity_id.split("_")[1]
+                    if "stats" not in entity_id_1 and int(entity_id_1) >= int(
                         user_input[CONF_NB_ACTIVITIES]
                     ):
                         _LOGGER.debug(f"disabling entity {entity}")
@@ -297,60 +173,23 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 user_input[CONF_IMG_UPDATE_INTERVAL_SECONDS]
             )
             self._config_entry_title = ha_strava_config_entries[0].title
-            return await self.show_form_sensor_options()
+
+            ha_strava_options = {  # pylint: disable=unnecessary-comprehension
+                k: v for k, v in ha_strava_config_entries[0].options.items()
+            }
+
+            ha_strava_options[CONF_NB_ACTIVITIES] = self._nb_activities
+            ha_strava_options[
+                CONF_IMG_UPDATE_INTERVAL_SECONDS
+            ] = self._img_update_interval_seconds
+            ha_strava_options[CONF_PHOTOS] = self._import_strava_images
+
+            _LOGGER.debug(f"Strava Config Options: {ha_strava_options}")
+            self.async_create_entry(
+                title=self._config_entry_title,
+                data=ha_strava_options,
+            )
         return await self.show_form_init()
-
-    async def async_step_sensor_options(self, user_input):
-        """
-        Second (final) and optional OptionsFlow step - asks ask the user
-        to customize the sensor-KPI-mapping for particular types of activities
-        """
-        ha_strava_config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
-
-        if len(ha_strava_config_entries) != 1:
-            return self.async_abort(reason="no_config")
-
-        ha_strava_options = {  # pylint: disable=unnecessary-comprehension
-            k: v for k, v in ha_strava_config_entries[0].options.items()
-        }
-
-        if user_input.get(CONF_SENSOR_ACTIVITY_TYPE, False):
-
-            sensor_config = ha_strava_options.get(
-                user_input[CONF_SENSOR_ACTIVITY_TYPE], {**CONF_SENSOR_DEFAULT}
-            )
-
-            sensor_config.update(
-                {
-                    "icon": user_input["icon"],
-                    CONF_SENSOR_1: user_input[CONF_SENSOR_1],
-                    CONF_SENSOR_2: user_input[CONF_SENSOR_2],
-                    CONF_SENSOR_3: user_input[CONF_SENSOR_3],
-                    CONF_SENSOR_4: user_input[CONF_SENSOR_4],
-                    CONF_SENSOR_5: user_input[CONF_SENSOR_5],
-                    CONF_SENSOR_6: user_input[CONF_SENSOR_6],
-                    CONF_SENSOR_7: user_input[CONF_SENSOR_7],
-                    CONF_SENSOR_8: user_input[CONF_SENSOR_8],
-                    CONF_SENSOR_9: user_input[CONF_SENSOR_9],
-                    CONF_SENSOR_10: user_input[CONF_SENSOR_10],
-                    CONF_SENSOR_11: user_input[CONF_SENSOR_11],
-                    CONF_SENSOR_12: user_input[CONF_SENSOR_12],
-                }
-            )
-
-            ha_strava_options[user_input[CONF_SENSOR_ACTIVITY_TYPE]] = sensor_config
-
-        ha_strava_options[CONF_NB_ACTIVITIES] = self._nb_activities
-        ha_strava_options[
-            CONF_IMG_UPDATE_INTERVAL_SECONDS
-        ] = self._img_update_interval_seconds
-        ha_strava_options[CONF_PHOTOS] = self._import_strava_images
-
-        _LOGGER.debug(f"Strava Config Options: {ha_strava_options}")
-        return self.async_create_entry(
-            title=self._config_entry_title,
-            data=ha_strava_options,
-        )
 
 
 class OAuth2FlowHandler(
