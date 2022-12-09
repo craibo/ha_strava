@@ -8,12 +8,14 @@ from datetime import datetime as dt
 from homeassistant.components.sensor import SensorEntity, SensorStateClass
 from homeassistant.components.sensor.const import CONF_STATE_CLASS
 from homeassistant.const import (
+    CONF_DEVICE_CLASS,
     CONF_LATITUDE,
     CONF_LONGITUDE,
     LENGTH_KILOMETERS,
     LENGTH_METERS,
     POWER_WATT,
     SPEED_KILOMETERS_PER_HOUR,
+    TIME_SECONDS,
 )
 from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
 
@@ -31,6 +33,7 @@ from .const import (
     CONF_ACTIVITY_TYPE_SWIM,
     CONF_ACTIVITY_TYPE_WALK,
     CONF_ACTIVITY_TYPE_WORKOUT,
+    CONF_ATTR_DURATION,
     CONF_ATTR_SPORT_TYPE,
     CONF_ATTR_START_LATLONG,
     CONF_SENSOR_ACTIVITY_COUNT,
@@ -134,7 +137,7 @@ class StravaSummaryStatsSensor(SensorEntity):  # pylint: disable=missing-class-d
             "identifiers": {(DOMAIN, f"strava_stats")},
             "name": f"Strava Summary",
             "manufacturer": "Strava",
-            "model": "Activity",
+            "model": "Activity Summary",
         }
 
     @property
@@ -305,10 +308,10 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
         metric = self.get_metric()
 
         if metric == CONF_SENSOR_DURATION:
-            return self.convert_to_display_time(self._data[CONF_SENSOR_MOVING_TIME])
+            return self._data[CONF_SENSOR_MOVING_TIME]
 
         if metric == CONF_SENSOR_ELAPSED_TIME:
-            return self.convert_to_display_time(self._data[CONF_SENSOR_DURATION])
+            return self._data[CONF_SENSOR_DURATION]
 
         if metric == CONF_SENSOR_DISTANCE:
             return f"{round(self._data[CONF_SENSOR_DISTANCE]/1000,2)}"
@@ -348,6 +351,9 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             return None
 
         metric = self.get_metric()
+
+        if metric in [CONF_SENSOR_DURATION, CONF_SENSOR_ELAPSED_TIME]:
+            return TIME_SECONDS
 
         if metric == CONF_SENSOR_POWER:
             return POWER_WATT
@@ -425,30 +431,16 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
                 )  # noqa: E501
             return attr
 
-        metirc = self.get_metric()
-        if metirc == CONF_SENSOR_DURATION:
-            attr[CONF_SENSOR_ELAPSED_TIME] = self._data[CONF_SENSOR_DURATION]
-            attr[CONF_SENSOR_MOVING_TIME] = self._data[CONF_SENSOR_MOVING_TIME]
+        metric = self.get_metric()
+        if metric == CONF_SENSOR_DURATION:
+            attr[CONF_DEVICE_CLASS] = CONF_ATTR_DURATION
+            return attr
+
+        if metric == CONF_SENSOR_ELAPSED_TIME:
+            attr[CONF_DEVICE_CLASS] = CONF_ATTR_DURATION
+            return attr
 
         return attr
-
-    def convert_to_display_time(self, metric_value):
-        """Convrt seconds to days, hours, minutes, seconds display"""
-        if metric_value is None:
-            metric_value = 0
-
-        days = int(metric_value // (3600 * 24))
-        hours = int((metric_value - days * (3600 * 24)) // 3600)
-        minutes = int((metric_value - days * (3600 * 24) - hours * 3600) // 60)
-        seconds = int(metric_value - days * (3600 * 24) - hours * 3600 - minutes * 60)
-        return "".join(
-            [
-                "" if days == 0 else f"{days} Day(s), ",
-                "" if hours == 0 and days == 0 else f"{hours:02}:",
-                "" if minutes == 0 and hours == 0 else f"{minutes:02}:",
-                f"{seconds:02}",
-            ]
-        )
 
     def get_metric(self):
         """Retrive the metric object"""
