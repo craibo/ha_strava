@@ -28,18 +28,8 @@
         "data": {
           "nb_activities": "Number of concurrent Strava Activities",
           "img_update_interval_seconds": "Image rotation (seconds)",
-          "conf_photos": "Import Photos from Strava?"
-        }
-      },
-      "sensor_options": {
-        "title": "Customize Sensor Readings for particular Activity Types",
-        "data": {
-          "activity_type": "Activity Type",
-          "sensor_1": "Sensor 1",
-          "sensor_2": "Sensor 2",
-          "sensor_3": "Sensor 3",
-          "sensor_4": "Sensor 4",
-          "sensor_5": "Sensor 5"
+          "conf_photos": "Import Photos from Strava?",
+          "conf_distance_unit": "Preferred distance unit system"
         }
       }
     },

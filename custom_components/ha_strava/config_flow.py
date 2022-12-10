@@ -19,22 +19,14 @@ from homeassistant.helpers.network import NoURLAvailableError, get_url
 # custom module imports
 from .const import (
     CONF_CALLBACK_URL,
+    CONF_DISTANCE_UNIT_OVERRIDE,
+    CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT,
+    CONF_DISTANCE_UNIT_OVERRIDE_IMPERIAL,
+    CONF_DISTANCE_UNIT_OVERRIDE_METRIC,
     CONF_IMG_UPDATE_INTERVAL_SECONDS,
     CONF_IMG_UPDATE_INTERVAL_SECONDS_DEFAULT,
     CONF_NB_ACTIVITIES,
     CONF_PHOTOS,
-    CONF_SENSOR_CALORIES,
-    CONF_SENSOR_DISTANCE,
-    CONF_SENSOR_DURATION,
-    CONF_SENSOR_ELAPSED_TIME,
-    CONF_SENSOR_ELEVATION,
-    CONF_SENSOR_HEART_RATE_AVG,
-    CONF_SENSOR_HEART_RATE_MAX,
-    CONF_SENSOR_KUDOS,
-    CONF_SENSOR_PACE,
-    CONF_SENSOR_POWER,
-    CONF_SENSOR_SPEED,
-    CONF_SENSOR_TROPHIES,
     CONFIG_ENTRY_TITLE,
     DEFAULT_NB_ACTIVITIES,
     DOMAIN,
@@ -45,19 +37,10 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-SENSOR_OPTIONS = [
-    CONF_SENSOR_DURATION,
-    CONF_SENSOR_PACE,
-    CONF_SENSOR_SPEED,
-    CONF_SENSOR_DISTANCE,
-    CONF_SENSOR_KUDOS,
-    CONF_SENSOR_CALORIES,
-    CONF_SENSOR_ELEVATION,
-    CONF_SENSOR_POWER,
-    CONF_SENSOR_TROPHIES,
-    CONF_SENSOR_HEART_RATE_AVG,
-    CONF_SENSOR_HEART_RATE_MAX,
-    CONF_SENSOR_ELAPSED_TIME,
+DISTANCE_UNIT_OVERRIDE_OPTIONS = [
+    CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT,
+    CONF_DISTANCE_UNIT_OVERRIDE_METRIC,
+    CONF_DISTANCE_UNIT_OVERRIDE_IMPERIAL,
 ]
 
 
@@ -71,6 +54,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         self._config_entry_title = None
         self._import_strava_images = None
         self._img_update_interval_seconds = None
+        self._config_distance_unit_override = None
 
     async def show_form_init(self):
         """
@@ -119,6 +103,13 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                             ha_strava_config_entries[0].data.get(CONF_PHOTOS),
                         ),
                     ): bool,
+                    vol.Required(
+                        CONF_DISTANCE_UNIT_OVERRIDE,
+                        default=ha_strava_config_entries[0].options.get(
+                            CONF_DISTANCE_UNIT_OVERRIDE,
+                            CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT,
+                        )[CONF_DISTANCE_UNIT_OVERRIDE],
+                    ): vol.In(DISTANCE_UNIT_OVERRIDE_OPTIONS),
                 }
             ),
         )
@@ -183,6 +174,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 CONF_IMG_UPDATE_INTERVAL_SECONDS
             ] = self._img_update_interval_seconds
             ha_strava_options[CONF_PHOTOS] = self._import_strava_images
+            ha_strava_options[
+                CONF_DISTANCE_UNIT_OVERRIDE
+            ] = self._config_distance_unit_override
 
             _LOGGER.debug(f"Strava Config Options: {ha_strava_options}")
             return self.async_create_entry(
