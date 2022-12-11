@@ -108,7 +108,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         default=ha_strava_config_entries[0].options.get(
                             CONF_DISTANCE_UNIT_OVERRIDE,
                             CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT,
-                        )[CONF_DISTANCE_UNIT_OVERRIDE],
+                        ),
                     ): vol.In(DISTANCE_UNIT_OVERRIDE_OPTIONS),
                 }
             ),

@@ -341,7 +341,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
             if len(config_entries) >= 1:
                 conf_distance_unit_override = config_entries[0].options.get(
-                    self._data[CONF_DISTANCE_UNIT_OVERRIDE], CONF_SENSOR_DEFAULT
+                    self._data.get(CONF_DISTANCE_UNIT_OVERRIDE), CONF_SENSOR_DEFAULT
                 )
 
                 if conf_distance_unit_override != CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT:
@@ -421,7 +421,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             return None
 
         conf_distance_unit_override = config_entries[0].options.get(
-            self._data[CONF_DISTANCE_UNIT_OVERRIDE], CONF_SENSOR_DEFAULT
+            self._data.get(CONF_DISTANCE_UNIT_OVERRIDE), CONF_SENSOR_DEFAULT
         )
 
         if conf_distance_unit_override == CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT:
