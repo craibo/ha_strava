@@ -165,32 +165,7 @@ class StravaSummaryStatsSensor(SensorEntity):  # pylint: disable=missing-class-d
     @property
     def native_value(self):
         if self._metric == CONF_SENSOR_MOVING_TIME:
-            days = int(self._data[CONF_SENSOR_MOVING_TIME] // (3600 * 24))
-            hours = int(
-                (self._data[CONF_SENSOR_MOVING_TIME] - days * (3600 * 24)) // 3600
-            )
-            minutes = int(
-                (
-                    self._data[CONF_SENSOR_MOVING_TIME]
-                    - days * (3600 * 24)
-                    - hours * 3600
-                )
-                // 60
-            )
-            seconds = int(
-                self._data[CONF_SENSOR_MOVING_TIME]
-                - days * (3600 * 24)
-                - hours * 3600
-                - minutes * 60
-            )
-            return "".join(
-                [
-                    "" if days == 0 else f"{days} Day(s), ",
-                    "" if hours == 0 and days == 0 else f"{hours:02}:",
-                    "" if minutes == 0 and hours == 0 else f"{minutes:02}:",
-                    f"{seconds:02}",
-                ]
-            )
+            return self._data[CONF_SENSOR_MOVING_TIME]
 
         if self._metric == CONF_SENSOR_DISTANCE:
             return f"{round(self._data[CONF_SENSOR_DISTANCE]/1000,2)}"
@@ -199,7 +174,26 @@ class StravaSummaryStatsSensor(SensorEntity):  # pylint: disable=missing-class-d
 
     @property
     def native_unit_of_measurement(self):
-        if self._metric == CONF_SENSOR_DISTANCE:
+        if self._metric not in [CONF_SENSOR_MOVING_TIME, CONF_SENSOR_DISTANCE]:
+            return None
+
+        if self._metric == CONF_SENSOR_MOVING_TIME:
+            return TIME_SECONDS
+
+        if self._metric == CONF_SENSOR_DISTANCE:    
+            config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
+            if len(config_entries) != 1:
+                return LENGTH_KILOMETERS
+
+            conf_distance_unit_override = config_entries[0].options.get(
+                CONF_DISTANCE_UNIT_OVERRIDE, CONF_SENSOR_DEFAULT
+                )
+
+            if conf_distance_unit_override != CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT:
+                is_metric = (conf_distance_unit_override == CONF_DISTANCE_UNIT_OVERRIDE_METRIC)
+                if self._metric == CONF_SENSOR_DISTANCE:
+                    return LENGTH_KILOMETERS if is_metric else LENGTH_MILES
+        
             return LENGTH_KILOMETERS
 
         return None
@@ -223,6 +217,24 @@ class StravaSummaryStatsSensor(SensorEntity):  # pylint: disable=missing-class-d
                 " ", ["" + str.upper(s[0]) + s[1:] for s in self._metric.split("_")]
             )
         )
+
+    @property
+    def capability_attributes(self):  # pylint: disable=too-many-return-statements
+        attr = super().capability_attributes
+        attr = dict(attr) if attr else {}
+
+        if not self._data:
+            return attr
+
+        if self._metric == CONF_SENSOR_MOVING_TIME:
+            attr[CONF_DEVICE_CLASS] = CONF_ATTR_DURATION
+            return attr
+
+        if self._metric == CONF_SENSOR_DISTANCE:
+            attr[CONF_DEVICE_CLASS] = CONF_ATTR_DISTANCE
+            return attr
+
+        return attr
 
     def strava_data_update_event_handler(self, event):
         """Handle Strava API data which is emitted from a Strava Update Event"""
@@ -341,7 +353,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
             if len(config_entries) >= 1:
                 conf_distance_unit_override = config_entries[0].options.get(
-                    self._data.get(CONF_DISTANCE_UNIT_OVERRIDE), CONF_SENSOR_DEFAULT
+                    CONF_DISTANCE_UNIT_OVERRIDE, CONF_SENSOR_DEFAULT
                 )
 
                 if conf_distance_unit_override != CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT:
@@ -421,8 +433,8 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             return None
 
         conf_distance_unit_override = config_entries[0].options.get(
-            self._data.get(CONF_DISTANCE_UNIT_OVERRIDE), CONF_SENSOR_DEFAULT
-        )
+            CONF_DISTANCE_UNIT_OVERRIDE, CONF_SENSOR_DEFAULT
+            )
 
         if conf_distance_unit_override == CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT:
             return None

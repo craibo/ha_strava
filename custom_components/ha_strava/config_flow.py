@@ -158,11 +158,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                             disabled_by=RegistryEntryDisabler.INTEGRATION,
                         )
 
-            self._nb_activities = user_input[CONF_NB_ACTIVITIES]
-            self._import_strava_images = user_input[CONF_PHOTOS]
-            self._img_update_interval_seconds = int(
-                user_input[CONF_IMG_UPDATE_INTERVAL_SECONDS]
-            )
+            self._nb_activities = user_input.get(CONF_NB_ACTIVITIES)
+            self._import_strava_images = user_input.get(CONF_PHOTOS)
+            self._img_update_interval_seconds = int(user_input.get(CONF_IMG_UPDATE_INTERVAL_SECONDS))
+            self._config_distance_unit_override = user_input.get(CONF_DISTANCE_UNIT_OVERRIDE)
             self._config_entry_title = ha_strava_config_entries[0].title
 
             ha_strava_options = {  # pylint: disable=unnecessary-comprehension
