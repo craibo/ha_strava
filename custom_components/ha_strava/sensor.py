@@ -10,15 +10,11 @@ from homeassistant.const import (
     CONF_LONGITUDE,
     DEVICE_CLASS_DATE,
     DEVICE_CLASS_POWER,
-    LENGTH_FEET,
-    LENGTH_KILOMETERS,
-    LENGTH_METERS,
-    LENGTH_MILES,
-    POWER_WATT,
     SPEED,
-    SPEED_KILOMETERS_PER_HOUR,
-    SPEED_MILES_PER_HOUR,
     TIME_SECONDS,
+    UnitOfLength,
+    UnitOfPower,
+    UnitOfSpeed,
 )
 from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
 
@@ -182,7 +178,7 @@ class StravaSummaryStatsSensor(SensorEntity):  # pylint: disable=missing-class-d
             return TIME_SECONDS
 
         if self._metric == CONF_SENSOR_DISTANCE:
-            return LENGTH_KILOMETERS
+            return UnitOfLength.KILOMETERS
 
         return None
 
@@ -205,7 +201,7 @@ class StravaSummaryStatsSensor(SensorEntity):  # pylint: disable=missing-class-d
             )
 
             if self._metric == CONF_SENSOR_DISTANCE:
-                return LENGTH_KILOMETERS if is_metric else LENGTH_MILES
+                return UnitOfLength.KILOMETERS if is_metric else UnitOfLength.MILES
 
         return super().suggested_unit_of_measurement
 
@@ -388,14 +384,14 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
         if metric == CONF_SENSOR_POWER:
             return (
                 f"{int(round(self._data[CONF_SENSOR_POWER],1))}"
-                if (self._data.get(CONF_SENSOR_POWER) != "-1")
+                if (self._data.get(CONF_SENSOR_POWER) != -1)
                 else None
             )
 
         if metric == CONF_SENSOR_CALORIES:
             return (
                 str(self._data.get(metric))
-                if (self._data.get(CONF_SENSOR_CALORIES) == "-1")
+                if (self._data.get(CONF_SENSOR_CALORIES) != -1)
                 else None
             )
 
@@ -421,16 +417,16 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             return TIME_SECONDS
 
         if metric == CONF_SENSOR_POWER:
-            return POWER_WATT
+            return UnitOfPower.WATT
 
         if metric == CONF_SENSOR_ELEVATION:
-            return LENGTH_METERS
+            return UnitOfLength.METERS
 
         if metric == CONF_SENSOR_SPEED:
-            return SPEED_KILOMETERS_PER_HOUR
+            return UnitOfSpeed.KILOMETERS_PER_HOUR
 
         if metric == CONF_SENSOR_DISTANCE:
-            return LENGTH_KILOMETERS
+            return UnitOfLength.KILOMETERS
 
         if metric in [CONF_SENSOR_HEART_RATE_MAX, CONF_SENSOR_HEART_RATE_AVG]:
             return UNIT_BEATS_PER_MINUTE
@@ -477,13 +473,17 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
         is_metric = conf_distance_unit_override == CONF_DISTANCE_UNIT_OVERRIDE_METRIC
 
         if metric == CONF_SENSOR_DISTANCE:
-            return LENGTH_KILOMETERS if is_metric else LENGTH_MILES
+            return UnitOfLength.KILOMETERS if is_metric else UnitOfLength.MILES
 
         if metric == CONF_SENSOR_SPEED:
-            return SPEED_KILOMETERS_PER_HOUR if is_metric else SPEED_MILES_PER_HOUR
+            return (
+                UnitOfSpeed.KILOMETERS_PER_HOUR
+                if is_metric
+                else UnitOfSpeed.MILES_PER_HOUR
+            )
 
         if metric == CONF_SENSOR_ELEVATION:
-            return LENGTH_METERS if is_metric else LENGTH_FEET
+            return UnitOfLength.METERS if is_metric else UnitOfLength.FEET
 
         if metric == CONF_SENSOR_PACE:
             return (
