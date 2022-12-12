@@ -182,24 +182,32 @@ class StravaSummaryStatsSensor(SensorEntity):  # pylint: disable=missing-class-d
             return TIME_SECONDS
 
         if self._metric == CONF_SENSOR_DISTANCE:
-            config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
-            if len(config_entries) != 1:
-                return LENGTH_KILOMETERS
-
-            conf_distance_unit_override = config_entries[0].options.get(
-                CONF_DISTANCE_UNIT_OVERRIDE, CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
-            )
-
-            if conf_distance_unit_override != CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT:
-                is_metric = (
-                    conf_distance_unit_override == CONF_DISTANCE_UNIT_OVERRIDE_METRIC
-                )
-                if self._metric == CONF_SENSOR_DISTANCE:
-                    return LENGTH_KILOMETERS if is_metric else LENGTH_MILES
-
             return LENGTH_KILOMETERS
 
         return None
+
+    @property
+    def suggested_unit_of_measurement(self):
+        if self._metric not in [CONF_SENSOR_DISTANCE]:
+            return super().suggested_unit_of_measurement
+
+        config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
+        if len(config_entries) != 1:
+            return super().suggested_unit_of_measurement
+
+        conf_distance_unit_override = config_entries[0].options.get(
+            CONF_DISTANCE_UNIT_OVERRIDE, CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
+        )
+
+        if conf_distance_unit_override != CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT:
+            is_metric = (
+                conf_distance_unit_override == CONF_DISTANCE_UNIT_OVERRIDE_METRIC
+            )
+
+            if self._metric == CONF_SENSOR_DISTANCE:
+                return LENGTH_KILOMETERS if is_metric else LENGTH_MILES
+
+        return super().suggested_unit_of_measurement
 
     @property
     def name(self):
