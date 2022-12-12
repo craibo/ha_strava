@@ -382,7 +382,18 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             return f"{round((self._data[CONF_SENSOR_DISTANCE]/1000) / (self._data[CONF_SENSOR_MOVING_TIME]/3600),2)}"  # noqa: E501
 
         if metric == CONF_SENSOR_POWER:
-            return f"{int(round(self._data[CONF_SENSOR_POWER],1))}"
+            return (
+                f"{int(round(self._data[CONF_SENSOR_POWER],1))}"
+                if (self._data.get(CONF_SENSOR_POWER) != "-1")
+                else None
+            )
+
+        if metric == CONF_SENSOR_CALORIES:
+            return (
+                str(self._data.get(metric))
+                if (self._data.get(CONF_SENSOR_CALORIES) == "-1")
+                else None
+            )
 
         if metric == CONF_SENSOR_ELEVATION:
             return f"{round(self._data[CONF_SENSOR_ELEVATION],0)}"
@@ -393,7 +404,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
         if metric == CONF_SENSOR_HEART_RATE_MAX:
             return f"{round(self._data[CONF_SENSOR_HEART_RATE_MAX],1)}"
 
-        return str(self._data[metric])
+        return str(self._data.get(metric))
 
     @property
     def native_unit_of_measurement(self):  # pylint: disable=too-many-return-statements
