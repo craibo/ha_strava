@@ -12,6 +12,7 @@ from homeassistant.const import (
     CONF_LATITUDE,
     CONF_LONGITUDE,
     DEVICE_CLASS_POWER,
+    LENGTH_FEET,
     LENGTH_KILOMETERS,
     LENGTH_METERS,
     LENGTH_MILES,
@@ -180,20 +181,22 @@ class StravaSummaryStatsSensor(SensorEntity):  # pylint: disable=missing-class-d
         if self._metric == CONF_SENSOR_MOVING_TIME:
             return TIME_SECONDS
 
-        if self._metric == CONF_SENSOR_DISTANCE:    
+        if self._metric == CONF_SENSOR_DISTANCE:
             config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
             if len(config_entries) != 1:
                 return LENGTH_KILOMETERS
 
             conf_distance_unit_override = config_entries[0].options.get(
-                CONF_DISTANCE_UNIT_OVERRIDE, CONF_SENSOR_DEFAULT
-                )
+                CONF_DISTANCE_UNIT_OVERRIDE, CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
+            )
 
             if conf_distance_unit_override != CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT:
-                is_metric = (conf_distance_unit_override == CONF_DISTANCE_UNIT_OVERRIDE_METRIC)
+                is_metric = (
+                    conf_distance_unit_override == CONF_DISTANCE_UNIT_OVERRIDE_METRIC
+                )
                 if self._metric == CONF_SENSOR_DISTANCE:
                     return LENGTH_KILOMETERS if is_metric else LENGTH_MILES
-        
+
             return LENGTH_KILOMETERS
 
         return None
@@ -353,7 +356,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
             if len(config_entries) >= 1:
                 conf_distance_unit_override = config_entries[0].options.get(
-                    CONF_DISTANCE_UNIT_OVERRIDE, CONF_SENSOR_DEFAULT
+                    CONF_DISTANCE_UNIT_OVERRIDE, CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
                 )
 
                 if conf_distance_unit_override != CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT:
@@ -428,25 +431,36 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
         if not self._data or self._sensor_index == 0:
             return None
 
+        metric = self.get_metric()
+        if metric not in [
+            CONF_SENSOR_DISTANCE,
+            CONF_SENSOR_SPEED,
+            CONF_SENSOR_PACE,
+            CONF_SENSOR_ELEVATION,
+        ]:
+            return None
+
         config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
         if len(config_entries) != 1:
             return None
 
         conf_distance_unit_override = config_entries[0].options.get(
-            CONF_DISTANCE_UNIT_OVERRIDE, CONF_SENSOR_DEFAULT
-            )
+            CONF_DISTANCE_UNIT_OVERRIDE, CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
+        )
 
         if conf_distance_unit_override == CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT:
             return None
 
         is_metric = conf_distance_unit_override == CONF_DISTANCE_UNIT_OVERRIDE_METRIC
-        metric = self.get_metric()
 
         if metric == CONF_SENSOR_DISTANCE:
             return LENGTH_KILOMETERS if is_metric else LENGTH_MILES
 
         if metric == CONF_SENSOR_SPEED:
             return SPEED_KILOMETERS_PER_HOUR if is_metric else SPEED_MILES_PER_HOUR
+
+        if metric == CONF_SENSOR_ELEVATION:
+            return LENGTH_METERS if is_metric else LENGTH_FEET
 
         if metric == CONF_SENSOR_PACE:
             return (
