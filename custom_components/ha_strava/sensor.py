@@ -497,10 +497,14 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
     @property
     def name(self):  # pylint: disable=too-many-return-statements
         if self._sensor_index == 0:
+            if not self._data:
+                return "Title & Date"
+
             if self._data.get(CONF_SENSOR_CITY):
                 return (
                     f"{self._data[CONF_SENSOR_TITLE]} | {self._data[CONF_SENSOR_CITY]}"
                 )
+
             return (
                 f"{self._data[CONF_SENSOR_TITLE]}"
                 if self._data.get(CONF_SENSOR_TITLE)
