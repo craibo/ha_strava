@@ -54,7 +54,6 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         self._config_entry_title = None
         self._import_strava_images = None
         self._img_update_interval_seconds = None
-        self._config_distance_unit_override = None
 
     async def show_form_init(self):
         """
@@ -103,13 +102,6 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                             ha_strava_config_entries[0].data.get(CONF_PHOTOS),
                         ),
                     ): bool,
-                    vol.Required(
-                        CONF_DISTANCE_UNIT_OVERRIDE,
-                        default=ha_strava_config_entries[0].options.get(
-                            CONF_DISTANCE_UNIT_OVERRIDE,
-                            CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT,
-                        ),
-                    ): vol.In(DISTANCE_UNIT_OVERRIDE_OPTIONS),
                 }
             ),
         )
@@ -161,7 +153,6 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             self._nb_activities = user_input.get(CONF_NB_ACTIVITIES)
             self._import_strava_images = user_input.get(CONF_PHOTOS)
             self._img_update_interval_seconds = int(user_input.get(CONF_IMG_UPDATE_INTERVAL_SECONDS))
-            self._config_distance_unit_override = user_input.get(CONF_DISTANCE_UNIT_OVERRIDE)
             self._config_entry_title = ha_strava_config_entries[0].title
 
             ha_strava_options = {  # pylint: disable=unnecessary-comprehension
@@ -173,9 +164,6 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 CONF_IMG_UPDATE_INTERVAL_SECONDS
             ] = self._img_update_interval_seconds
             ha_strava_options[CONF_PHOTOS] = self._import_strava_images
-            ha_strava_options[
-                CONF_DISTANCE_UNIT_OVERRIDE
-            ] = self._config_distance_unit_override
 
             _LOGGER.debug(f"Strava Config Options: {ha_strava_options}")
             return self.async_create_entry(
@@ -193,6 +181,7 @@ class OAuth2FlowHandler(
     DOMAIN = DOMAIN
     CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_PUSH
     _import_photos_from_strava = True
+    _distance_unit_override_metric = CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
 
     @property
     def logger(self) -> logging.Logger:
@@ -220,6 +209,10 @@ class OAuth2FlowHandler(
             vol.Required(CONF_CLIENT_ID): str,
             vol.Required(CONF_CLIENT_SECRET): str,
             vol.Required(CONF_PHOTOS, default=self._import_photos_from_strava): bool,
+            vol.Required(
+                CONF_DISTANCE_UNIT_OVERRIDE,
+                default=self._distance_unit_override_metric
+                ): vol.In(DISTANCE_UNIT_OVERRIDE_OPTIONS),
         }
 
         assert self.hass is not None
@@ -234,6 +227,7 @@ class OAuth2FlowHandler(
 
         if user_input is not None:
             self._import_photos_from_strava = user_input[CONF_PHOTOS]
+            self._distance_unit_override_metric = user_input[CONF_DISTANCE_UNIT_OVERRIDE]
             config_entry_oauth2_flow.async_register_implementation(
                 self.hass,
                 DOMAIN,
@@ -259,6 +253,7 @@ class OAuth2FlowHandler(
         data[CONF_CLIENT_ID] = self.flow_impl.client_id
         data[CONF_CLIENT_SECRET] = self.flow_impl.client_secret
         data[CONF_PHOTOS] = self._import_photos_from_strava
+        data[CONF_DISTANCE_UNIT_OVERRIDE] = self._distance_unit_override_metric
 
         return self.async_create_entry(title=CONFIG_ENTRY_TITLE, data=data)
 
