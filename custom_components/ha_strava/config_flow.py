@@ -203,7 +203,7 @@ class OAuth2FlowHandler(
     def extra_authorize_data(self) -> dict:
         """Extra data that needs to be appended to the authorize url."""
         return {
-            "scope": "activity:read",
+            "scope": "activity:read_all",
             "approval_prompt": "force",
             "response_type": "code",
         }
