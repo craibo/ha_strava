@@ -126,6 +126,8 @@ class StravaSummaryStatsSensor(
     _activity_type = None
     _attr_should_poll = False
     _attr_state_class = SensorStateClass.TOTAL
+    _is_unit_metric_default = True
+    _is_unit_metric = True
 
     def __init__(self, activity_type, metric, summary_type):
         self._metric = metric
@@ -135,19 +137,6 @@ class StravaSummaryStatsSensor(
         self._attr_unique_id = (
             f"strava_stats_{self._summary_type}_{self._activity_type}_{self._metric}"
         )
-        config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
-        if len(config_entries) == 1:
-            conf_distance_unit_override = config_entries[0].options.get(
-                CONF_DISTANCE_UNIT_OVERRIDE, CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
-            )
-            self._is_unit_metric_default = (
-                conf_distance_unit_override == CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
-            )
-            self._is_unit_metric = (
-                conf_distance_unit_override == CONF_DISTANCE_UNIT_OVERRIDE_METRIC
-            )
-        else:
-            self._is_unit_metric_default = True
 
     @property
     def device_info(self):
@@ -178,6 +167,7 @@ class StravaSummaryStatsSensor(
             return self._data[CONF_SENSOR_MOVING_TIME]
 
         if self._metric == CONF_SENSOR_DISTANCE:
+            self.set_distance_units()
             if self._is_unit_metric_default or self._is_unit_metric:
                 return f"{round(self._data[CONF_SENSOR_DISTANCE]/1000,2)}"
 
@@ -197,6 +187,7 @@ class StravaSummaryStatsSensor(
         if self._metric == CONF_SENSOR_MOVING_TIME:
             return TIME_SECONDS
 
+        self.set_distance_units()
         if self._metric == CONF_SENSOR_DISTANCE:
             if self._is_unit_metric_default or self._is_unit_metric:
                 return UnitOfLength.KILOMETERS
@@ -209,6 +200,7 @@ class StravaSummaryStatsSensor(
         if self._metric not in [CONF_SENSOR_DISTANCE]:
             return super().suggested_unit_of_measurement
 
+        self.set_distance_units()
         if self._is_unit_metric_default or self._is_unit_metric:
             return UnitOfLength.KILOMETERS
         return UnitOfLength.MILES
@@ -251,6 +243,20 @@ class StravaSummaryStatsSensor(
 
         return attr
 
+    def set_distance_units(self):
+        """Set the distance unit config values"""
+        config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
+        if len(config_entries) == 1:
+            conf_distance_unit_override = config_entries[0].options.get(
+                CONF_DISTANCE_UNIT_OVERRIDE, CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
+            )
+            self._is_unit_metric_default = (
+                conf_distance_unit_override == CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
+            )
+            self._is_unit_metric = (
+                conf_distance_unit_override == CONF_DISTANCE_UNIT_OVERRIDE_METRIC
+            )
+
     def strava_data_update_event_handler(self, event):
         """Handle Strava API data which is emitted from a Strava Update Event"""
         summary_stats = event.data.get("summary_stats", None)
@@ -274,25 +280,14 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
     _attr_unit_of_measurement = None
     _attr_should_poll = False
     _attr_state_class = SensorStateClass.MEASUREMENT
+    _is_unit_metric_default = True
+    _is_unit_metric = True
 
     def __init__(self, activity_index, sensor_index):
         self._sensor_index = sensor_index
         self._activity_index = int(activity_index)
         self.entity_id = f"{DOMAIN}.strava_{self._activity_index}_{self._sensor_index}"
         self._attr_unique_id = f"strava_{self._activity_index}_{self._sensor_index}"
-        config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
-        if len(config_entries) == 1:
-            conf_distance_unit_override = config_entries[0].options.get(
-                CONF_DISTANCE_UNIT_OVERRIDE, CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
-            )
-            self._is_unit_metric_default = (
-                conf_distance_unit_override == CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
-            )
-            self._is_unit_metric = (
-                conf_distance_unit_override == CONF_DISTANCE_UNIT_OVERRIDE_METRIC
-            )
-        else:
-            self._is_unit_metric_default = True
 
     @property
     def device_info(self):
@@ -358,7 +353,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             )
 
         metric = self.get_metric()
-
+        self.set_distance_units()
         if metric == CONF_SENSOR_MOVING_TIME:
             return self._data[CONF_SENSOR_MOVING_TIME]
 
@@ -445,6 +440,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             return None
 
         metric = self.get_metric()
+        self.set_distance_units()
 
         if metric in [CONF_SENSOR_MOVING_TIME, CONF_SENSOR_ELAPSED_TIME]:
             return TIME_SECONDS
@@ -505,6 +501,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
         ]:
             return None
 
+        self.set_distance_units()
         if self._is_unit_metric_default:
             return None
 
@@ -594,6 +591,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
                 )  # noqa: E501
             return attr
 
+        self.set_distance_units()
         metric = self.get_metric()
         if metric == CONF_SENSOR_MOVING_TIME:
             attr[CONF_DEVICE_CLASS] = DEVICE_CLASS_DURATION
@@ -616,6 +614,20 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             return attr
 
         return attr
+
+    def set_distance_units(self):
+        """Set the distance unit config values"""
+        config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
+        if len(config_entries) == 1:
+            conf_distance_unit_override = config_entries[0].options.get(
+                CONF_DISTANCE_UNIT_OVERRIDE, CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
+            )
+            self._is_unit_metric_default = (
+                conf_distance_unit_override == CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
+            )
+            self._is_unit_metric = (
+                conf_distance_unit_override == CONF_DISTANCE_UNIT_OVERRIDE_METRIC
+            )
 
     def get_metric(self):
         """Retrive the metric object"""
