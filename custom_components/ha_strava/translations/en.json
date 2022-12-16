@@ -29,7 +29,7 @@
           "nb_activities": "Number of concurrent Strava Activities",
           "img_update_interval_seconds": "Image rotation (seconds)",
           "conf_photos": "Import Photos from Strava?",
-          "conf_distance_unit": "Preferred distance unit system"
+          "conf_distance_unit": "Distance unit system to use"
         }
       }
     },

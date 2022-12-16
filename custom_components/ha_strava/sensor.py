@@ -16,6 +16,7 @@ from homeassistant.const import (
     UnitOfPower,
     UnitOfSpeed,
 )
+from homeassistant.util.unit_conversion import DistanceConverter, SpeedConverter
 from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
 
 # custom module imports
@@ -65,7 +66,6 @@ from .const import (
     DOMAIN,
     EVENT_ACTIVITIES_UPDATE,
     EVENT_SUMMARY_STATS_UPDATE,
-    FACTOR_KILOMETER_TO_MILE,
     MAX_NB_ACTIVITIES,
     UNIT_BEATS_PER_MINUTE,
     UNIT_KILO_CALORIES,
@@ -119,10 +119,11 @@ async def async_setup_entry(
     return
 
 
-class StravaSummaryStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstring
-    _data = None  # Strava activity data
+class StravaSummaryStatsSensor(
+    SensorEntity
+):  # pylint: disable=missing-class-docstring,too-many-instance-attributes
+    _data = None
     _activity_type = None
-
     _attr_should_poll = False
     _attr_state_class = SensorStateClass.TOTAL
 
@@ -131,10 +132,22 @@ class StravaSummaryStatsSensor(SensorEntity):  # pylint: disable=missing-class-d
         self._activity_type = activity_type
         self._summary_type = summary_type
         self.entity_id = f"{DOMAIN}.strava_stats_{self._summary_type}_{self._activity_type}_{self._metric}"  # noqa: E501
-
         self._attr_unique_id = (
             f"strava_stats_{self._summary_type}_{self._activity_type}_{self._metric}"
         )
+        config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
+        if len(config_entries) == 1:
+            conf_distance_unit_override = config_entries[0].options.get(
+                CONF_DISTANCE_UNIT_OVERRIDE, CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
+            )
+            self._is_unit_metric_default = (
+                conf_distance_unit_override == CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
+            )
+            self._is_unit_metric = (
+                conf_distance_unit_override == CONF_DISTANCE_UNIT_OVERRIDE_METRIC
+            )
+        else:
+            self._is_unit_metric_default = True
 
     @property
     def device_info(self):
@@ -165,7 +178,14 @@ class StravaSummaryStatsSensor(SensorEntity):  # pylint: disable=missing-class-d
             return self._data[CONF_SENSOR_MOVING_TIME]
 
         if self._metric == CONF_SENSOR_DISTANCE:
-            return f"{round(self._data[CONF_SENSOR_DISTANCE]/1000,2)}"
+            if self._is_unit_metric_default or self._is_unit_metric:
+                return f"{round(self._data[CONF_SENSOR_DISTANCE]/1000,2)}"
+
+            return DistanceConverter.convert(
+                (self._data[CONF_SENSOR_DISTANCE] / 1000),
+                UnitOfLength.KILOMETERS,
+                UnitOfLength.MILES,
+            )
 
         return int(self._data[CONF_SENSOR_ACTIVITY_COUNT])
 
@@ -178,7 +198,9 @@ class StravaSummaryStatsSensor(SensorEntity):  # pylint: disable=missing-class-d
             return TIME_SECONDS
 
         if self._metric == CONF_SENSOR_DISTANCE:
-            return UnitOfLength.KILOMETERS
+            if self._is_unit_metric_default or self._is_unit_metric:
+                return UnitOfLength.KILOMETERS
+            return UnitOfLength.MILES
 
         return None
 
@@ -187,23 +209,9 @@ class StravaSummaryStatsSensor(SensorEntity):  # pylint: disable=missing-class-d
         if self._metric not in [CONF_SENSOR_DISTANCE]:
             return super().suggested_unit_of_measurement
 
-        config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
-        if len(config_entries) != 1:
-            return super().suggested_unit_of_measurement
-
-        conf_distance_unit_override = config_entries[0].options.get(
-            CONF_DISTANCE_UNIT_OVERRIDE, CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
-        )
-
-        if conf_distance_unit_override != CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT:
-            is_metric = (
-                conf_distance_unit_override == CONF_DISTANCE_UNIT_OVERRIDE_METRIC
-            )
-
-            if self._metric == CONF_SENSOR_DISTANCE:
-                return UnitOfLength.KILOMETERS if is_metric else UnitOfLength.MILES
-
-        return super().suggested_unit_of_measurement
+        if self._is_unit_metric_default or self._is_unit_metric:
+            return UnitOfLength.KILOMETERS
+        return UnitOfLength.MILES
 
     @property
     def name(self):
@@ -272,6 +280,19 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
         self._activity_index = int(activity_index)
         self.entity_id = f"{DOMAIN}.strava_{self._activity_index}_{self._sensor_index}"
         self._attr_unique_id = f"strava_{self._activity_index}_{self._sensor_index}"
+        config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
+        if len(config_entries) == 1:
+            conf_distance_unit_override = config_entries[0].options.get(
+                CONF_DISTANCE_UNIT_OVERRIDE, CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
+            )
+            self._is_unit_metric_default = (
+                conf_distance_unit_override == CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
+            )
+            self._is_unit_metric = (
+                conf_distance_unit_override == CONF_DISTANCE_UNIT_OVERRIDE_METRIC
+            )
+        else:
+            self._is_unit_metric_default = True
 
     @property
     def device_info(self):
@@ -345,7 +366,12 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             return self._data[CONF_SENSOR_ELAPSED_TIME]
 
         if metric == CONF_SENSOR_DISTANCE:
-            return f"{round(self._data[CONF_SENSOR_DISTANCE]/1000,2)}"
+            distance = f"{round(self._data[CONF_SENSOR_DISTANCE]/1000,2)}"
+            if self._is_unit_metric_default or self._is_unit_metric:
+                return distance
+            return DistanceConverter.convert(
+                distance, UnitOfLength.KILOMETERS, UnitOfLength.MILES
+            )
 
         if metric == CONF_SENSOR_PACE:
             distance = self._data[CONF_SENSOR_DISTANCE]
@@ -356,30 +382,30 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
                 / (self._data[CONF_SENSOR_DISTANCE] / 1000)
             )
 
-            pace_imperial = pace * FACTOR_KILOMETER_TO_MILE
-            pace_final = (
-                pace_imperial if self.hass.config.units is US_CUSTOMARY_SYSTEM else pace
+            pace_imperial = DistanceConverter.convert(
+                pace, UnitOfLength.KILOMETERS, UnitOfLength.MILES
             )
 
-            config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
-            if len(config_entries) >= 1:
-                conf_distance_unit_override = config_entries[0].options.get(
-                    CONF_DISTANCE_UNIT_OVERRIDE, CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
+            if self._is_unit_metric_default:
+                pace_final = (
+                    pace_imperial
+                    if self.hass.config.units is US_CUSTOMARY_SYSTEM
+                    else pace
                 )
-
-                if conf_distance_unit_override != CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT:
-                    is_metric = (
-                        conf_distance_unit_override
-                        == CONF_DISTANCE_UNIT_OVERRIDE_METRIC
-                    )
-                    pace_final = pace if is_metric else pace_imperial
+            else:
+                pace_final = pace if self._is_unit_metric else pace_imperial
 
             minutes = int(pace_final // 60)
             seconds = int(pace_final - minutes * 60)
             return "".join(["" if minutes == 0 else f"{minutes:02}:", f"{seconds:02}"])
 
         if metric == CONF_SENSOR_SPEED:
-            return f"{round((self._data[CONF_SENSOR_DISTANCE]/1000) / (self._data[CONF_SENSOR_MOVING_TIME]/3600),2)}"  # noqa: E501
+            speed = f"{round((self._data[CONF_SENSOR_DISTANCE]/1000) / (self._data[CONF_SENSOR_MOVING_TIME]/3600),2)}"
+            if self._is_unit_metric_default or self._is_unit_metric:
+                return speed
+            return SpeedConverter.convert(
+                speed, UnitOfSpeed.KILOMETERS_PER_HOUR, UnitOfSpeed.MILES_PER_HOUR
+            )
 
         if metric == CONF_SENSOR_POWER:
             return (
@@ -396,7 +422,12 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             )
 
         if metric == CONF_SENSOR_ELEVATION:
-            return f"{round(self._data[CONF_SENSOR_ELEVATION],0)}"
+            elevation_gain = f"{round(self._data[CONF_SENSOR_ELEVATION],0)}"
+            if self._is_unit_metric_default or self._is_unit_metric:
+                return elevation_gain
+            return DistanceConverter.convert(
+                elevation_gain, UnitOfLength.METERS, UnitOfLength.FEET
+            )
 
         if metric == CONF_SENSOR_HEART_RATE_AVG:
             return f"{round(self._data[CONF_SENSOR_HEART_RATE_AVG],1)}"
@@ -407,7 +438,9 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
         return str(self._data.get(metric))
 
     @property
-    def native_unit_of_measurement(self):  # pylint: disable=too-many-return-statements
+    def native_unit_of_measurement(
+        self,
+    ):  # pylint: disable=too-many-return-statements,too-many-branches
         if not self._data or self._sensor_index == 0:
             return None
 
@@ -420,22 +453,35 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             return UnitOfPower.WATT
 
         if metric == CONF_SENSOR_ELEVATION:
-            return UnitOfLength.METERS
+            if self._is_unit_metric_default or self._is_unit_metric:
+                return UnitOfLength.METERS
+            return UnitOfLength.FEET
 
         if metric == CONF_SENSOR_SPEED:
-            return UnitOfSpeed.KILOMETERS_PER_HOUR
+            if self._is_unit_metric_default or self._is_unit_metric:
+                return UnitOfSpeed.KILOMETERS_PER_HOUR
+            return UnitOfSpeed.MILES_PER_HOUR
 
         if metric == CONF_SENSOR_DISTANCE:
-            return UnitOfLength.KILOMETERS
+            if self._is_unit_metric_default or self._is_unit_metric:
+                return UnitOfLength.KILOMETERS
+            return UnitOfLength.MILES
 
         if metric in [CONF_SENSOR_HEART_RATE_MAX, CONF_SENSOR_HEART_RATE_AVG]:
             return UNIT_BEATS_PER_MINUTE
 
         if metric == CONF_SENSOR_PACE:
+            if self._is_unit_metric_default:
+                return (
+                    UNIT_PACE_MINUTES_PER_MILE
+                    if self.hass.config.units is US_CUSTOMARY_SYSTEM
+                    else UNIT_PACE_MINUTES_PER_KILOMETER
+                )
+
             return (
-                UNIT_PACE_MINUTES_PER_MILE
-                if self.hass.config.units is US_CUSTOMARY_SYSTEM
-                else UNIT_PACE_MINUTES_PER_KILOMETER
+                UNIT_PACE_MINUTES_PER_KILOMETER
+                if self._is_unit_metric
+                else UNIT_PACE_MINUTES_PER_MILE
             )
 
         if metric == CONF_SENSOR_CALORIES:
@@ -459,36 +505,28 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
         ]:
             return None
 
-        config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
-        if len(config_entries) != 1:
+        if self._is_unit_metric_default:
             return None
-
-        conf_distance_unit_override = config_entries[0].options.get(
-            CONF_DISTANCE_UNIT_OVERRIDE, CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
-        )
-
-        if conf_distance_unit_override == CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT:
-            return None
-
-        is_metric = conf_distance_unit_override == CONF_DISTANCE_UNIT_OVERRIDE_METRIC
 
         if metric == CONF_SENSOR_DISTANCE:
-            return UnitOfLength.KILOMETERS if is_metric else UnitOfLength.MILES
+            return (
+                UnitOfLength.KILOMETERS if self._is_unit_metric else UnitOfLength.MILES
+            )
 
         if metric == CONF_SENSOR_SPEED:
             return (
                 UnitOfSpeed.KILOMETERS_PER_HOUR
-                if is_metric
+                if self._is_unit_metric
                 else UnitOfSpeed.MILES_PER_HOUR
             )
 
         if metric == CONF_SENSOR_ELEVATION:
-            return UnitOfLength.METERS if is_metric else UnitOfLength.FEET
+            return UnitOfLength.METERS if self._is_unit_metric else UnitOfLength.FEET
 
         if metric == CONF_SENSOR_PACE:
             return (
                 UNIT_PACE_MINUTES_PER_KILOMETER
-                if is_metric
+                if self._is_unit_metric
                 else UNIT_PACE_MINUTES_PER_MILE
             )
 
