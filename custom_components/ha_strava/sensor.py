@@ -168,13 +168,15 @@ class StravaSummaryStatsSensor(
 
         if self._metric == CONF_SENSOR_DISTANCE:
             self.set_distance_units()
+            distance = self._data[CONF_SENSOR_DISTANCE] / 1000
             if self._is_unit_metric_default or self._is_unit_metric:
-                return f"{round(self._data[CONF_SENSOR_DISTANCE]/1000,2)}"
+                return round(distance, 2)
 
-            return DistanceConverter.convert(
-                (self._data[CONF_SENSOR_DISTANCE] / 1000),
-                UnitOfLength.KILOMETERS,
-                UnitOfLength.MILES,
+            return round(
+                DistanceConverter.convert(
+                    distance, UnitOfLength.KILOMETERS, UnitOfLength.MILES
+                ),
+                2,
             )
 
         return int(self._data[CONF_SENSOR_ACTIVITY_COUNT])
@@ -361,11 +363,14 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             return self._data[CONF_SENSOR_ELAPSED_TIME]
 
         if metric == CONF_SENSOR_DISTANCE:
-            distance = f"{round(self._data[CONF_SENSOR_DISTANCE]/1000,2)}"
+            distance = self._data[CONF_SENSOR_DISTANCE] / 1000
             if self._is_unit_metric_default or self._is_unit_metric:
-                return distance
-            return DistanceConverter.convert(
-                distance, UnitOfLength.KILOMETERS, UnitOfLength.MILES
+                return round(distance, 2)
+            return round(
+                DistanceConverter.convert(
+                    distance, UnitOfLength.KILOMETERS, UnitOfLength.MILES
+                ),
+                2,
             )
 
         if metric == CONF_SENSOR_PACE:
@@ -395,11 +400,16 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             return "".join(["" if minutes == 0 else f"{minutes:02}:", f"{seconds:02}"])
 
         if metric == CONF_SENSOR_SPEED:
-            speed = f"{round((self._data[CONF_SENSOR_DISTANCE]/1000) / (self._data[CONF_SENSOR_MOVING_TIME]/3600),2)}"
+            speed = (self._data[CONF_SENSOR_DISTANCE] / 1000) / (
+                self._data[CONF_SENSOR_MOVING_TIME] / 3600
+            )
             if self._is_unit_metric_default or self._is_unit_metric:
-                return speed
-            return SpeedConverter.convert(
-                speed, UnitOfSpeed.KILOMETERS_PER_HOUR, UnitOfSpeed.MILES_PER_HOUR
+                return round(speed, 2)
+            return round(
+                SpeedConverter.convert(
+                    speed, UnitOfSpeed.KILOMETERS_PER_HOUR, UnitOfSpeed.MILES_PER_HOUR
+                ),
+                2,
             )
 
         if metric == CONF_SENSOR_POWER:
@@ -417,11 +427,14 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             )
 
         if metric == CONF_SENSOR_ELEVATION:
-            elevation_gain = f"{round(self._data[CONF_SENSOR_ELEVATION],0)}"
+            elevation_gain = self._data[CONF_SENSOR_ELEVATION]
             if self._is_unit_metric_default or self._is_unit_metric:
-                return elevation_gain
-            return DistanceConverter.convert(
-                elevation_gain, UnitOfLength.METERS, UnitOfLength.FEET
+                return round(elevation_gain, 2)
+            return round(
+                DistanceConverter.convert(
+                    elevation_gain, UnitOfLength.METERS, UnitOfLength.FEET
+                ),
+                2,
             )
 
         if metric == CONF_SENSOR_HEART_RATE_AVG:
