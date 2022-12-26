@@ -41,6 +41,8 @@ from .const import (
     CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT,
     CONF_DISTANCE_UNIT_OVERRIDE_METRIC,
     CONF_SENSOR_ACTIVITY_COUNT,
+    CONF_SENSOR_BIGGEST_ELEVATION_GAIN,
+    CONF_SENSOR_BIGGEST_RIDE_DISTANCE,
     CONF_SENSOR_CALORIES,
     CONF_SENSOR_CITY,
     CONF_SENSOR_DATE,
@@ -111,6 +113,23 @@ async def async_setup_entry(
                         summary_type=summary_type,
                     )
                 )
+        if metric == CONF_SENSOR_BIGGEST_ELEVATION_GAIN:
+            entries.append(
+                StravaSummaryStatsSensor(
+                    activity_type=activity_type,
+                    metric=metric,
+                    summary_type=CONF_SUMMARY_ALL,
+                )
+            )
+
+        if metric == CONF_SENSOR_BIGGEST_RIDE_DISTANCE:
+            entries.append(
+                StravaSummaryStatsSensor(
+                    activity_type=activity_type,
+                    metric=metric,
+                    summary_type=CONF_SUMMARY_ALL,
+                )
+            )
 
     async_add_entities(entries)
 
@@ -162,7 +181,7 @@ class StravaSummaryStatsSensor(
         return CONF_SENSORS[self._metric]["icon"]
 
     @property
-    def native_value(self):
+    def native_value(self):  # pylint: disable=too-many-return-statements
         if self._metric == CONF_SENSOR_MOVING_TIME:
             return self._data[CONF_SENSOR_MOVING_TIME]
 
@@ -179,10 +198,36 @@ class StravaSummaryStatsSensor(
                 2,
             )
 
+        if self._metric == CONF_SENSOR_BIGGEST_RIDE_DISTANCE:
+            self.set_distance_units()
+            distance = self._data[CONF_SENSOR_BIGGEST_RIDE_DISTANCE] / 1000
+            if self._is_unit_metric_default or self._is_unit_metric:
+                return round(distance, 2)
+
+            return round(
+                DistanceConverter.convert(
+                    distance, UnitOfLength.KILOMETERS, UnitOfLength.MILES
+                ),
+                2,
+            )
+
+        if self._metric == CONF_SENSOR_BIGGEST_ELEVATION_GAIN:
+            self.set_distance_units()
+            distance = self._data[CONF_SENSOR_BIGGEST_ELEVATION_GAIN]
+            if self._is_unit_metric_default or self._is_unit_metric:
+                return round(distance, 2)
+
+            return round(
+                DistanceConverter.convert(
+                    distance, UnitOfLength.METERS, UnitOfLength.FEET
+                ),
+                2,
+            )
+
         return int(self._data[CONF_SENSOR_ACTIVITY_COUNT])
 
     @property
-    def native_unit_of_measurement(self):
+    def native_unit_of_measurement(self):  # pylint: disable=too-many-return-statements
         if self._metric not in [CONF_SENSOR_MOVING_TIME, CONF_SENSOR_DISTANCE]:
             return None
 
@@ -190,10 +235,15 @@ class StravaSummaryStatsSensor(
             return TIME_SECONDS
 
         self.set_distance_units()
-        if self._metric == CONF_SENSOR_DISTANCE:
+        if self._metric in [CONF_SENSOR_DISTANCE, CONF_SENSOR_BIGGEST_RIDE_DISTANCE]:
             if self._is_unit_metric_default or self._is_unit_metric:
                 return UnitOfLength.KILOMETERS
             return UnitOfLength.MILES
+
+        if self._metric == CONF_SENSOR_BIGGEST_ELEVATION_GAIN:
+            if self._is_unit_metric_default or self._is_unit_metric:
+                return UnitOfLength.METERS
+            return UnitOfLength.FEET
 
         return None
 
@@ -209,6 +259,12 @@ class StravaSummaryStatsSensor(
 
     @property
     def name(self):
+        if self._metric == CONF_SENSOR_BIGGEST_ELEVATION_GAIN:
+            return "ALL Run Biggest Elevation Gain"
+
+        if self._metric == CONF_SENSOR_BIGGEST_ELEVATION_GAIN:
+            return "ALL Ride Biggest Distance"
+
         ret = ""
         if self._summary_type == CONF_SUMMARY_YTD:
             ret += "YTD "
@@ -239,7 +295,11 @@ class StravaSummaryStatsSensor(
             attr[CONF_DEVICE_CLASS] = DEVICE_CLASS_DURATION
             return attr
 
-        if self._metric == CONF_SENSOR_DISTANCE:
+        if self._metric in [
+            CONF_SENSOR_DISTANCE,
+            CONF_SENSOR_BIGGEST_ELEVATION_GAIN,
+            CONF_SENSOR_BIGGEST_RIDE_DISTANCE,
+        ]:
             attr[CONF_DEVICE_CLASS] = DEVICE_CLASS_DISTANCE
             return attr
 
