@@ -335,7 +335,10 @@ class StravaWebhookView(HomeAssistantView):
                         )
                     ),
                     CONF_SENSOR_BIGGEST_RIDE_DISTANCE: float(
-                        summary_stats.get(CONF_SENSOR_BIGGEST_RIDE_DISTANCE, 0)
+                        summary_stats.get("biggest_ride_distance", 0)
+                    ),
+                    CONF_SENSOR_BIGGEST_ELEVATION_GAIN: float(
+                        summary_stats.get("biggest_climb_elevation_gain", 0)
                     ),
                 },
             },
@@ -389,9 +392,6 @@ class StravaWebhookView(HomeAssistantView):
                         summary_stats.get("all_run_totals", {"moving_time": 0}).get(
                             "moving_time", 0
                         )
-                    ),
-                    CONF_SENSOR_BIGGEST_ELEVATION_GAIN: float(
-                        summary_stats.get(CONF_SENSOR_BIGGEST_ELEVATION_GAIN, 0)
                     ),
                 },
             },

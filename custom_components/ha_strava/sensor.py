@@ -260,7 +260,7 @@ class StravaSummaryStatsSensor(
     @property
     def name(self):
         if self._metric == CONF_SENSOR_BIGGEST_ELEVATION_GAIN:
-            return "ALL Run Biggest Elevation Gain"
+            return "ALL Ride Biggest Elevation Gain"
 
         if self._metric == CONF_SENSOR_BIGGEST_ELEVATION_GAIN:
             return "ALL Ride Biggest Distance"
