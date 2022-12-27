@@ -335,10 +335,10 @@ class StravaWebhookView(HomeAssistantView):
                         )
                     ),
                     CONF_SENSOR_BIGGEST_RIDE_DISTANCE: float(
-                        summary_stats.get("biggest_ride_distance", 0)
+                        summary_stats.get("biggest_ride_distance", 0) or 0
                     ),
                     CONF_SENSOR_BIGGEST_ELEVATION_GAIN: float(
-                        summary_stats.get("biggest_climb_elevation_gain", 0)
+                        summary_stats.get("biggest_climb_elevation_gain", 0) or 0
                     ),
                 },
             },
