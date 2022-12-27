@@ -20,7 +20,7 @@ Custom Component to integrate Activity Data from Strava into Home Assistant.
 - Exposes **12 sensor entities** for each Strava activity
 - **Easy set-up**: only enter your Strava Client-ID and Client-Secret and you're ready to go
 
-<img src="img/strava_activity_device.png" width="50%"><img src="img/strava_summary_device.png" width="50%">
+<img src="https://raw.githubusercontent.com/craibo/ha_strava/main/img/strava_activity_device.png" width="50%"><img src="https://raw.githubusercontent.com/craibo/ha_strava/main/img/strava_summary_device.png" width="50%">
 
 For every Strava activity, the Strava Home Assistant Integration creates a **device entity** in Home Assistant (max 10 activities). Each of these virtual device entities exposes **thirteen sensor entities**:
 
@@ -82,17 +82,15 @@ You can always **adjust the number of Strava activities you wish to track** from
 
 Just locate the Strava Home Assistant Integration under `Configuration` > `Integrations`, click on `Options`, and use the slider to adjust the number of activities. After you've saved your settings, it might take a few minutes for Home Assistant to create the corresponding sensor entities and fetch the underlying data. The activities available in Home Assistant always correspond to the most recent ones under your Strava profile.
 
+## Contributors
+
+- [@craibo](https://github.com/craibo)
+- [@jlapenna](https://github.com/jlapenna)
+- [@madmic1314](https://github.com/madmic1314)
+- [@codingcyclist](https://github.com/codingcyclist)
+
 ## Acknowledgments
 
 This is a fork from [@madmic1314](https://github.com/madmic1314) <https://github.com/madmic1314/ha_strava> after they abandoned the project.
 
 Originally forked from [@codingcyclist](https://github.com/codingcyclist) <https://github.com/codingcyclist/ha_strava>.
-
-I take no credit for their hard work, and I am happy to accept suggestions, contributions and help from the community.
-
-## Contributors
-
-- [@codingcyclist](https://github.com/codingcyclist)
-- [@madmic1314](https://github.com/madmic1314)
-- [@craibo](https://github.com/craibo)
-- [@jlapenna](https://github.com/jlapenna)

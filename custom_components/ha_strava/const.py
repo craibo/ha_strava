@@ -58,6 +58,8 @@ CONF_SENSOR_ELAPSED_TIME = "elapsed_time"
 CONF_SENSOR_ACTIVITY_TYPE = "activity_type"
 CONF_SENSOR_HEART_RATE_AVG = "average_heartrate"
 CONF_SENSOR_HEART_RATE_MAX = "max_heartrate"
+CONF_SENSOR_BIGGEST_RIDE_DISTANCE = "biggest_ride_distance"
+CONF_SENSOR_BIGGEST_ELEVATION_GAIN = "biggest_climb_elevation_gain"
 
 CONF_ACTIVITY_TYPE_RUN = "run"
 CONF_ACTIVITY_TYPE_RIDE = "ride"

@@ -38,6 +38,8 @@ from .const import (  # noqa: F401
     CONF_IMG_UPDATE_EVENT,
     CONF_SENSOR_ACTIVITY_COUNT,
     CONF_SENSOR_ACTIVITY_TYPE,
+    CONF_SENSOR_BIGGEST_ELEVATION_GAIN,
+    CONF_SENSOR_BIGGEST_RIDE_DISTANCE,
     CONF_SENSOR_CALORIES,
     CONF_SENSOR_CITY,
     CONF_SENSOR_DATE,
@@ -331,6 +333,12 @@ class StravaWebhookView(HomeAssistantView):
                         summary_stats.get("all_ride_totals", {"moving_time": 0}).get(
                             "moving_time", 0
                         )
+                    ),
+                    CONF_SENSOR_BIGGEST_RIDE_DISTANCE: float(
+                        summary_stats.get("biggest_ride_distance", 0) or 0
+                    ),
+                    CONF_SENSOR_BIGGEST_ELEVATION_GAIN: float(
+                        summary_stats.get("biggest_climb_elevation_gain", 0) or 0
                     ),
                 },
             },
