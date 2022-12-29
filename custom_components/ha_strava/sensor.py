@@ -114,17 +114,18 @@ async def async_setup_entry(
                     )
                 )
 
-        for metric in [
-            CONF_SENSOR_BIGGEST_ELEVATION_GAIN,
-            CONF_SENSOR_BIGGEST_RIDE_DISTANCE,
-        ]:
-            entries.append(
-                StravaSummaryStatsSensor(
-                    activity_type=activity_type,
-                    metric=metric,
-                    summary_type=CONF_SUMMARY_ALL,
+        if activity_type == CONF_ACTIVITY_TYPE_RIDE:
+            for metric in [
+                CONF_SENSOR_BIGGEST_ELEVATION_GAIN,
+                CONF_SENSOR_BIGGEST_RIDE_DISTANCE,
+            ]:
+                entries.append(
+                    StravaSummaryStatsSensor(
+                        activity_type=activity_type,
+                        metric=metric,
+                        summary_type=CONF_SUMMARY_ALL,
+                    )
                 )
-            )
 
     async_add_entities(entries)
 
