@@ -230,7 +230,12 @@ class StravaSummaryStatsSensor(
 
     @property
     def native_unit_of_measurement(self):  # pylint: disable=too-many-return-statements
-        if self._metric not in [CONF_SENSOR_MOVING_TIME, CONF_SENSOR_DISTANCE]:
+        if self._metric not in [
+            CONF_SENSOR_MOVING_TIME,
+            CONF_SENSOR_DISTANCE,
+            CONF_SENSOR_BIGGEST_RIDE_DISTANCE,
+            CONF_SENSOR_BIGGEST_ELEVATION_GAIN,
+        ]:
             return None
 
         if self._metric == CONF_SENSOR_MOVING_TIME:
