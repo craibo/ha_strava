@@ -113,16 +113,11 @@ async def async_setup_entry(
                         summary_type=summary_type,
                     )
                 )
-        if metric == CONF_SENSOR_BIGGEST_ELEVATION_GAIN:
-            entries.append(
-                StravaSummaryStatsSensor(
-                    activity_type=activity_type,
-                    metric=metric,
-                    summary_type=CONF_SUMMARY_ALL,
-                )
-            )
 
-        if metric == CONF_SENSOR_BIGGEST_RIDE_DISTANCE:
+        for metric in [
+            CONF_SENSOR_BIGGEST_ELEVATION_GAIN,
+            CONF_SENSOR_BIGGEST_RIDE_DISTANCE,
+        ]:
             entries.append(
                 StravaSummaryStatsSensor(
                     activity_type=activity_type,
