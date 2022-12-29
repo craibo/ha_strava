@@ -188,7 +188,7 @@ class StravaSummaryStatsSensor(
 
         if self._metric == CONF_SENSOR_DISTANCE:
             self.set_distance_units()
-            distance = self._data[CONF_SENSOR_DISTANCE] / 1000
+            distance = self._data.get(CONF_SENSOR_DISTANCE, 0) / 1000
             if self._is_unit_metric_default or self._is_unit_metric:
                 return round(distance, 2)
 
@@ -201,7 +201,7 @@ class StravaSummaryStatsSensor(
 
         if self._metric == CONF_SENSOR_BIGGEST_RIDE_DISTANCE:
             self.set_distance_units()
-            distance = self._data[CONF_SENSOR_BIGGEST_RIDE_DISTANCE] / 1000
+            distance = self._data.get(CONF_SENSOR_BIGGEST_RIDE_DISTANCE, 0) / 1000
             if self._is_unit_metric_default or self._is_unit_metric:
                 return round(distance, 2)
 
@@ -214,7 +214,7 @@ class StravaSummaryStatsSensor(
 
         if self._metric == CONF_SENSOR_BIGGEST_ELEVATION_GAIN:
             self.set_distance_units()
-            distance = self._data[CONF_SENSOR_BIGGEST_ELEVATION_GAIN]
+            distance = self._data.get(CONF_SENSOR_BIGGEST_ELEVATION_GAIN, 0)
             if self._is_unit_metric_default or self._is_unit_metric:
                 return round(distance, 2)
 
