@@ -166,14 +166,20 @@ class StravaSummaryStatsSensor(
         return bool(self._data)
 
     @property
-    def icon(self):
+    def icon(self):  # pylint: disable=too-many-return-statements
         if self._metric == CONF_SENSOR_ACTIVITY_COUNT:
             if self._activity_type == CONF_ACTIVITY_TYPE_RIDE:
                 return "mdi:bike"
             if self._activity_type == CONF_ACTIVITY_TYPE_SWIM:
                 return "mdi:swim"
             return "mdi:run"
-        return CONF_SENSORS[self._metric]["icon"]
+
+        if self._metric == CONF_SENSOR_BIGGEST_ELEVATION_GAIN:
+            return "mdi:elevation-rise"
+        if self._metric == CONF_SENSOR_BIGGEST_RIDE_DISTANCE:
+            return "mdi:map-marker-distance"
+
+        return CONF_SENSORS[self._metric].get("icon", "mdi:chart-timeline-variant")
 
     @property
     def native_value(self):  # pylint: disable=too-many-return-statements
