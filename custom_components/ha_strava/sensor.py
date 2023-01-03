@@ -269,7 +269,7 @@ class StravaSummaryStatsSensor(
         if self._metric == CONF_SENSOR_BIGGEST_ELEVATION_GAIN:
             return "ALL Ride Biggest Elevation Gain"
 
-        if self._metric == CONF_SENSOR_BIGGEST_ELEVATION_GAIN:
+        if self._metric == CONF_SENSOR_BIGGEST_RIDE_DISTANCE:
             return "ALL Ride Biggest Distance"
 
         ret = ""
