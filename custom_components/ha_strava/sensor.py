@@ -464,7 +464,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
 
             minutes = int(pace_final // 60)
             seconds = int(pace_final - minutes * 60)
-            return "".join(["" if minutes == 0 else f"{minutes:02}:", f"{seconds:02}"])
+            return "".join(["0:" if minutes == 0 else f"{minutes}:", f"{seconds:02}"])
 
         if metric == CONF_SENSOR_SPEED:
             speed = (self._data[CONF_SENSOR_DISTANCE] / 1000) / (
