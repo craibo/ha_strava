@@ -8,8 +8,7 @@ Custom Component to integrate Activity Data from Strava into Home Assistant.
 
 ## Important Notes:
 
-1. If you have added another version of HA Strava. You MUST remove the HA_Strava integration from Home Assistant integration, HACS Integration, HACS Custom Repository and reboot HA before adding this.
-2. When configuring the Strava API, the **Authorization Callback Domain** must be set to: **my.home-assistant.io**
+When configuring the Strava API, the **Authorization Callback Domain** must be set to: **my.home-assistant.io**
 
 ## Features
 
