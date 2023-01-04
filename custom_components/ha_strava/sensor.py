@@ -269,7 +269,7 @@ class StravaSummaryStatsSensor(
         if self._metric == CONF_SENSOR_BIGGEST_ELEVATION_GAIN:
             return "ALL Ride Biggest Elevation Gain"
 
-        if self._metric == CONF_SENSOR_BIGGEST_ELEVATION_GAIN:
+        if self._metric == CONF_SENSOR_BIGGEST_RIDE_DISTANCE:
             return "ALL Ride Biggest Distance"
 
         ret = ""
@@ -464,7 +464,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
 
             minutes = int(pace_final // 60)
             seconds = int(pace_final - minutes * 60)
-            return "".join(["" if minutes == 0 else f"{minutes:02}:", f"{seconds:02}"])
+            return "".join(["0:" if minutes == 0 else f"{minutes}:", f"{seconds:02}"])
 
         if metric == CONF_SENSOR_SPEED:
             speed = (self._data[CONF_SENSOR_DISTANCE] / 1000) / (
