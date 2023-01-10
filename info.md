@@ -1,6 +1,6 @@
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/craibo/ha_strava?color=41BDF5&style=for-the-badge)
-![Integration Usage](https://img.shields.io/badge/dynamic/json?color=41BDF5&style=for-the-badge&logo=home-assistant&label=usage&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.ha_strava.total)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/craibo/ha_strava?color=41BDF5&style=for-the-badge)](https://github.com/craibo/ha_strava/releases/latest)
+[![Integration Usage](https://img.shields.io/badge/dynamic/json?color=41BDF5&style=for-the-badge&logo=home-assistant&label=usage&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.ha_strava.total)](https://analytics.home-assistant.io/)
 
 # Strava Home Assistant Integration
 
@@ -106,6 +106,6 @@ This setting is selectable on configuration of the Strava integration and from t
 
 ## Acknowledgments
 
-This is a fork from [@madmic1314](https://github.com/madmic1314) <https://github.com/madmic1314/ha_strava> after they abandoned the project.
+Forked from <https://github.com/madmic1314/ha_strava> (project abandoned).
 
-Originally forked from [@codingcyclist](https://github.com/codingcyclist) <https://github.com/codingcyclist/ha_strava>.
+Originally forked from <https://github.com/codingcyclist/ha_strava> (project abandoned).
