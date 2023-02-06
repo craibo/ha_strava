@@ -13,7 +13,7 @@ interactive debugging and instantanious testing for thie custom component.
 Basic python development dependencies.
 
 ```
-python3-m pip install virtualenv
+python3 -m pip install virtualenv
 tools/setup_virtualenv.sh
 ```
 

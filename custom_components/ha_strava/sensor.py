@@ -693,6 +693,10 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             attr[CONF_DEVICE_CLASS] = SPEED
             return attr
 
+        if metric == CONF_SENSOR_PACE:
+            attr.pop(CONF_STATE_CLASS, None)
+            return attr
+
         return attr
 
     def set_distance_units(self):
