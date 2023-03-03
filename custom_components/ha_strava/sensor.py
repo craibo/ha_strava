@@ -481,14 +481,14 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
 
         if metric == CONF_SENSOR_POWER:
             return (
-                f"{int(round(self._data[CONF_SENSOR_POWER],1))}"
+                round(self._data[CONF_SENSOR_POWER], 0)
                 if (self._data.get(CONF_SENSOR_POWER) != -1)
                 else None
             )
 
         if metric == CONF_SENSOR_CALORIES:
             return (
-                str(self._data.get(metric))
+                round(self._data[CONF_SENSOR_CALORIES], 0)
                 if (self._data.get(CONF_SENSOR_CALORIES) != -1)
                 else None
             )
@@ -505,10 +505,10 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             )
 
         if metric == CONF_SENSOR_HEART_RATE_AVG:
-            return f"{round(self._data[CONF_SENSOR_HEART_RATE_AVG],1)}"
+            return round(self._data[CONF_SENSOR_HEART_RATE_AVG], 1)
 
         if metric == CONF_SENSOR_HEART_RATE_MAX:
-            return f"{round(self._data[CONF_SENSOR_HEART_RATE_MAX],1)}"
+            return round(self._data[CONF_SENSOR_HEART_RATE_MAX], 1)
 
         return str(self._data.get(metric))
 
@@ -645,6 +645,9 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
 
         if metric == CONF_SENSOR_CALORIES:
             return "Calories"
+
+        if metric == CONF_SENSOR_POWER:
+            return "Average Power (Ride Only)"
 
         return "" + str.upper(metric[0]) + metric[1:]
 
