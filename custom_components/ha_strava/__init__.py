@@ -267,10 +267,7 @@ class StravaWebhookView(HomeAssistantView):
             CONF_SENSOR_ELAPSED_TIME: float(activity.get("elapsed_time", -1)),
             CONF_SENSOR_MOVING_TIME: float(activity.get("moving_time", -1)),
             CONF_SENSOR_KUDOS: int(activity.get("kudos_count", -1)),
-            CONF_SENSOR_CALORIES: int(
-                activity.get("kilojoules", -1 / FACTOR_KILOJOULES_TO_KILOCALORIES)
-                * FACTOR_KILOJOULES_TO_KILOCALORIES
-            ),
+            CONF_SENSOR_CALORIES: float(activity.get("calories", -1)),
             CONF_SENSOR_ELEVATION: int(activity.get("total_elevation_gain", -1)),
             CONF_SENSOR_POWER: float(activity.get("average_watts", -1)),
             CONF_SENSOR_TROPHIES: int(activity.get("achievement_count", -1)),
@@ -490,7 +487,6 @@ async def renew_webhook_subscription(
     entry: ConfigEntry,
     webhook_view: StravaWebhookView,  # pylint: disable=unused-argument
 ):
-
     """
     Function to check whether HASS has already subscribed to Strava Webhook with
     its public URL Re-creates a subscription if there was none before or if the
@@ -540,7 +536,6 @@ async def renew_webhook_subscription(
         return
 
     if len(existing_webhook_subscriptions) == 1:
-
         config_data[CONF_WEBHOOK_ID] = existing_webhook_subscriptions[0]["id"]
 
         if (
