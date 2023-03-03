@@ -482,14 +482,14 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
         if metric == CONF_SENSOR_POWER:
             return (
                 round(self._data[CONF_SENSOR_POWER], 0)
-                if (self._data.get(CONF_SENSOR_POWER) != -1)
+                if (self._data[CONF_SENSOR_POWER] != -1)
                 else None
             )
 
         if metric == CONF_SENSOR_CALORIES:
             return (
                 round(self._data[CONF_SENSOR_CALORIES], 0)
-                if (self._data.get(CONF_SENSOR_CALORIES) != -1)
+                if (self._data[CONF_SENSOR_CALORIES] != -1)
                 else None
             )
 
