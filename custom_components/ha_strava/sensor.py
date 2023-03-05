@@ -43,6 +43,7 @@ from .const import (
     CONF_SENSOR_ACTIVITY_COUNT,
     CONF_SENSOR_BIGGEST_ELEVATION_GAIN,
     CONF_SENSOR_BIGGEST_RIDE_DISTANCE,
+    CONF_SENSOR_CADENCE_AVG,
     CONF_SENSOR_CALORIES,
     CONF_SENSOR_CITY,
     CONF_SENSOR_DATE,
@@ -73,6 +74,7 @@ from .const import (
     UNIT_KILO_CALORIES,
     UNIT_PACE_MINUTES_PER_KILOMETER,
     UNIT_PACE_MINUTES_PER_MILE,
+    UNIT_STEPS_PER_MINUTE,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -510,6 +512,9 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
         if metric == CONF_SENSOR_HEART_RATE_MAX:
             return round(self._data[CONF_SENSOR_HEART_RATE_MAX], 1)
 
+        if metric == CONF_SENSOR_CADENCE_AVG:
+            return round(self._data[CONF_SENSOR_CADENCE_AVG], 0)
+
         return str(self._data.get(metric))
 
     @property
@@ -562,6 +567,9 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
 
         if metric == CONF_SENSOR_CALORIES:
             return UNIT_KILO_CALORIES
+
+        if metric == CONF_SENSOR_CADENCE_AVG:
+            return UNIT_STEPS_PER_MINUTE
 
         return None
 
@@ -648,6 +656,9 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
 
         if metric == CONF_SENSOR_POWER:
             return "Average Power (Ride Only)"
+
+        if metric == CONF_SENSOR_CADENCE_AVG:
+            return "Average Cadence"
 
         return "" + str.upper(metric[0]) + metric[1:]
 
