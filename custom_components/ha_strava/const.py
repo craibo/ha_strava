@@ -47,6 +47,7 @@ CONF_SENSOR_PACE = "pace"
 CONF_SENSOR_SPEED = "speed"
 CONF_SENSOR_DISTANCE = "distance"
 CONF_SENSOR_KUDOS = "kudos"
+CONF_SENSOR_CADENCE_AVG = "average_cadence"
 CONF_SENSOR_CALORIES = "kcal"
 CONF_SENSOR_ELEVATION = "elevation_gain"
 CONF_SENSOR_POWER = "power"
@@ -87,6 +88,7 @@ CONF_SENSORS = {
     CONF_SENSOR_SPEED: {"icon": "mdi:speedometer"},
     CONF_SENSOR_DISTANCE: {"icon": "mdi:map-marker-distance"},
     CONF_SENSOR_KUDOS: {"icon": "mdi:thumb-up-outline"},
+    CONF_SENSOR_CADENCE_AVG: {"icon": "mdi:shoe-print"},
     CONF_SENSOR_CALORIES: {"icon": "mdi:fire"},
     CONF_SENSOR_ELEVATION: {"icon": "mdi:elevation-rise"},
     CONF_SENSOR_POWER: {"icon": "mdi:dumbbell"},
@@ -111,6 +113,7 @@ CONF_SENSOR_9 = "sensor_9"
 CONF_SENSOR_10 = "sensor_10"
 CONF_SENSOR_11 = "sensor_11"
 CONF_SENSOR_12 = "sensor_12"
+CONF_SENSOR_13 = "sensor_13"
 
 CONF_SENSOR_DEFAULT = {
     "icon": "mdi:run",
@@ -126,6 +129,7 @@ CONF_SENSOR_DEFAULT = {
     CONF_SENSOR_10: CONF_SENSOR_ELAPSED_TIME,
     CONF_SENSOR_11: CONF_SENSOR_TROPHIES,
     CONF_SENSOR_12: CONF_SENSOR_KUDOS,
+    CONF_SENSOR_13: CONF_SENSOR_CADENCE_AVG,
 }
 
 DEVICE_CLASS_DURATION = "duration"
@@ -141,3 +145,4 @@ UNIT_BEATS_PER_MINUTE = "bpm"
 UNIT_PACE_MINUTES_PER_KILOMETER = "min/km"
 UNIT_PACE_MINUTES_PER_MILE = "min/mi"
 UNIT_KILO_CALORIES = "kcal"
+UNIT_STEPS_PER_MINUTE = "spm"
