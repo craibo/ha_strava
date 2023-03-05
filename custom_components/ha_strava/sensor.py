@@ -84,12 +84,12 @@ async def async_setup_entry(
     hass, config_entry, async_add_entities
 ):  # pylint: disable=unused-argument
     """
-    create 12+1 sensor entities for 10 devices
+    create 13+1 sensor entities for 10 devices
     all sensor entities are hidden by default
     """
     entries = [
         StravaStatsSensor(activity_index=activity_index, sensor_index=sensor_index)
-        for sensor_index in range(13)
+        for sensor_index in range(14)
         for activity_index in range(MAX_NB_ACTIVITIES)
     ]
 
