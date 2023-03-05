@@ -267,12 +267,12 @@ class StravaWebhookView(HomeAssistantView):
             CONF_SENSOR_ELAPSED_TIME: float(activity.get("elapsed_time", -1)),
             CONF_SENSOR_MOVING_TIME: float(activity.get("moving_time", -1)),
             CONF_SENSOR_KUDOS: int(activity.get("kudos_count", -1)),
-            CONF_SENSOR_CALORIES: float(
+            CONF_SENSOR_CALORIES: int(
                 activity.get("kilojoules", (-1 / FACTOR_KILOJOULES_TO_KILOCALORIES))
-            )
-            * FACTOR_KILOJOULES_TO_KILOCALORIES,
+                * FACTOR_KILOJOULES_TO_KILOCALORIES
+            ),
             CONF_SENSOR_ELEVATION: int(activity.get("total_elevation_gain", -1)),
-            CONF_SENSOR_POWER: float(activity.get("average_watts", -1)),
+            CONF_SENSOR_POWER: int(activity.get("average_watts", -1)),
             CONF_SENSOR_TROPHIES: int(activity.get("achievement_count", -1)),
             CONF_SENSOR_HEART_RATE_AVG: float(activity.get("average_heartrate", -1)),
             CONF_SENSOR_HEART_RATE_MAX: float(activity.get("max_heartrate", -1)),
