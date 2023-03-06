@@ -277,7 +277,9 @@ class StravaWebhookView(HomeAssistantView):
             CONF_SENSOR_TROPHIES: int(activity.get("achievement_count", -1)),
             CONF_SENSOR_HEART_RATE_AVG: float(activity.get("average_heartrate", -1)),
             CONF_SENSOR_HEART_RATE_MAX: float(activity.get("max_heartrate", -1)),
-            CONF_SENSOR_CADENCE_AVG: float(activity.get("average_cadence", -1)),
+            CONF_SENSOR_CADENCE_AVG: float(
+                activity.get("average_cadence", (-1 / 2)) * 2
+            ),
             CONF_ATTR_START_LATLONG: activity.get("start_latlng"),
             CONF_ATTR_END_LATLONG: activity.get("end_latlng"),
             CONF_ATTR_SPORT_TYPE: activity.get("sport_type"),

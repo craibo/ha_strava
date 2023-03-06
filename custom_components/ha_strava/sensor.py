@@ -513,7 +513,11 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             return round(self._data[CONF_SENSOR_HEART_RATE_MAX], 1)
 
         if metric == CONF_SENSOR_CADENCE_AVG:
-            return round(self._data[CONF_SENSOR_CADENCE_AVG], 0)
+            return (
+                round(self._data[CONF_SENSOR_CADENCE_AVG], 1)
+                if (self._data[CONF_SENSOR_CADENCE_AVG] != float(-1))
+                else None
+            )
 
         return str(self._data.get(metric))
 
