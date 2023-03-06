@@ -17,7 +17,7 @@ When configuring the Strava API, the **Authorization Callback Domain** must be s
 - Creates a **camera entity** in Home Assistant to **feature recent Strava pictures** as a photo-carousel
 - Supports both the **metric and the imperial** unit system
 - Activity data in Home Assistant **auto-updates** whenever you add, modify, or delete activities on Strava
-- Exposes **12 sensor entities** for each Strava activity
+- Exposes **13 sensor entities** for each Strava activity
 - **Easy set-up**: only enter your Strava Client-ID and Client-Secret and you're ready to go
 
 <img src="https://raw.githubusercontent.com/craibo/ha_strava/main/img/strava_activity_device.png" width="50%"><img src="https://raw.githubusercontent.com/craibo/ha_strava/main/img/strava_summary_device.png" width="50%">
@@ -32,9 +32,10 @@ For every Strava activity, the Strava Home Assistant Integration creates a **dev
 - Pace
 - Speed
 - Distance
-- Average Heart Rate
-- Max Heart Rate
+- Heart Rate (Average)
+- Heart Rate (Max)
 - Calories
+- Cadence (Average)
 - Elevation Gain
 - Power
 - Kudos
