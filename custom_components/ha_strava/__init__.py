@@ -304,6 +304,11 @@ class StravaWebhookView(HomeAssistantView):
                             "moving_time", 0
                         )
                     ),
+                    CONF_SENSOR_ELEVATION: float(
+                        summary_stats.get(
+                            "recent_ride_totals", {"elevation_gain": 0}
+                        ).get("elevation_gain", 0)
+                    ),
                 },
                 CONF_SUMMARY_YTD: {
                     CONF_SENSOR_DISTANCE: float(
@@ -321,6 +326,11 @@ class StravaWebhookView(HomeAssistantView):
                             "moving_time", 0
                         )
                     ),
+                    CONF_SENSOR_ELEVATION: float(
+                        summary_stats.get("ytd_ride_totals", {"elevation_gain": 0}).get(
+                            "elevation_gain", 0
+                        )
+                    ),
                 },
                 CONF_SUMMARY_ALL: {
                     CONF_SENSOR_DISTANCE: float(
@@ -336,6 +346,11 @@ class StravaWebhookView(HomeAssistantView):
                     CONF_SENSOR_MOVING_TIME: float(
                         summary_stats.get("all_ride_totals", {"moving_time": 0}).get(
                             "moving_time", 0
+                        )
+                    ),
+                    CONF_SENSOR_ELEVATION: float(
+                        summary_stats.get("all_ride_totals", {"elevation_gain": 0}).get(
+                            "elevation_gain", 0
                         )
                     ),
                     CONF_SENSOR_BIGGEST_RIDE_DISTANCE: float(
@@ -363,6 +378,11 @@ class StravaWebhookView(HomeAssistantView):
                             "moving_time", 0
                         )
                     ),
+                    CONF_SENSOR_ELEVATION: float(
+                        summary_stats.get(
+                            "recent_run_totals", {"elevation_gain": 0}
+                        ).get("elevation_gain", 0)
+                    ),
                 },
                 CONF_SUMMARY_YTD: {
                     CONF_SENSOR_DISTANCE: float(
@@ -380,6 +400,11 @@ class StravaWebhookView(HomeAssistantView):
                             "moving_time", 0
                         )
                     ),
+                    CONF_SENSOR_ELEVATION: float(
+                        summary_stats.get("ytd_run_totals", {"elevation_gain": 0}).get(
+                            "elevation_gain", 0
+                        )
+                    ),
                 },
                 CONF_SUMMARY_ALL: {
                     CONF_SENSOR_DISTANCE: float(
@@ -395,6 +420,11 @@ class StravaWebhookView(HomeAssistantView):
                     CONF_SENSOR_MOVING_TIME: float(
                         summary_stats.get("all_run_totals", {"moving_time": 0}).get(
                             "moving_time", 0
+                        )
+                    ),
+                    CONF_SENSOR_ELEVATION: float(
+                        summary_stats.get("all_run_totals", {"elevation_gain": 0}).get(
+                            "elevation_gain", 0
                         )
                     ),
                 },
