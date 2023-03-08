@@ -231,6 +231,7 @@ class StravaSummaryStatsSensor(
             CONF_SENSOR_DISTANCE,
             CONF_SENSOR_BIGGEST_RIDE_DISTANCE,
             CONF_SENSOR_BIGGEST_ELEVATION_GAIN,
+            CONF_SENSOR_ELEVATION,
         ]:
             return None
 
