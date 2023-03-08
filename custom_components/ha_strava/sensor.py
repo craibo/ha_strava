@@ -102,12 +102,19 @@ async def async_setup_entry(
             CONF_SENSOR_DISTANCE,
             CONF_SENSOR_MOVING_TIME,
             CONF_SENSOR_ACTIVITY_COUNT,
+            CONF_SENSOR_ELEVATION,
         ]:
             for summary_type in [
                 CONF_SUMMARY_RECENT,
                 CONF_SUMMARY_YTD,
                 CONF_SUMMARY_ALL,
             ]:
+                if (
+                    metric is CONF_SENSOR_ELEVATION
+                    and activity_type is CONF_ACTIVITY_TYPE_SWIM
+                ):
+                    break
+
                 entries.append(
                     StravaSummaryStatsSensor(
                         activity_type=activity_type,
@@ -177,7 +184,7 @@ class StravaSummaryStatsSensor(
                 return "mdi:swim"
             return "mdi:run"
 
-        if self._metric == CONF_SENSOR_BIGGEST_ELEVATION_GAIN:
+        if self._metric in [CONF_SENSOR_BIGGEST_ELEVATION_GAIN, CONF_SENSOR_ELEVATION]:
             return "mdi:elevation-rise"
         if self._metric == CONF_SENSOR_BIGGEST_RIDE_DISTANCE:
             return "mdi:map-marker-distance"
@@ -189,9 +196,9 @@ class StravaSummaryStatsSensor(
         if self._metric == CONF_SENSOR_MOVING_TIME:
             return self._data[CONF_SENSOR_MOVING_TIME]
 
-        if self._metric == CONF_SENSOR_DISTANCE:
+        if self._metric in [CONF_SENSOR_DISTANCE, CONF_SENSOR_BIGGEST_RIDE_DISTANCE]:
             self.set_distance_units()
-            distance = self._data.get(CONF_SENSOR_DISTANCE, 0) / 1000
+            distance = self._data.get(self._metric, 0) / 1000
             if self._is_unit_metric_default or self._is_unit_metric:
                 return round(distance, 2)
 
@@ -202,22 +209,9 @@ class StravaSummaryStatsSensor(
                 2,
             )
 
-        if self._metric == CONF_SENSOR_BIGGEST_RIDE_DISTANCE:
+        if self._metric in [CONF_SENSOR_BIGGEST_ELEVATION_GAIN, CONF_SENSOR_ELEVATION]:
             self.set_distance_units()
-            distance = self._data.get(CONF_SENSOR_BIGGEST_RIDE_DISTANCE, 0) / 1000
-            if self._is_unit_metric_default or self._is_unit_metric:
-                return round(distance, 2)
-
-            return round(
-                DistanceConverter.convert(
-                    distance, UnitOfLength.KILOMETERS, UnitOfLength.MILES
-                ),
-                2,
-            )
-
-        if self._metric == CONF_SENSOR_BIGGEST_ELEVATION_GAIN:
-            self.set_distance_units()
-            distance = self._data.get(CONF_SENSOR_BIGGEST_ELEVATION_GAIN, 0)
+            distance = self._data.get(self._metric, 0)
             if self._is_unit_metric_default or self._is_unit_metric:
                 return round(distance, 2)
 
@@ -249,7 +243,7 @@ class StravaSummaryStatsSensor(
                 return UnitOfLength.KILOMETERS
             return UnitOfLength.MILES
 
-        if self._metric == CONF_SENSOR_BIGGEST_ELEVATION_GAIN:
+        if self._metric in [CONF_SENSOR_BIGGEST_ELEVATION_GAIN, CONF_SENSOR_ELEVATION]:
             if self._is_unit_metric_default or self._is_unit_metric:
                 return UnitOfLength.METERS
             return UnitOfLength.FEET
@@ -308,6 +302,7 @@ class StravaSummaryStatsSensor(
             CONF_SENSOR_DISTANCE,
             CONF_SENSOR_BIGGEST_ELEVATION_GAIN,
             CONF_SENSOR_BIGGEST_RIDE_DISTANCE,
+            CONF_SENSOR_ELEVATION,
         ]:
             attr[CONF_DEVICE_CLASS] = DEVICE_CLASS_DISTANCE
             return attr
