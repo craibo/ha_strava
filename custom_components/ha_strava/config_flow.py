@@ -56,6 +56,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         self._import_strava_images = None
         self._img_update_interval_seconds = None
         self._config_distance_unit_override = None
+        self._config_geocode_xyz_api_key = None
 
     async def show_form_init(self):
         """
