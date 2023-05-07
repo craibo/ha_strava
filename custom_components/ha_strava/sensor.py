@@ -346,7 +346,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
     _activity_index = None
     _attr_unit_of_measurement = None
     _attr_should_poll = False
-    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_state_class = None
     _is_unit_metric_default = True
     _is_unit_metric = True
 
@@ -671,7 +671,6 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             return attr
 
         if self._sensor_index == 0:
-            attr.pop(CONF_STATE_CLASS, None)
             attr[CONF_DEVICE_CLASS] = DEVICE_CLASS_DATE
             attr[CONF_ATTR_SPORT_TYPE] = self._data[CONF_ATTR_SPORT_TYPE]
             attr[CONF_ATTR_LOCATION] = self._data[CONF_SENSOR_CITY]
@@ -687,6 +686,11 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
 
         self.set_distance_units()
         metric = self.get_metric()
+        if metric == CONF_SENSOR_PACE:
+            return attr
+
+        attr[CONF_STATE_CLASS] = SensorStateClass.MEASUREMENT
+
         if metric == CONF_SENSOR_MOVING_TIME:
             attr[CONF_DEVICE_CLASS] = DEVICE_CLASS_DURATION
             return attr
@@ -705,10 +709,6 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
 
         if metric == CONF_SENSOR_SPEED:
             attr[CONF_DEVICE_CLASS] = SPEED
-            return attr
-
-        if metric == CONF_SENSOR_PACE:
-            attr.pop(CONF_STATE_CLASS, None)
             return attr
 
         return attr
