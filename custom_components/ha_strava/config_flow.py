@@ -23,6 +23,7 @@ from .const import (
     CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT,
     CONF_DISTANCE_UNIT_OVERRIDE_IMPERIAL,
     CONF_DISTANCE_UNIT_OVERRIDE_METRIC,
+    CONF_GEOCODE_XYZ_API_KEY,
     CONF_IMG_UPDATE_INTERVAL_SECONDS,
     CONF_IMG_UPDATE_INTERVAL_SECONDS_DEFAULT,
     CONF_NB_ACTIVITIES,
@@ -110,6 +111,13 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                             CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT,
                         ),
                     ): vol.In(DISTANCE_UNIT_OVERRIDE_OPTIONS),
+                    vol.Optional(
+                        CONF_GEOCODE_XYZ_API_KEY,
+                        default=ha_strava_config_entries[0].options.get(
+                            CONF_GEOCODE_XYZ_API_KEY,
+                            None,
+                        ),
+                    ): str,
                 }
             ),
         )
@@ -166,6 +174,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             self._config_distance_unit_override = user_input.get(
                 CONF_DISTANCE_UNIT_OVERRIDE
             )
+            self._config_geocode_xyz_api_key = user_input.get(CONF_GEOCODE_XYZ_API_KEY)
             self._config_entry_title = ha_strava_config_entries[0].title
 
             ha_strava_options = {  # pylint: disable=unnecessary-comprehension
@@ -180,6 +189,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             ha_strava_options[
                 CONF_DISTANCE_UNIT_OVERRIDE
             ] = self._config_distance_unit_override
+            ha_strava_options[CONF_GEOCODE_XYZ_API_KEY] = self._config_geocode_xyz_api_key
 
             _LOGGER.debug(f"Strava Config Options: {ha_strava_options}")
             return self.async_create_entry(
