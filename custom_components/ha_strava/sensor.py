@@ -166,11 +166,13 @@ class StravaSummaryStatsSensor(
 
     @property
     def device_info(self):
+        athlete_id = self._data.get(CONF_SENSOR_ID, "")
         return {
             "identifiers": {(DOMAIN, f"strava_stats")},
             "name": f"Strava Summary",
             "manufacturer": "Strava",
             "model": "Activity Summary",
+            "configuration_url": f"https://www.strava.com/athletes/{athlete_id}",
         }
 
     @property
