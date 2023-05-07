@@ -166,7 +166,7 @@ class StravaSummaryStatsSensor(
 
     @property
     def device_info(self):
-        athlete_id = self._data.get(CONF_SENSOR_ID, "")
+        athlete_id = self._metric.get(CONF_SENSOR_ID, "") if self._metric else ""
         return {
             "identifiers": {(DOMAIN, f"strava_stats")},
             "name": f"Strava Summary",
@@ -362,7 +362,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
 
     @property
     def device_info(self):
-        activity_id = self._data.get(CONF_SENSOR_ID, "")
+        activity_id = self._data.get(CONF_SENSOR_ID, "") if self._data else ""
         return {
             "identifiers": {(DOMAIN, f"strava_activity_{self._activity_index}")},
             "name": f"Strava Activity {self._activity_index}",
