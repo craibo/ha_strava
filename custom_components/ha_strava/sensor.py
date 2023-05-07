@@ -462,7 +462,18 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
 
             minutes = int(pace_final // 60)
             seconds = int(pace_final - minutes * 60)
-            return "".join(["0:" if minutes == 0 else f"{minutes}:", f"{seconds:02}"])
+
+            unit = (
+                    UNIT_PACE_MINUTES_PER_MILE
+                    if self.hass.config.units is US_CUSTOMARY_SYSTEM
+                    else UNIT_PACE_MINUTES_PER_KILOMETER
+                ) if self._is_unit_metric_default else (
+                UNIT_PACE_MINUTES_PER_KILOMETER
+                if self._is_unit_metric
+                else UNIT_PACE_MINUTES_PER_MILE
+            )
+
+            return "".join(["0:" if minutes == 0 else f"{minutes}:", f"{seconds:02}", f" {unit}"])
 
         if metric == CONF_SENSOR_SPEED:
             speed = (self._data[CONF_SENSOR_DISTANCE] / 1000) / (
@@ -551,19 +562,19 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
         if metric in [CONF_SENSOR_HEART_RATE_MAX, CONF_SENSOR_HEART_RATE_AVG]:
             return UNIT_BEATS_PER_MINUTE
 
-        if metric == CONF_SENSOR_PACE:
-            if self._is_unit_metric_default:
-                return (
-                    UNIT_PACE_MINUTES_PER_MILE
-                    if self.hass.config.units is US_CUSTOMARY_SYSTEM
-                    else UNIT_PACE_MINUTES_PER_KILOMETER
-                )
+        # if metric == CONF_SENSOR_PACE:
+        #     if self._is_unit_metric_default:
+        #         return (
+        #             UNIT_PACE_MINUTES_PER_MILE
+        #             if self.hass.config.units is US_CUSTOMARY_SYSTEM
+        #             else UNIT_PACE_MINUTES_PER_KILOMETER
+        #         )
 
-            return (
-                UNIT_PACE_MINUTES_PER_KILOMETER
-                if self._is_unit_metric
-                else UNIT_PACE_MINUTES_PER_MILE
-            )
+        #     return (
+        #         UNIT_PACE_MINUTES_PER_KILOMETER
+        #         if self._is_unit_metric
+        #         else UNIT_PACE_MINUTES_PER_MILE
+        #     )
 
         if metric == CONF_SENSOR_CALORIES:
             return UNIT_KILO_CALORIES
@@ -608,12 +619,12 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
         if metric == CONF_SENSOR_ELEVATION:
             return UnitOfLength.METERS if self._is_unit_metric else UnitOfLength.FEET
 
-        if metric == CONF_SENSOR_PACE:
-            return (
-                UNIT_PACE_MINUTES_PER_KILOMETER
-                if self._is_unit_metric
-                else UNIT_PACE_MINUTES_PER_MILE
-            )
+        # if metric == CONF_SENSOR_PACE:
+        #     return (
+        #         UNIT_PACE_MINUTES_PER_KILOMETER
+        #         if self._is_unit_metric
+        #         else UNIT_PACE_MINUTES_PER_MILE
+        #     )
 
         return None
 
