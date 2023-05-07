@@ -31,7 +31,7 @@
           "img_update_interval_seconds": "Image rotation (seconds)",
           "conf_photos": "Import Photos from Strava?",
           "conf_distance_unit": "Distance unit system to use",
-          "geocode_xyz_api_key": "Optional: geocode.xyz api key (reduces location throttling)"
+          "geocode_xyz_api_key": "(Optional) geocode.xyz api key"
         }
       }
     },

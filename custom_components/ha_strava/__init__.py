@@ -149,6 +149,9 @@ class StravaWebhookView(HomeAssistantView):
         }
 
         auth = config_data.get(CONF_GEOCODE_XYZ_API_KEY, None)
+        if auth:
+            _LOGGER.debug("Geocode.xyz has API key")
+
         athlete_id = None
         activities = []
         for activity in await response.json():
@@ -191,11 +194,11 @@ class StravaWebhookView(HomeAssistantView):
         return UNKNOWN_AREA
 
     async def _make_geocode_request(self, start_latlng: dict, auth: str) -> dict:
-        url = "".join([f"https://geocode.xyz/{start_latlng[0]},{start_latlng[1]}?geoit=json", f"&auth={auth}" if auth else f""]),  # noqa: E501
-        _LOGGER.debug(f"Geocode.xyz Url: {url}")
+        request_url = "".join([f"https://geocode.xyz/{start_latlng[0]},{start_latlng[1]}?geoit=json", f"&auth={auth}" if auth else f""])  # noqa: E501
+        _LOGGER.debug(f"Geocode.xyz Url: {request_url}")
         geo_location_response = await self.oauth_websession.async_request(
             method="GET",
-            url=url
+            url=request_url
         )
         return await geo_location_response.json()
 
