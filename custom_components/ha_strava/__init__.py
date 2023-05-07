@@ -104,8 +104,7 @@ class StravaWebhookView(HomeAssistantView):
         oauth_websession: config_entry_oauth2_flow.OAuth2Session,
         event_factory: Callable,
         host: str,
-        hass: HomeAssistant,
-        entry: ConfigEntry
+        hass: HomeAssistant
     ):
         """Init the view."""
         self.oauth_websession = oauth_websession
@@ -113,7 +112,6 @@ class StravaWebhookView(HomeAssistantView):
         self.webhook_id = None
         self.host = host
         self.hass = hass
-        self.entry = entry
 
     async def fetch_strava_data(
         self,
@@ -144,11 +142,9 @@ class StravaWebhookView(HomeAssistantView):
             _LOGGER.error(f"Activities Fetch Failed: {response.status}: {text}")
             return
 
-        config_data = {
-            **self.entry.data,
-        }
+        config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
+        auth = config_entries.get(CONF_GEOCODE_XYZ_API_KEY, None)
 
-        auth = config_data.get(CONF_GEOCODE_XYZ_API_KEY, None)
         if auth:
             _LOGGER.debug("Geocode.xyz has API key")
 
@@ -713,8 +709,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         oauth_websession=oauth_websession,
         event_factory=strava_update_event_factory,
         host=get_url(hass, allow_internal=False, allow_ip=False),
-        hass=hass,
-        entry=entry
+        hass=hass
     )
 
     hass.http.register_view(strava_webhook_view)
