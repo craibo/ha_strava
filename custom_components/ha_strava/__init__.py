@@ -143,7 +143,9 @@ class StravaWebhookView(HomeAssistantView):
             return
 
         config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
-        auth = config_entries.get(CONF_GEOCODE_XYZ_API_KEY, None)
+        auth = None if (not config_entries or len(config_entries) < 1) else (
+            config_entries[0].options.get(CONF_GEOCODE_XYZ_API_KEY, None)
+        )
 
         if auth:
             _LOGGER.debug("Geocode.xyz has API key")
