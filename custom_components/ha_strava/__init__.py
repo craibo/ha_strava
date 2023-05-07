@@ -3,7 +3,6 @@
 import asyncio
 import json
 import logging
-import time
 from datetime import datetime as dt
 from http import HTTPStatus
 from typing import Callable, Tuple
@@ -183,11 +182,7 @@ class StravaWebhookView(HomeAssistantView):
                 # Allow 3 attempts to resolve the geocode due to throttling
                 geo_location = await self._make_geocode_request(start_latlng=start_latlng, auth=auth)
                 city = geo_location.get("city", None)
-                if not city or city == GEOCODE_XYZ_THROTTLED:
-                    retries += 1
-                    time.sleep(1)
-                else:
-                    retries = 3
+                retries += 1 if not city or city == GEOCODE_XYZ_THROTTLED else 3
 
             city = geo_location.get("city", None)
             if city:
@@ -196,9 +191,11 @@ class StravaWebhookView(HomeAssistantView):
         return UNKNOWN_AREA
 
     async def _make_geocode_request(self, start_latlng: dict, auth: str) -> dict:
+        url = "".join([f"https://geocode.xyz/{start_latlng[0]},{start_latlng[1]}?geoit=json", f"&auth={auth}" if auth else f""]),  # noqa: E501
+        _LOGGER.debug(f"Geocode.xyz Url: {url}")
         geo_location_response = await self.oauth_websession.async_request(
             method="GET",
-            url="".join([f"https://geocode.xyz/{start_latlng[0]},{start_latlng[1]}?geoit=json", f"" if not auth else f"&auth={auth}"]),  # noqa: E501
+            url=url
         )
         return await geo_location_response.json()
 

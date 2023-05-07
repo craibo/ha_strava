@@ -93,6 +93,14 @@ Three configurations for the **_distance unit system_** are available.
 
 This setting is selectable on configuration of the Strava integration and from the Strava Home Assistant Integration under `Configuration` > `Integrations`, click on `CONFIGURE`.
 
+### 3. Geocode.xyz API kKey
+
+If your activity titles are constantly showing the area as **Unknown Area**, this is likely a result of the geocode.xyz api throttling. You are able to register for a free geocode.xyz account which will provide you with an API key. This key will reduce the throttling applied your geocoding queries.
+
+1. Go to https://geocode.xyz/new_account to register your account. 
+2. Copy the provided API key
+3. Paste the API Key in the configuration of the Strava Home Assistant Integration found here: `Configuration` > `Integrations`, click on `CONFIGURE`.
+
 **_NOTES_**
 
 1. Changing the unit system setting will require a restart of Home Assistant to be fully applied.
