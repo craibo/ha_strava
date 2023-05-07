@@ -217,6 +217,7 @@ class StravaWebhookView(HomeAssistantView):
 
         _LOGGER.debug("Publishing Summary Stats event")
         summary_stats = self._sensor_summary_stats(await response.json())
+        summary_stats[CONF_SENSOR_ID] = athlete_id
         self.event_factory(
             data={
                 "summary_stats": summary_stats,

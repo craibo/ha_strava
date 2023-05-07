@@ -141,6 +141,7 @@ CONF_ATTR_END_LATLONG = "end_latlng"
 CONF_ATTR_SPORT_TYPE = "sport_type"
 CONF_ATTR_LOCATION = "location"
 CONF_ATTR_TITLE = "title"
+CONF_ATTR_ACTIVITY_ID = "activity_id"
 
 UNIT_BEATS_PER_MINUTE = "bpm"
 UNIT_PACE_MINUTES_PER_KILOMETER = "min/km"
