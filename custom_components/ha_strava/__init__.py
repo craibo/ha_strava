@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import time
 from datetime import datetime as dt
 from http import HTTPStatus
 from typing import Callable, Tuple
@@ -35,6 +36,7 @@ from .const import (  # noqa: F401
     CONF_ATTR_SPORT_TYPE,
     CONF_ATTR_START_LATLONG,
     CONF_CALLBACK_URL,
+    CONF_GEOCODE_XYZ_API_KEY,
     CONF_IMG_UPDATE_EVENT,
     CONF_SENSOR_ACTIVITY_COUNT,
     CONF_SENSOR_ACTIVITY_TYPE,
@@ -67,10 +69,12 @@ from .const import (  # noqa: F401
     EVENT_ACTIVITY_IMAGES_UPDATE,
     EVENT_SUMMARY_STATS_UPDATE,
     FACTOR_KILOJOULES_TO_KILOCALORIES,
+    GEOCODE_XYZ_THROTTLED,
     MAX_NB_ACTIVITIES,
     OAUTH2_AUTHORIZE,
     OAUTH2_TOKEN,
     WEBHOOK_SUBSCRIPTION_URL,
+    UNKNOWN_AREA,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -102,6 +106,7 @@ class StravaWebhookView(HomeAssistantView):
         event_factory: Callable,
         host: str,
         hass: HomeAssistant,
+        entry: ConfigEntry
     ):
         """Init the view."""
         self.oauth_websession = oauth_websession
@@ -109,6 +114,7 @@ class StravaWebhookView(HomeAssistantView):
         self.webhook_id = None
         self.host = host
         self.hass = hass
+        self.entry = entry
 
     async def fetch_strava_data(
         self,
@@ -139,12 +145,17 @@ class StravaWebhookView(HomeAssistantView):
             _LOGGER.error(f"Activities Fetch Failed: {response.status}: {text}")
             return
 
+        config_data = {
+            **self.entry.data,
+        }
+
+        auth = config_data.get(CONF_GEOCODE_XYZ_API_KEY, None)
         athlete_id = None
         activities = []
         for activity in await response.json():
             athlete_id = int(activity["athlete"]["id"])
             activities.append(
-                self._sensor_activity(activity, await self._geocode_activity(activity))
+                self._sensor_activity(activity, await self._geocode_activity(activity=activity, auth=auth))
             )
         _LOGGER.debug("Publishing activities event")
         self.event_factory(
@@ -159,7 +170,7 @@ class StravaWebhookView(HomeAssistantView):
         )
         return athlete_id, activities
 
-    async def _geocode_activity(self, activity: dict) -> str:
+    async def _geocode_activity(self, activity: dict, auth: str) -> str:
         """Fetch the best geocode possible from the activity's start location."""
         if activity.get("location_city", None):
             return activity.get("location_city")
@@ -167,16 +178,29 @@ class StravaWebhookView(HomeAssistantView):
             return activity.get("location_state")
         if activity.get("start_latlng", None):
             start_latlng = activity.get("start_latlng")
-            geo_location_response = await self.oauth_websession.async_request(
-                method="GET",
-                url=f"https://geocode.xyz/{start_latlng[0]},{start_latlng[1]}?geoit=json",  # noqa: E501
-            )
-            geo_location = await geo_location_response.json()
+            retries = 0
+            while retries < 3:
+                # Allow 3 attempts to resolve the geocode due to throttling
+                geo_location = await self._make_geocode_request(start_latlng=start_latlng, auth=auth)
+                city = geo_location.get("city", None)
+                if not city or city == GEOCODE_XYZ_THROTTLED:
+                    retries += 1
+                    time.sleep(1)
+                else:
+                    retries = 3
+
             city = geo_location.get("city", None)
             if city:
-                return city
-            return geo_location.get("region", "Unknown Area")
-        return "Unknown Area"
+                return city if city != GEOCODE_XYZ_THROTTLED else UNKNOWN_AREA
+            return geo_location.get("region", UNKNOWN_AREA)
+        return UNKNOWN_AREA
+
+    async def _make_geocode_request(self, start_latlng: dict, auth: str) -> dict:
+        geo_location_response = await self.oauth_websession.async_request(
+            method="GET",
+            url="".join([f"https://geocode.xyz/{start_latlng[0]},{start_latlng[1]}?geoit=json", f"" if not auth else f"&auth={auth}"]),  # noqa: E501
+        )
+        return await geo_location_response.json()
 
     async def _fetch_summary_stats(self, athlete_id: str) -> dict:
         _LOGGER.debug("Fetching summary stats")
@@ -690,6 +714,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         event_factory=strava_update_event_factory,
         host=get_url(hass, allow_internal=False, allow_ip=False),
         hass=hass,
+        entry=entry
     )
 
     hass.http.register_view(strava_webhook_view)

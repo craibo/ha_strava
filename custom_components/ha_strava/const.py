@@ -28,6 +28,7 @@ CONF_DISTANCE_UNIT_OVERRIDE = "conf_distance_unit"
 CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT = "default"
 CONF_DISTANCE_UNIT_OVERRIDE_METRIC = "metric"
 CONF_DISTANCE_UNIT_OVERRIDE_IMPERIAL = "imperial"
+CONF_GEOCODE_XYZ_API_KEY = "geocode_xyz_api_key"
 
 # Event Specs
 CONF_STRAVA_DATA_UPDATE_EVENT = "strava_data_update"
@@ -146,3 +147,6 @@ UNIT_PACE_MINUTES_PER_KILOMETER = "min/km"
 UNIT_PACE_MINUTES_PER_MILE = "min/mi"
 UNIT_KILO_CALORIES = "kcal"
 UNIT_STEPS_PER_MINUTE = "spm"
+
+GEOCODE_XYZ_THROTTLED = "Throttled! See geocode.xyz/pricing"
+UNKNOWN_AREA = "Unknown Area"
