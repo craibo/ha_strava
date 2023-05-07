@@ -33,6 +33,7 @@ from .const import (
     CONF_ACTIVITY_TYPE_SWIM,
     CONF_ACTIVITY_TYPE_WALK,
     CONF_ACTIVITY_TYPE_WORKOUT,
+    CONF_ATTR_ACTIVITY_ID,
     CONF_ATTR_LOCATION,
     CONF_ATTR_SPORT_TYPE,
     CONF_ATTR_START_LATLONG,
@@ -53,6 +54,7 @@ from .const import (
     CONF_SENSOR_ELEVATION,
     CONF_SENSOR_HEART_RATE_AVG,
     CONF_SENSOR_HEART_RATE_MAX,
+    CONF_SENSOR_ID,
     CONF_SENSOR_MOVING_TIME,
     CONF_SENSOR_PACE,
     CONF_SENSOR_POWER,
@@ -358,11 +360,13 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
 
     @property
     def device_info(self):
+        activity_id = self._data.get(CONF_SENSOR_ID, "")
         return {
             "identifiers": {(DOMAIN, f"strava_activity_{self._activity_index}")},
             "name": f"Strava Activity {self._activity_index}",
             "manufacturer": "Strava",
             "model": "Activity",
+            "configuration_url": f"https://www.strava.com/activities/{activity_id}",
         }
 
     @property
@@ -686,6 +690,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             attr[CONF_ATTR_SPORT_TYPE] = self._data[CONF_ATTR_SPORT_TYPE]
             attr[CONF_ATTR_LOCATION] = self._data[CONF_SENSOR_CITY]
             attr[CONF_ATTR_TITLE] = self._data[CONF_SENSOR_TITLE]
+            attr[CONF_ATTR_ACTIVITY_ID] = self._data[CONF_SENSOR_ID]
             if self._data[CONF_ATTR_START_LATLONG]:
                 attr[CONF_LATITUDE] = float(
                     self._data[CONF_ATTR_START_LATLONG][0]
