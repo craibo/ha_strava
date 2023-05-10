@@ -30,6 +30,9 @@ CONF_DISTANCE_UNIT_OVERRIDE_METRIC = "metric"
 CONF_DISTANCE_UNIT_OVERRIDE_IMPERIAL = "imperial"
 CONF_GEOCODE_XYZ_API_KEY = "geocode_xyz_api_key"
 
+STRAVA_ACTIVITY_BASE_URL = "https://www.strava.com/activities/"
+STRAVA_ACTHLETE_BASE_URL = ""
+
 # Event Specs
 CONF_STRAVA_DATA_UPDATE_EVENT = "strava_data_update"
 CONF_STRAVA_CONFIG_UPDATE_EVENT = "strava_config_update"
@@ -142,6 +145,9 @@ CONF_ATTR_SPORT_TYPE = "sport_type"
 CONF_ATTR_LOCATION = "location"
 CONF_ATTR_TITLE = "title"
 CONF_ATTR_ACTIVITY_ID = "activity_id"
+CONF_ATTR_ACTIVITY_URL = "activity_url"
+CONF_ATTR_ATHLETE_ID = "athlete_id"
+CONF_ATTR_ATHLETE_URL = "athlete_url"
 
 UNIT_BEATS_PER_MINUTE = "bpm"
 UNIT_PACE_MINUTES_PER_KILOMETER = "min/km"
