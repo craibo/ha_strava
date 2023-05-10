@@ -34,6 +34,9 @@ from .const import (
     CONF_ACTIVITY_TYPE_WALK,
     CONF_ACTIVITY_TYPE_WORKOUT,
     CONF_ATTR_ACTIVITY_ID,
+    CONF_ATTR_ACTIVITY_URL,
+    CONF_ATTR_ATHLETE_ID,
+    CONF_ATTR_ATHLETE_URL,
     CONF_ATTR_LOCATION,
     CONF_ATTR_SPORT_TYPE,
     CONF_ATTR_START_LATLONG,
@@ -72,6 +75,8 @@ from .const import (
     EVENT_ACTIVITIES_UPDATE,
     EVENT_SUMMARY_STATS_UPDATE,
     MAX_NB_ACTIVITIES,
+    STRAVA_ACTIVITY_BASE_URL,
+    STRAVA_ACTHLETE_BASE_URL,
     UNIT_BEATS_PER_MINUTE,
     UNIT_KILO_CALORIES,
     UNIT_PACE_MINUTES_PER_KILOMETER,
@@ -172,7 +177,7 @@ class StravaSummaryStatsSensor(
             "name": f"Strava Summary",
             "manufacturer": "Strava",
             "model": "Activity Summary",
-            "configuration_url": f"https://www.strava.com/athletes/{athlete_id}",
+            "configuration_url": f"{STRAVA_ACTHLETE_BASE_URL}{athlete_id}",
         }
 
     @property
@@ -299,6 +304,11 @@ class StravaSummaryStatsSensor(
         if not self._data:
             return attr
 
+        athlete_id = str(self._data[CONF_SENSOR_ID])
+        if athlete_id:
+            attr[CONF_ATTR_ATHLETE_ID] = f"{athlete_id}"
+            attr[CONF_ATTR_ATHLETE_URL] = f"{STRAVA_ACTHLETE_BASE_URL}{athlete_id}"
+
         if self._metric == CONF_SENSOR_MOVING_TIME:
             attr[CONF_DEVICE_CLASS] = DEVICE_CLASS_DURATION
             return attr
@@ -368,7 +378,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             "name": f"Strava Activity {self._activity_index}",
             "manufacturer": "Strava",
             "model": "Activity",
-            "configuration_url": f"https://www.strava.com/activities/{activity_id}",
+            "configuration_url": f"{STRAVA_ACTIVITY_BASE_URL}{activity_id}",
         }
 
     @property
@@ -688,11 +698,13 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             return attr
 
         if self._sensor_index == 0:
+            activity_id = str(self._data[CONF_SENSOR_ID])
             attr[CONF_DEVICE_CLASS] = DEVICE_CLASS_DATE
+            attr[CONF_ATTR_ACTIVITY_ID] = activity_id
             attr[CONF_ATTR_SPORT_TYPE] = self._data[CONF_ATTR_SPORT_TYPE]
             attr[CONF_ATTR_LOCATION] = self._data[CONF_SENSOR_CITY]
             attr[CONF_ATTR_TITLE] = self._data[CONF_SENSOR_TITLE]
-            attr[CONF_ATTR_ACTIVITY_ID] = str(self._data[CONF_SENSOR_ID])
+            attr[CONF_ATTR_ACTIVITY_URL] = f"{STRAVA_ACTIVITY_BASE_URL}{activity_id}"
             if self._data[CONF_ATTR_START_LATLONG]:
                 attr[CONF_LATITUDE] = float(
                     self._data[CONF_ATTR_START_LATLONG][0]
