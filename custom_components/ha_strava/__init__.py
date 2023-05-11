@@ -309,9 +309,11 @@ class StravaWebhookView(HomeAssistantView):
         }
 
     def _sensor_summary_stats(self, summary_stats: dict) -> dict:
+        athlete_id = str(summary_stats.get(CONF_SENSOR_ID, ""))
         return {
             CONF_ACTIVITY_TYPE_RIDE: {
                 CONF_SUMMARY_RECENT: {
+                    CONF_SENSOR_ID: athlete_id,
                     CONF_SENSOR_DISTANCE: float(
                         summary_stats.get("recent_ride_totals", {"distance": 0}).get(
                             "distance", 0
@@ -334,6 +336,7 @@ class StravaWebhookView(HomeAssistantView):
                     ),
                 },
                 CONF_SUMMARY_YTD: {
+                    CONF_SENSOR_ID: athlete_id,
                     CONF_SENSOR_DISTANCE: float(
                         summary_stats.get("ytd_ride_totals", {"distance": 0}).get(
                             "distance", 0
@@ -356,6 +359,7 @@ class StravaWebhookView(HomeAssistantView):
                     ),
                 },
                 CONF_SUMMARY_ALL: {
+                    CONF_SENSOR_ID: athlete_id,
                     CONF_SENSOR_DISTANCE: float(
                         summary_stats.get("all_ride_totals", {"distance": 0}).get(
                             "distance", 0
@@ -386,6 +390,7 @@ class StravaWebhookView(HomeAssistantView):
             },
             CONF_ACTIVITY_TYPE_RUN: {
                 CONF_SUMMARY_RECENT: {
+                    CONF_SENSOR_ID: athlete_id,
                     CONF_SENSOR_DISTANCE: float(
                         summary_stats.get("recent_run_totals", {"distance": 0}).get(
                             "distance", 0
@@ -408,6 +413,7 @@ class StravaWebhookView(HomeAssistantView):
                     ),
                 },
                 CONF_SUMMARY_YTD: {
+                    CONF_SENSOR_ID: athlete_id,
                     CONF_SENSOR_DISTANCE: float(
                         summary_stats.get("ytd_run_totals", {"distance": 0}).get(
                             "distance", 0
@@ -430,6 +436,7 @@ class StravaWebhookView(HomeAssistantView):
                     ),
                 },
                 CONF_SUMMARY_ALL: {
+                    CONF_SENSOR_ID: athlete_id,
                     CONF_SENSOR_DISTANCE: float(
                         summary_stats.get("all_run_totals", {"distance": 0}).get(
                             "distance", 0
@@ -454,6 +461,7 @@ class StravaWebhookView(HomeAssistantView):
             },
             CONF_ACTIVITY_TYPE_SWIM: {
                 CONF_SUMMARY_RECENT: {
+                    CONF_SENSOR_ID: athlete_id,
                     CONF_SENSOR_DISTANCE: float(
                         summary_stats.get("recent_swim_totals", {"distance": 0}).get(
                             "distance", 0
@@ -471,6 +479,7 @@ class StravaWebhookView(HomeAssistantView):
                     ),
                 },
                 CONF_SUMMARY_YTD: {
+                    CONF_SENSOR_ID: athlete_id,
                     CONF_SENSOR_DISTANCE: float(
                         summary_stats.get("ytd_swim_totals", {"distance": 0}).get(
                             "distance", 0
@@ -488,6 +497,7 @@ class StravaWebhookView(HomeAssistantView):
                     ),
                 },
                 CONF_SUMMARY_ALL: {
+                    CONF_SENSOR_ID: athlete_id,
                     CONF_SENSOR_DISTANCE: float(
                         summary_stats.get("all_swim_totals", {"distance": 0}).get(
                             "distance", 0

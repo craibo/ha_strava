@@ -304,7 +304,7 @@ class StravaSummaryStatsSensor(
         if not self._data:
             return attr
 
-        athlete_id = str(self._data[CONF_SENSOR_ID])
+        athlete_id = str(self._data.get(CONF_SENSOR_ID, ""))
         if athlete_id:
             attr[CONF_ATTR_ATHLETE_ID] = f"{athlete_id}"
             attr[CONF_ATTR_ATHLETE_URL] = f"{STRAVA_ACTHLETE_BASE_URL}{athlete_id}"
