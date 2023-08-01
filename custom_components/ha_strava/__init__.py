@@ -152,10 +152,33 @@ class StravaWebhookView(HomeAssistantView):
 
         athlete_id = None
         activities = []
+        activity_id = None
         for activity in await response.json():
             athlete_id = int(activity["athlete"]["id"])
+            
+            activity_id = int(activity["id"])
+            _LOGGER.debug(f"Activity ID: {activity_id}")
+
+            response_detail = await self.oauth_websession.async_request(
+                method="GET",
+                url=f"https://www.strava.com/api/v3/activities/{activity_id}",
+            )
+
+            if response_detail.status == 429:
+                _LOGGER.warning(f"Strava API rate limit has been reached")
+                return
+
+            if response_detail.status != 200:
+                text = await response_detail.text()
+                _LOGGER.error(f"Detailed Activity Fetch Failed: {response_detail.status}: {text}")
+                return
+
+            activity_details =  await response_detail.json()
+            calories = int(activity_details["calories"])
+            _LOGGER.debug(f"Calories: {calories}")
+            
             activities.append(
-                self._sensor_activity(activity, await self._geocode_activity(activity=activity, auth=auth))
+                self._sensor_activity(activity, await self._geocode_activity(activity=activity, auth=auth), calories)
             )
         _LOGGER.debug("Publishing activities event")
         self.event_factory(
@@ -277,7 +300,7 @@ class StravaWebhookView(HomeAssistantView):
                 data={"img_urls": img_urls}, event_type=CONF_IMG_UPDATE_EVENT
             )
 
-    def _sensor_activity(self, activity: dict, geocode: str) -> dict:
+    def _sensor_activity(self, activity: dict, geocode: str, calories) -> dict:
         return {
             CONF_SENSOR_ID: activity.get("id"),
             CONF_SENSOR_TITLE: activity.get("name", "Strava Activity"),
@@ -291,10 +314,7 @@ class StravaWebhookView(HomeAssistantView):
             CONF_SENSOR_ELAPSED_TIME: float(activity.get("elapsed_time", -1)),
             CONF_SENSOR_MOVING_TIME: float(activity.get("moving_time", -1)),
             CONF_SENSOR_KUDOS: int(activity.get("kudos_count", -1)),
-            CONF_SENSOR_CALORIES: int(
-                activity.get("kilojoules", (-1 / FACTOR_KILOJOULES_TO_KILOCALORIES))
-                * FACTOR_KILOJOULES_TO_KILOCALORIES
-            ),
+            CONF_SENSOR_CALORIES: calories,
             CONF_SENSOR_ELEVATION: int(activity.get("total_elevation_gain", -1)),
             CONF_SENSOR_POWER: int(activity.get("average_watts", -1)),
             CONF_SENSOR_TROPHIES: int(activity.get("achievement_count", -1)),
