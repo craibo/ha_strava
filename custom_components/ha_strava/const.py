@@ -31,7 +31,7 @@ CONF_DISTANCE_UNIT_OVERRIDE_IMPERIAL = "imperial"
 CONF_GEOCODE_XYZ_API_KEY = "geocode_xyz_api_key"
 
 STRAVA_ACTIVITY_BASE_URL = "https://www.strava.com/activities/"
-STRAVA_ACTHLETE_BASE_URL = ""
+STRAVA_ACTHLETE_BASE_URL = "https://www.strava.com/athletes/"
 
 # Event Specs
 CONF_STRAVA_DATA_UPDATE_EVENT = "strava_data_update"
