@@ -31,7 +31,9 @@ from .const import (  # noqa: F401
     CONF_ACTIVITY_TYPE_RIDE,
     CONF_ACTIVITY_TYPE_RUN,
     CONF_ACTIVITY_TYPE_SWIM,
+    CONF_ATTR_COMMUTE,
     CONF_ATTR_END_LATLONG,
+    CONF_ATTR_PRIVATE,
     CONF_ATTR_SPORT_TYPE,
     CONF_ATTR_START_LATLONG,
     CONF_CALLBACK_URL,
@@ -306,6 +308,8 @@ class StravaWebhookView(HomeAssistantView):
             CONF_ATTR_START_LATLONG: activity.get("start_latlng"),
             CONF_ATTR_END_LATLONG: activity.get("end_latlng"),
             CONF_ATTR_SPORT_TYPE: activity.get("sport_type"),
+            CONF_ATTR_COMMUTE: activity.get("commute", False),
+            CONF_ATTR_PRIVATE: activity.get("private", False),
         }
 
     def _sensor_summary_stats(self, summary_stats: dict) -> dict:
