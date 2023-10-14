@@ -179,7 +179,7 @@ class StravaSummaryStatsSensor(
             "name": f"Strava Summary",
             "manufacturer": "Strava",
             "model": "Activity Summary",
-            "configuration_url": f"{STRAVA_ACTHLETE_BASE_URL}{athlete_id}",
+            "configuration_url": f"{STRAVA_ACTHLETE_BASE_URL}",
         }
 
     @property
