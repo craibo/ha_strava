@@ -37,7 +37,9 @@ from .const import (
     CONF_ATTR_ACTIVITY_URL,
     CONF_ATTR_ATHLETE_ID,
     CONF_ATTR_ATHLETE_URL,
+    CONF_ATTR_COMMUTE,
     CONF_ATTR_LOCATION,
+    CONF_ATTR_PRIVATE,
     CONF_ATTR_SPORT_TYPE,
     CONF_ATTR_START_LATLONG,
     CONF_ATTR_TITLE,
@@ -60,7 +62,7 @@ from .const import (
     CONF_SENSOR_ID,
     CONF_SENSOR_MOVING_TIME,
     CONF_SENSOR_PACE,
-    CONF_SENSOR_POWER,
+    CONF_SENSOR_POWER, 
     CONF_SENSOR_SPEED,
     CONF_SENSOR_TITLE,
     CONF_SENSORS,
@@ -704,6 +706,8 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             attr[CONF_ATTR_SPORT_TYPE] = self._data[CONF_ATTR_SPORT_TYPE]
             attr[CONF_ATTR_LOCATION] = self._data[CONF_SENSOR_CITY]
             attr[CONF_ATTR_TITLE] = self._data[CONF_SENSOR_TITLE]
+            attr[CONF_ATTR_COMMUTE] = self._data[CONF_ATTR_COMMUTE]
+            attr[CONF_ATTR_PRIVATE] = self._data[CONF_ATTR_PRIVATE]
             attr[CONF_ATTR_ACTIVITY_URL] = f"{STRAVA_ACTIVITY_BASE_URL}{activity_id}"
             if self._data[CONF_ATTR_START_LATLONG]:
                 attr[CONF_LATITUDE] = float(
