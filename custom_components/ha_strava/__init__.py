@@ -39,6 +39,7 @@ from .const import (  # noqa: F401
     CONF_CALLBACK_URL,
     CONF_GEOCODE_XYZ_API_KEY,
     CONF_IMG_UPDATE_EVENT,
+    CONF_PHOTOS,
     CONF_SENSOR_ACTIVITY_COUNT,
     CONF_SENSOR_ACTIVITY_TYPE,
     CONF_SENSOR_BIGGEST_ELEVATION_GAIN,
@@ -260,6 +261,15 @@ class StravaWebhookView(HomeAssistantView):
         )
 
     async def _fetch_images(self, activities: list[dict]):
+        config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
+        photos_enabled = None if (not config_entries or len(config_entries) < 1) else (
+            config_entries[0].options.get(CONF_PHOTOS, False)
+        )
+
+        if not photos_enabled:
+            _LOGGER.debug("Fetch photos DISABLED")
+            return
+
         _LOGGER.debug("Fetching images")
         img_urls = []
         for idx, activity in enumerate(activities):
