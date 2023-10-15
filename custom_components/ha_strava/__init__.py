@@ -179,7 +179,7 @@ class StravaWebhookView(HomeAssistantView):
                 _LOGGER.error(f"Failed to get activity by ID!") 
 
             activities.append(
-                self._sensor_activity(activity, await self._geocode_activity(activity=activity, activity_dto = activity_dto, auth=auth))
+                self._sensor_activity(activity, await self._geocode_activity(activity=activity, activity_dto=activity_dto, auth=auth))
             )
 
         _LOGGER.debug("Publishing activities event")
@@ -202,7 +202,8 @@ class StravaWebhookView(HomeAssistantView):
             if segment_efforts:
                 _LOGGER.debug("Has activity_dto.segment_efforts")
                 segment = segment_efforts[0]
-                if segment and segment["city"]:
+                _LOGGER.debug("activity_dto.segment_efforts[0]: {segment}")
+                if segment and segment.get("city", None):
                     city = segment["city"]
                     _LOGGER.debug("Using activity_dto.segment_efforts.0.city: {city}")
                     return city
