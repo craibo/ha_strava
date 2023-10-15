@@ -95,7 +95,7 @@ This setting is selectable on configuration of the Strava integration and from t
 
 ### 3. Geocode.xyz API Key
 
-If your activity titles are constantly showing the area as **Unknown Area**, this is likely a result of the geocode.xyz api throttling. You are able to register for a free geocode.xyz account which will provide you with an API key. This key will reduce the throttling applied your geocoding queries.
+An initial attempt to get the location from the detailed strava activity is made, however if this is not present the geocode.xyz service is used. If your activity titles are constantly showing the area as **Unknown Area**, this is likely a result of the geocode.xyz api throttling. You are able to register for a free geocode.xyz account which will provide you with an API key. This key will reduce the throttling applied your geocoding queries.
 
 1. Go to https://geocode.xyz/new_account to register your account. 
 2. Copy the provided API key
@@ -104,7 +104,7 @@ If your activity titles are constantly showing the area as **Unknown Area**, thi
 **_NOTES_**
 
 1. Changing the unit system setting will require a restart of Home Assistant to be fully applied.
-2. Due to the way that some sensors track statistical data, chaging this after the inital integration setup may result in some staticstical data not showing correctly.
+2. Due to the way that some sensors track statistical data, changing this after the initial integration setup may result in some staticstical data not showing correctly.
 
 ## Contributors
 
