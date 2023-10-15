@@ -199,10 +199,9 @@ class StravaWebhookView(HomeAssistantView):
         """Fetch the best geocode possible from the activity's start location."""
         if activity_dto:
             segment_efforts = activity_dto.get("segment_efforts", None)
-            if segment_efforts:
-                _LOGGER.debug("Has activity_dto.segment_efforts")
-                segment = segment_efforts[0]
-                _LOGGER.debug("activity_dto.segment_efforts[0]: {segment}")
+            if segment_efforts and len(segment_efforts) > 0:
+                segment = segment_efforts[0].get("segment", None)
+                _LOGGER.debug("activity_dto.segment_efforts[0].segment: {segment}")
                 if segment and segment.get("city", None):
                     city = segment["city"]
                     _LOGGER.debug("Using activity_dto.segment_efforts.0.city: {city}")
