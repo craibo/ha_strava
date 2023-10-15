@@ -166,9 +166,10 @@ class StravaWebhookView(HomeAssistantView):
             activity_dto = None
             if activity_response:
                 if activity_response.status == 200:
-                    activity_dto =  await activity_response.json()
-                    calories = int(activity_dto["calories"])
-                    activity[CONF_SENSOR_CALORIES] = calories
+                    activity_dto = await activity_response.json()
+                    calories = int(activity_dto.get("calories", -1))
+                    if calories != -1:
+                        activity[CONF_SENSOR_CALORIES] = calories
                 elif activity_response.status == 429:
                     _LOGGER.warning(f"Strava API rate limit has been reached")
                 else:
