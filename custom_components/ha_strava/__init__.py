@@ -201,10 +201,10 @@ class StravaWebhookView(HomeAssistantView):
             segment_efforts = activity_dto.get("segment_efforts", None)
             if segment_efforts and len(segment_efforts) > 0:
                 segment = segment_efforts[0].get("segment", None)
-                _LOGGER.debug("activity_dto.segment_efforts[0].segment: {segment}")
+                _LOGGER.debug(f"activity_dto.segment_efforts[0].segment: {segment}")
                 if segment and segment.get("city", None):
                     city = segment["city"]
-                    _LOGGER.debug("Using activity_dto.segment_efforts.0.city: {city}")
+                    _LOGGER.debug(f"Using activity_dto.segment_efforts.0.city: {city}")
                     return city
         if activity.get("location_city", None):
             return activity.get("location_city")
