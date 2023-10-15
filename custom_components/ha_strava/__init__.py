@@ -156,9 +156,32 @@ class StravaWebhookView(HomeAssistantView):
         activities = []
         for activity in await response.json():
             athlete_id = int(activity["athlete"]["id"])
-            activities.append(
-                self._sensor_activity(activity, await self._geocode_activity(activity=activity, auth=auth))
+            activity_id = int(activity["id"])
+
+            activity_response = await self.oauth_websession.async_request(
+                method="GET",
+                url=f"https://www.strava.com/api/v3/activities/{activity_id}",
             )
+
+            activity_dto = None
+            if activity_response:
+                if activity_response.status == 200:
+                    activity_dto = await activity_response.json()
+                    calories = int(activity_dto.get("calories", -1))
+                    if calories != -1:
+                        activity[CONF_SENSOR_CALORIES] = calories
+                elif activity_response.status == 429:
+                    _LOGGER.warning(f"Strava API rate limit has been reached")
+                else:
+                    text = await activity_response.text()
+                    _LOGGER.error(f"Error getting activity by ID. Status: {activity_response.status}: {text}")   
+            else:
+                _LOGGER.error(f"Failed to get activity by ID!") 
+
+            activities.append(
+                self._sensor_activity(activity, await self._geocode_activity(activity=activity, activity_dto = activity_dto, auth=auth))
+            )
+
         _LOGGER.debug("Publishing activities event")
         self.event_factory(
             data={
@@ -172,8 +195,17 @@ class StravaWebhookView(HomeAssistantView):
         )
         return athlete_id, activities
 
-    async def _geocode_activity(self, activity: dict, auth: str) -> str:
+    async def _geocode_activity(self, activity: dict, activity_dto: dict, auth: str) -> str:
         """Fetch the best geocode possible from the activity's start location."""
+        if activity_dto:
+            segment_efforts = activity_dto.get("segment_efforts", None)
+            if segment_efforts:
+                _LOGGER.debug("Has activity_dto.segment_efforts")
+                segment = segment_efforts[0]
+                if segment and segment["city"]:
+                    city = segment["city"]
+                    _LOGGER.debug("Using activity_dto.segment_efforts.0.city: {city}")
+                    return city
         if activity.get("location_city", None):
             return activity.get("location_city")
         if activity.get("location_state", None):
@@ -294,8 +326,11 @@ class StravaWebhookView(HomeAssistantView):
             CONF_SENSOR_MOVING_TIME: float(activity.get("moving_time", -1)),
             CONF_SENSOR_KUDOS: int(activity.get("kudos_count", -1)),
             CONF_SENSOR_CALORIES: int(
-                activity.get("kilojoules", (-1 / FACTOR_KILOJOULES_TO_KILOCALORIES))
-                * FACTOR_KILOJOULES_TO_KILOCALORIES
+                activity.get(
+                    CONF_SENSOR_CALORIES,
+                    activity.get("kilojoules", (-1 / FACTOR_KILOJOULES_TO_KILOCALORIES))
+                    * FACTOR_KILOJOULES_TO_KILOCALORIES
+                )
             ),
             CONF_SENSOR_ELEVATION: int(activity.get("total_elevation_gain", -1)),
             CONF_SENSOR_POWER: int(activity.get("average_watts", -1)),
