@@ -2,9 +2,11 @@
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/craibo/ha_strava?color=41BDF5&style=for-the-badge)](https://github.com/craibo/ha_strava/releases/latest)
 [![Integration Usage](https://img.shields.io/badge/dynamic/json?color=41BDF5&style=for-the-badge&logo=home-assistant&label=usage&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.ha_strava.total)](https://analytics.home-assistant.io/)
 
-# Strava Home Assistant Integration
+# Powered by Strava integration for Home Assistant (Unofficial)
 
-Custom Component to integrate Activity Data from Strava into Home Assistant.
+Unofficial custom component to integrating Strava activity data into Home Assistant.
+
+<img src="https://raw.githubusercontent.com/craibo/ha_strava/main/img/api_logo_pwrdBy_strava_horiz_light.png">
 
 ## Important Notes:
 
@@ -25,8 +27,12 @@ When configuring the Strava API, the **Authorization Callback Domain** must be s
 For every Strava activity, the Strava Home Assistant Integration creates a **device entity** in Home Assistant (max 10 activities). Each of these virtual device entities exposes **thirteen sensor entities**:
 
 - Date & Title
-  - Activity type
+  - Sport type
+  - City
   - Start geo co-ordinates
+  - Link to Stata activity
+  - Commute
+  - Private
 - Elapsed Time
 - Moving Time
 - Pace
