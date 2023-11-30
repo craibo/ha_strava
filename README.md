@@ -4,9 +4,9 @@
 
 # Powered by Strava integration for Home Assistant (Unofficial)
 
-Unofficial custom component to integrating Strava activity data into Home Assistant.
+<img src="https://raw.githubusercontent.com/craibo/ha_strava/main/img/api_logo_pwrdBy_strava_stack_light.png"> 
 
-<img src="https://raw.githubusercontent.com/craibo/ha_strava/main/img/api_logo_pwrdBy_strava_horiz_light.png">
+The unofficial Powered by Strava intregration for Home Assistant. Adds a custom component to integrating Strava activity data into Home Assistant.
 
 ## Important Notes:
 
