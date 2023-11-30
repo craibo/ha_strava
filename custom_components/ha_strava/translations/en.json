@@ -1,8 +1,8 @@
 {
   "config": {
-    "title": "Strava Home Assistant Integration",
+    "title": "Strava Home Assistant Integration (Unofficial)",
     "create_entry": {
-      "default": "Your Strava Home Assistant Integration has successfully been installed"
+      "default": "Your Strava Home Assistant Integration has been successfully installed"
     },
     "abort": {
       "already_configured": "A Strava Home Assistant Integration has already been installed. You can only have one installation at a time",
@@ -25,7 +25,7 @@
     "step": {
       "init": {
         "title": "Strava Home Assistant Configuration",
-        "description": "Strava integration configurations. You can find more information on the options here: https://github.com/craibo/ha_strava",
+        "description": "Strava Home Assistant integration configurations. You can find more information on the options here: https://github.com/craibo/ha_strava",
         "data": {
           "nb_activities": "Number of concurrent Strava Activities",
           "img_update_interval_seconds": "Image rotation (seconds)",
@@ -36,8 +36,8 @@
       }
     },
     "abort": {
-      "no_config": "Could not find the Strava Home Assistant Configuration",
-      "update_success": "The Strava Home Assistant Configuration was updated successfully!"
+      "no_config": "Could not find the Strava Home Assistant configuration",
+      "update_success": "The Strava Home Assistant configuration was updated successfully!"
     }
   }
 }

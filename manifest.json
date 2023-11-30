@@ -6,7 +6,7 @@
   "issue_tracker": "https://github.com/craibo/ha_strava/issues",
   "domain": "ha_strava",
   "iot_class": "cloud_polling",
-  "name": "HA Strava 2.0",
+  "name": "Strava (Unofficial)",
   "requirements": ["aiohttp>=3.6.1", "voluptuous>=0.11.7"],
-  "version": "3.2.28"
+  "version": "3.2.29"
 }
