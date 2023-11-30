@@ -62,7 +62,7 @@ from .const import (
     CONF_SENSOR_ID,
     CONF_SENSOR_MOVING_TIME,
     CONF_SENSOR_PACE,
-    CONF_SENSOR_POWER, 
+    CONF_SENSOR_POWER,
     CONF_SENSOR_SPEED,
     CONF_SENSOR_TITLE,
     CONF_SENSORS,
@@ -77,8 +77,8 @@ from .const import (
     EVENT_ACTIVITIES_UPDATE,
     EVENT_SUMMARY_STATS_UPDATE,
     MAX_NB_ACTIVITIES,
-    STRAVA_ACTIVITY_BASE_URL,
     STRAVA_ACTHLETE_BASE_URL,
+    STRAVA_ACTIVITY_BASE_URL,
     UNIT_BEATS_PER_MINUTE,
     UNIT_KILO_CALORIES,
     UNIT_PACE_MINUTES_PER_KILOMETER,
@@ -173,11 +173,10 @@ class StravaSummaryStatsSensor(
 
     @property
     def device_info(self):
-        athlete_id = self._data.get(CONF_SENSOR_ID, "") if self._data else ""
         return {
             "identifiers": {(DOMAIN, f"strava_stats")},
             "name": f"Strava Summary",
-            "manufacturer": "Strava",
+            "manufacturer": "Powered by Strava",
             "model": "Activity Summary",
             "configuration_url": f"{STRAVA_ACTHLETE_BASE_URL}",
         }
@@ -378,7 +377,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
         return {
             "identifiers": {(DOMAIN, f"strava_activity_{self._activity_index}")},
             "name": f"Strava Activity {self._activity_index}",
-            "manufacturer": "Strava",
+            "manufacturer": "Powered by Strava",
             "model": "Activity",
             "configuration_url": f"{STRAVA_ACTIVITY_BASE_URL}{activity_id}",
         }
@@ -482,16 +481,22 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
             seconds = int(pace_final - minutes * 60)
 
             unit = (
+                (
                     UNIT_PACE_MINUTES_PER_MILE
                     if self.hass.config.units is US_CUSTOMARY_SYSTEM
                     else UNIT_PACE_MINUTES_PER_KILOMETER
-                ) if self._is_unit_metric_default else (
-                UNIT_PACE_MINUTES_PER_KILOMETER
-                if self._is_unit_metric
-                else UNIT_PACE_MINUTES_PER_MILE
+                )
+                if self._is_unit_metric_default
+                else (
+                    UNIT_PACE_MINUTES_PER_KILOMETER
+                    if self._is_unit_metric
+                    else UNIT_PACE_MINUTES_PER_MILE
+                )
             )
 
-            return "".join(["0:" if minutes == 0 else f"{minutes}:", f"{seconds:02}", f" {unit}"])
+            return "".join(
+                ["0:" if minutes == 0 else f"{minutes}:", f"{seconds:02}", f" {unit}"]
+            )
 
         if metric == CONF_SENSOR_SPEED:
             speed = (self._data[CONF_SENSOR_DISTANCE] / 1000) / (

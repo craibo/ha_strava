@@ -2,9 +2,11 @@
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/craibo/ha_strava?color=41BDF5&style=for-the-badge)](https://github.com/craibo/ha_strava/releases/latest)
 [![Integration Usage](https://img.shields.io/badge/dynamic/json?color=41BDF5&style=for-the-badge&logo=home-assistant&label=usage&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.ha_strava.total)](https://analytics.home-assistant.io/)
 
-# Strava Home Assistant Integration
+# Strava integration for Home Assistant (Unofficial)
 
-Custom Component to integrate Activity Data from Strava into Home Assistant.
+<img src="https://raw.githubusercontent.com/craibo/ha_strava/main/img/api_logo_pwrdBy_strava_stack_light.png">
+
+The unofficial Strava intregration for Home Assistant. Adds a custom component to integrate Strava activity data into Home Assistant.
 
 ## Important Notes:
 
@@ -25,8 +27,12 @@ When configuring the Strava API, the **Authorization Callback Domain** must be s
 For every Strava activity, the Strava Home Assistant Integration creates a **device entity** in Home Assistant (max 10 activities). Each of these virtual device entities exposes **thirteen sensor entities**:
 
 - Date & Title
-  - Activity type
+  - Sport type
+  - Location
   - Start geo co-ordinates
+  - Link to Stata activity
+  - Commute
+  - Private
 - Elapsed Time
 - Moving Time
 - Pace
@@ -97,7 +103,7 @@ This setting is selectable on configuration of the Strava integration and from t
 
 An initial attempt to get the location from the detailed strava activity is made, however if this is not present the geocode.xyz service is used. If your activity titles are constantly showing the area as **Unknown Area**, this is likely a result of the geocode.xyz api throttling. You are able to register for a free geocode.xyz account which will provide you with an API key. This key will reduce the throttling applied your geocoding queries.
 
-1. Go to https://geocode.xyz/new_account to register your account. 
+1. Go to https://geocode.xyz/new_account to register your account.
 2. Copy the provided API key
 3. Paste the API Key in the configuration of the Strava Home Assistant Integration found here: `Configuration` > `Integrations`, click on `CONFIGURE`.
 
