@@ -1,24 +1,27 @@
 // See https://aka.ms/vscode-remote/devcontainer.json for format details.
 {
-  "image": "ghcr.io/ludeeus/devcontainer/integration:stable",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
   "name": "HA Strava development",
-  "context": "..",
   "appPort": ["9123:8123"],
-  "postCreateCommand": "container install && tools/post_create_command.sh",
-  "extensions": [
-    "ms-python.python",
-    "github.vscode-pull-request-github",
-    "ryanluker.vscode-coverage-gutters",
-    "ms-python.vscode-pylance",
-    "foxundermoon.shell-format"
-  ],
-  "settings": {
-    "editor.tabSize": 4,
-    "python.analysis.autoSearchPaths": false,
-    "python.linting.pylintEnabled": true,
-    "python.linting.flake8Enabled": true,
-    "python.linting.enabled": true,
-    "python.formatting.provider": "black",
-    "ha_strava.remote_host": "home.local"
+  "postCreateCommand": "git config --global --add safe.directory /workspaces/ha_strava && tools/post_create_command.sh",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "editor.tabSize": 4,
+        "python.analysis.autoSearchPaths": false,
+        "python.linting.pylintEnabled": true,
+        "python.linting.flake8Enabled": true,
+        "python.linting.enabled": true,
+        "python.formatting.provider": "black",
+        "ha_strava.remote_host": "home.local"
+      },
+      "extensions": [
+        "ms-python.python",
+        "github.vscode-pull-request-github",
+        "ryanluker.vscode-coverage-gutters",
+        "ms-python.vscode-pylance",
+        "foxundermoon.shell-format"
+      ]
+    }
   }
 }
