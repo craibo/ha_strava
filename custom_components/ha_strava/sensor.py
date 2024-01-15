@@ -2,19 +2,20 @@
 import logging
 
 # HASS imports
-from homeassistant.components.sensor import SensorEntity, SensorStateClass
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
 from homeassistant.components.sensor.const import CONF_STATE_CLASS
 from homeassistant.const import (
     CONF_DEVICE_CLASS,
     CONF_LATITUDE,
     CONF_LONGITUDE,
-    DEVICE_CLASS_DATE,
-    DEVICE_CLASS_POWER,
-    SPEED,
-    TIME_SECONDS,
     UnitOfLength,
     UnitOfPower,
     UnitOfSpeed,
+    UnitOfTime,
 )
 from homeassistant.util.unit_conversion import DistanceConverter, SpeedConverter
 from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
@@ -246,7 +247,7 @@ class StravaSummaryStatsSensor(
             return None
 
         if self._metric == CONF_SENSOR_MOVING_TIME:
-            return TIME_SECONDS
+            return UnitOfTime.SECONDS
 
         self.set_distance_units()
         if self._metric in [CONF_SENSOR_DISTANCE, CONF_SENSOR_BIGGEST_RIDE_DISTANCE]:
@@ -562,7 +563,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
         self.set_distance_units()
 
         if metric in [CONF_SENSOR_MOVING_TIME, CONF_SENSOR_ELAPSED_TIME]:
-            return TIME_SECONDS
+            return UnitOfTime.SECONDS
 
         if metric == CONF_SENSOR_POWER:
             return UnitOfPower.WATT
@@ -706,7 +707,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
 
         if self._sensor_index == 0:
             activity_id = str(self._data[CONF_SENSOR_ID])
-            attr[CONF_DEVICE_CLASS] = DEVICE_CLASS_DATE
+            attr[CONF_DEVICE_CLASS] = SensorDeviceClass.DATE
             attr[CONF_ATTR_ACTIVITY_ID] = activity_id
             attr[CONF_ATTR_SPORT_TYPE] = self._data[CONF_ATTR_SPORT_TYPE]
             attr[CONF_ATTR_LOCATION] = self._data[CONF_SENSOR_CITY]
@@ -731,23 +732,23 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
         attr[CONF_STATE_CLASS] = SensorStateClass.MEASUREMENT
 
         if metric == CONF_SENSOR_MOVING_TIME:
-            attr[CONF_DEVICE_CLASS] = DEVICE_CLASS_DURATION
+            attr[CONF_DEVICE_CLASS] = SensorDeviceClass.DURATION
             return attr
 
         if metric == CONF_SENSOR_ELAPSED_TIME:
-            attr[CONF_DEVICE_CLASS] = DEVICE_CLASS_DURATION
+            attr[CONF_DEVICE_CLASS] = SensorDeviceClass.DURATION
             return attr
 
         if metric == CONF_SENSOR_POWER:
-            attr[CONF_DEVICE_CLASS] = DEVICE_CLASS_POWER
+            attr[CONF_DEVICE_CLASS] = SensorDeviceClass.POWER
             return attr
 
         if metric == CONF_SENSOR_DISTANCE:
-            attr[CONF_DEVICE_CLASS] = DEVICE_CLASS_DISTANCE
+            attr[CONF_DEVICE_CLASS] = SensorDeviceClass.DISTANCE
             return attr
 
         if metric == CONF_SENSOR_SPEED:
-            attr[CONF_DEVICE_CLASS] = SPEED
+            attr[CONF_DEVICE_CLASS] = SensorDeviceClass.SPEED
             return attr
 
         return attr
