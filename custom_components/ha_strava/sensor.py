@@ -1,4 +1,5 @@
 """Sensor platform for HA Strava"""
+
 import logging
 
 # HASS imports
@@ -261,16 +262,6 @@ class StravaSummaryStatsSensor(
             return UnitOfLength.FEET
 
         return None
-
-    @property
-    def suggested_unit_of_measurement(self):
-        if self._metric not in [CONF_SENSOR_DISTANCE]:
-            return super().suggested_unit_of_measurement
-
-        self.set_distance_units()
-        if self._is_unit_metric_default or self._is_unit_metric:
-            return UnitOfLength.KILOMETERS
-        return UnitOfLength.MILES
 
     @property
     def name(self):
@@ -605,50 +596,6 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
 
         if metric == CONF_SENSOR_CADENCE_AVG:
             return UNIT_STEPS_PER_MINUTE
-
-        return None
-
-    @property
-    def suggested_unit_of_measurement(
-        self,
-    ):  # pylint: disable=unsupported-binary-operation,too-many-return-statements
-        if not self._data or self._sensor_index == 0:
-            return None
-
-        metric = self.get_metric()
-        if metric not in [
-            CONF_SENSOR_DISTANCE,
-            CONF_SENSOR_SPEED,
-            CONF_SENSOR_PACE,
-            CONF_SENSOR_ELEVATION,
-        ]:
-            return None
-
-        self.set_distance_units()
-        if self._is_unit_metric_default:
-            return None
-
-        if metric == CONF_SENSOR_DISTANCE:
-            return (
-                UnitOfLength.KILOMETERS if self._is_unit_metric else UnitOfLength.MILES
-            )
-
-        if metric == CONF_SENSOR_SPEED:
-            return (
-                UnitOfSpeed.KILOMETERS_PER_HOUR
-                if self._is_unit_metric
-                else UnitOfSpeed.MILES_PER_HOUR
-            )
-
-        if metric == CONF_SENSOR_ELEVATION:
-            return UnitOfLength.METERS if self._is_unit_metric else UnitOfLength.FEET
-
-        # if metric == CONF_SENSOR_PACE:
-        #     return (
-        #         UNIT_PACE_MINUTES_PER_KILOMETER
-        #         if self._is_unit_metric
-        #         else UNIT_PACE_MINUTES_PER_MILE
-        #     )
 
         return None
 
