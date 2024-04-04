@@ -8,5 +8,5 @@
   "iot_class": "cloud_polling",
   "name": "Strava (Unofficial)",
   "requirements": ["aiohttp>=3.6.1", "voluptuous>=0.11.7"],
-  "version": "3.2.30"
+  "version": "3.2.32"
 }
