@@ -2,25 +2,36 @@
 {
   "image": "mcr.microsoft.com/devcontainers/python:3.11",
   "name": "HA Strava development",
+  "forwardPorts": [8123],
+  "portsAttributes": {
+    "8123": {
+      "label": "Home Assistant",
+      "onAutoForward": "openBrowserOnce"
+    }
+  },
   "appPort": ["9123:8123"],
   "postCreateCommand": "git config --global --add safe.directory /workspaces/ha_strava && tools/post_create_command.sh",
   "customizations": {
     "vscode": {
       "settings": {
         "editor.tabSize": 4,
+        "editor.formatOnPaste": false,
+        "editor.formatOnSave": true,
+        "editor.formatOnType": true,
+        "files.trimTrailingWhitespace": true,
+        "ha_strava.remote_host": "home.local",
         "python.analysis.autoSearchPaths": false,
-        "python.linting.pylintEnabled": true,
-        "python.linting.flake8Enabled": true,
-        "python.linting.enabled": true,
         "python.formatting.provider": "black",
-        "ha_strava.remote_host": "home.local"
+        "python.pythonPath": "/usr/local/bin/python"
       },
       "extensions": [
+        "ms-python.flake8",
         "ms-python.python",
-        "github.vscode-pull-request-github",
-        "ryanluker.vscode-coverage-gutters",
+        "ms-python.pylint",
         "ms-python.vscode-pylance",
-        "foxundermoon.shell-format"
+        "github.vscode-pull-request-github",
+        "esbenp.prettier-vscode",
+        "ryanluker.vscode-coverage-gutters"
       ]
     }
   }
