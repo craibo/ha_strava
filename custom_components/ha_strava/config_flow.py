@@ -1,4 +1,5 @@
 """Config flow for Strava Home Assistant."""
+
 # generic imports
 import logging
 
@@ -116,7 +117,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_GEOCODE_XYZ_API_KEY,
                         default=ha_strava_config_entries[0].options.get(
                             CONF_GEOCODE_XYZ_API_KEY,
-                            None,
+                            "",
                         ),
                     ): str,
                 }
@@ -183,14 +184,16 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             }
 
             ha_strava_options[CONF_NB_ACTIVITIES] = self._nb_activities
-            ha_strava_options[
-                CONF_IMG_UPDATE_INTERVAL_SECONDS
-            ] = self._img_update_interval_seconds
+            ha_strava_options[CONF_IMG_UPDATE_INTERVAL_SECONDS] = (
+                self._img_update_interval_seconds
+            )
             ha_strava_options[CONF_PHOTOS] = self._import_strava_images
-            ha_strava_options[
-                CONF_DISTANCE_UNIT_OVERRIDE
-            ] = self._config_distance_unit_override
-            ha_strava_options[CONF_GEOCODE_XYZ_API_KEY] = self._config_geocode_xyz_api_key
+            ha_strava_options[CONF_DISTANCE_UNIT_OVERRIDE] = (
+                self._config_distance_unit_override
+            )
+            ha_strava_options[CONF_GEOCODE_XYZ_API_KEY] = (
+                self._config_geocode_xyz_api_key
+            )
 
             _LOGGER.debug(f"Strava Config Options: {ha_strava_options}")
             return self.async_create_entry(
@@ -268,9 +271,9 @@ class OAuth2FlowHandler(
         )
 
     async def async_oauth_create_entry(self, data: dict) -> dict:
-        data[
-            CONF_CALLBACK_URL
-        ] = f"{get_url(self.hass, allow_internal=False, allow_ip=False)}/api/strava/webhook"  # noqa: E501
+        data[CONF_CALLBACK_URL] = (
+            f"{get_url(self.hass, allow_internal=False, allow_ip=False)}/api/strava/webhook"  # noqa: E501
+        )
         data[CONF_CLIENT_ID] = self.flow_impl.client_id
         data[CONF_CLIENT_SECRET] = self.flow_impl.client_secret
         data[CONF_PHOTOS] = self._import_photos_from_strava
