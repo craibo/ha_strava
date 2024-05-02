@@ -1,4 +1,5 @@
 """Strava Home Assistant Custom Component"""
+
 # generic imports
 import asyncio
 import json
@@ -75,8 +76,8 @@ from .const import (  # noqa: F401
     MAX_NB_ACTIVITIES,
     OAUTH2_AUTHORIZE,
     OAUTH2_TOKEN,
-    WEBHOOK_SUBSCRIPTION_URL,
     UNKNOWN_AREA,
+    WEBHOOK_SUBSCRIPTION_URL,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -107,7 +108,7 @@ class StravaWebhookView(HomeAssistantView):
         oauth_websession: config_entry_oauth2_flow.OAuth2Session,
         event_factory: Callable,
         host: str,
-        hass: HomeAssistant
+        hass: HomeAssistant,
     ):
         """Init the view."""
         self.oauth_websession = oauth_websession
@@ -146,8 +147,10 @@ class StravaWebhookView(HomeAssistantView):
             return
 
         config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
-        auth = None if (not config_entries or len(config_entries) < 1) else (
-            config_entries[0].options.get(CONF_GEOCODE_XYZ_API_KEY, None)
+        auth = (
+            None
+            if (not config_entries or len(config_entries) < 1)
+            else (config_entries[0].options.get(CONF_GEOCODE_XYZ_API_KEY, None))
         )
 
         if auth:
@@ -175,12 +178,19 @@ class StravaWebhookView(HomeAssistantView):
                     _LOGGER.warning(f"Strava API rate limit has been reached")
                 else:
                     text = await activity_response.text()
-                    _LOGGER.error(f"Error getting activity by ID. Status: {activity_response.status}: {text}")   
+                    _LOGGER.error(
+                        f"Error getting activity by ID. Status: {activity_response.status}: {text}"
+                    )
             else:
-                _LOGGER.error(f"Failed to get activity by ID!") 
+                _LOGGER.error(f"Failed to get activity by ID!")
 
             activities.append(
-                self._sensor_activity(activity, await self._geocode_activity(activity=activity, activity_dto=activity_dto, auth=auth))
+                self._sensor_activity(
+                    activity,
+                    await self._geocode_activity(
+                        activity=activity, activity_dto=activity_dto, auth=auth
+                    ),
+                )  # noqa:E501
             )
 
         _LOGGER.debug("Publishing activities event")
@@ -196,7 +206,9 @@ class StravaWebhookView(HomeAssistantView):
         )
         return athlete_id, activities
 
-    async def _geocode_activity(self, activity: dict, activity_dto: dict, auth: str) -> str:
+    async def _geocode_activity(
+        self, activity: dict, activity_dto: dict, auth: str
+    ) -> str:
         """Fetch the best geocode possible from the activity's start location."""
         if activity_dto:
             segment_efforts = activity_dto.get("segment_efforts", None)
@@ -216,7 +228,9 @@ class StravaWebhookView(HomeAssistantView):
             retries = 0
             while retries < 3:
                 # Allow 3 attempts to resolve the geocode due to throttling
-                geo_location = await self._make_geocode_request(start_latlng=start_latlng, auth=auth)
+                geo_location = await self._make_geocode_request(
+                    start_latlng=start_latlng, auth=auth
+                )
                 city = geo_location.get("city", None)
                 retries += 1 if not city or city == GEOCODE_XYZ_THROTTLED else 3
 
@@ -227,11 +241,15 @@ class StravaWebhookView(HomeAssistantView):
         return UNKNOWN_AREA
 
     async def _make_geocode_request(self, start_latlng: dict, auth: str) -> dict:
-        request_url = "".join([f"https://geocode.xyz/{start_latlng[0]},{start_latlng[1]}?geoit=json", f"&auth={auth}" if auth else f""])  # noqa: E501
+        request_url = "".join(
+            [
+                f"https://geocode.xyz/{start_latlng[0]},{start_latlng[1]}?geoit=json",
+                f"&auth={auth}" if auth else f"",
+            ]
+        )  # noqa: E501
         _LOGGER.debug(f"Geocode.xyz Url: {request_url}")
         geo_location_response = await self.oauth_websession.async_request(
-            method="GET",
-            url=request_url
+            method="GET", url=request_url
         )
         return await geo_location_response.json()
 
@@ -262,8 +280,10 @@ class StravaWebhookView(HomeAssistantView):
 
     async def _fetch_images(self, activities: list[dict]):
         config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
-        photos_enabled = None if (not config_entries or len(config_entries) < 1) else (
-            config_entries[0].options.get(CONF_PHOTOS, False)
+        photos_enabled = (
+            None
+            if (not config_entries or len(config_entries) < 1)
+            else (config_entries[0].options.get(CONF_PHOTOS, False))
         )
 
         if not photos_enabled:
@@ -339,7 +359,7 @@ class StravaWebhookView(HomeAssistantView):
                 activity.get(
                     CONF_SENSOR_CALORIES,
                     activity.get("kilojoules", (-1 / FACTOR_KILOJOULES_TO_KILOCALORIES))
-                    * FACTOR_KILOJOULES_TO_KILOCALORIES
+                    * FACTOR_KILOJOULES_TO_KILOCALORIES,
                 )
             ),
             CONF_SENSOR_ELEVATION: int(activity.get("total_elevation_gain", -1)),
@@ -771,7 +791,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         oauth_websession=oauth_websession,
         event_factory=strava_update_event_factory,
         host=get_url(hass, allow_internal=False, allow_ip=False),
-        hass=hass
+        hass=hass,
     )
 
     hass.http.register_view(strava_webhook_view)
@@ -789,11 +809,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         called when HA rebooted
         i.e. after all webhook views have been registered and are available
         """
-        hass.async_create_task(strava_startup_functions())
+        asyncio.run_coroutine_threadsafe(strava_startup_functions(), hass.loop)
 
     def component_reload_handler(event):  # pylint: disable=unused-argument
         """called when the component reloads"""
-        hass.async_create_task(strava_startup_functions())
+        asyncio.run_coroutine_threadsafe(strava_startup_functions(), hass.loop)
 
     async def async_strava_config_update_handler():
         """called when user changes sensor configs"""
@@ -863,8 +883,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
         )
     )
 
-    for remove_listener in hass.data[DOMAIN]["remove_update_listener"]:
-        remove_listener()
+    try:
+        for remove_listener in hass.data[DOMAIN]["remove_update_listener"]:
+            remove_listener()
+    except ValueError as e:
+        _LOGGER.exception(f"Strava failed to remove listener", e)
 
     # delete strava webhook subscription
     websession = async_get_clientsession(hass, verify_ssl=False)
