@@ -337,7 +337,7 @@ class StravaSummaryStatsSensor(
         if not summary_stats:
             return
         self._data = summary_stats[self._activity_type][self._summary_type]
-        self.async_write_ha_state()
+        self.schedule_update_ha_state()
 
     async def async_added_to_hass(self):
         self.hass.bus.async_listen(
@@ -721,7 +721,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
     def strava_data_update_event_handler(self, event):
         """Handle Strava API data which is emitted from a Strava Update Event"""
         self._data = event.data["activities"][self._activity_index]
-        self.async_write_ha_state()
+        self.schedule_update_ha_state()
 
     async def async_added_to_hass(self):
         self.hass.bus.async_listen(
