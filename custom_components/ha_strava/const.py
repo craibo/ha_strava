@@ -160,4 +160,4 @@ UNIT_KILO_CALORIES = "kcal"
 UNIT_STEPS_PER_MINUTE = "spm"
 
 GEOCODE_XYZ_THROTTLED = "Throttled! See geocode.xyz/pricing"
-UNKNOWN_AREA = "Unknown Area"
+UNKNOWN_AREA = None

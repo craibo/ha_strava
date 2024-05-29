@@ -164,7 +164,7 @@ class StravaSummaryStatsSensor(
     _is_unit_metric_default = True
     _is_unit_metric = True
 
-    def __init__(self, activity_type, metric, summary_type):
+    def __init__(self, activity_type: str, metric: str, summary_type: str):
         self._metric = metric
         self._activity_type = activity_type
         self._summary_type = summary_type
@@ -438,7 +438,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
 
         if metric == CONF_SENSOR_DISTANCE:
             distance = self._data[CONF_SENSOR_DISTANCE] / 1000
-            if self._is_unit_metric_default or self._is_unit_metric:
+            if self._is_unit_metric_default or self._is_unit_metric: 
                 return round(distance, 2)
             return round(
                 DistanceConverter.convert(
