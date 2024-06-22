@@ -171,10 +171,10 @@ class UrlCam(Camera):  # pylint: disable=W0223
         _LOGGER.debug(f"url dump filepath: {self._url_dump_filepath}")
 
         if os.path.exists(self._url_dump_filepath):
-            self.hass.async_add_executor_job(self._load_pickle_urls)
+            self._load_pickle_urls()
         else:
             self._urls = {}
-            self.hass.async_add_executor_job(self._store_pickle_urls)
+            self._store_pickle_urls()
 
         self._url_index = 0
         self._default_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/No_image_available_600_x_450.svg/1280px-No_image_available_600_x_450.svg.png"  # noqa: E501
@@ -267,7 +267,7 @@ class UrlCam(Camera):  # pylint: disable=W0223
             ]
         )
 
-        self.hass.async_add_executor_job(self._store_pickle_urls)
+        self._store_pickle_urls()
 
     @property
     def entity_registry_enabled_default(self) -> bool:
