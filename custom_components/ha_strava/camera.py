@@ -40,7 +40,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     Works via image-URLs, not via local file storage
     """
     default_enabled = config_entry.data.get(CONF_PHOTOS, False)
-    cameras = [UrlCam(default_enabled=default_enabled)]
+    url_cam = UrlCam(default_enabled=default_enabled)
+    await url_cam.setup_pickle_urls()
+    cameras = [url_cam]
     for i in range(MAX_NB_ACTIVITIES):
         cameras.append(
             ActivityCamera(
@@ -80,7 +82,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
 class ActivityCamera(
     Camera
-):  # pylint: disable=W0223 disable=too-many-instance-attributes
+):  # pylint: disable=abstract-method disable=too-many-instance-attributes
     """
     Rotates through all images for an activity.
 
@@ -149,7 +151,7 @@ class ActivityCamera(
         )
 
 
-class UrlCam(Camera):  # pylint: disable=W0223
+class UrlCam(Camera):  # pylint: disable=abstract-method
     """
     Representation of a camera entity that can display images from Strava Image URL.
     Image URLs are fetched from the strava API and the URLs come as payload of
@@ -169,17 +171,18 @@ class UrlCam(Camera):  # pylint: disable=W0223
             os.path.split(os.path.abspath(__file__))[0], CONFIG_URL_DUMP_FILENAME
         )
         _LOGGER.debug(f"url dump filepath: {self._url_dump_filepath}")
-
-        if os.path.exists(self._url_dump_filepath):
-            self._load_pickle_urls()
-        else:
-            self._urls = {}
-            self._store_pickle_urls()
-
+        self._urls = {}
         self._url_index = 0
         self._default_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/No_image_available_600_x_450.svg/1280px-No_image_available_600_x_450.svg.png"  # noqa: E501
         self._max_images = CONF_MAX_NB_IMAGES
         self._default_enabled = default_enabled
+
+    async def setup_pickle_urls(self):
+        """Initialize pickle urls."""
+        if os.path.exists(self._url_dump_filepath):
+            await self._load_pickle_urls()
+        else:
+            await self._store_pickle_urls()
 
     async def _load_pickle_urls(self):
         async with aiofiles.open(self._url_dump_filepath, "rb") as file:
@@ -249,7 +252,7 @@ class UrlCam(Camera):  # pylint: disable=W0223
             return {"img_url": self._default_url}
         return {"img_url": self._urls[list(self._urls.keys())[self._url_index]]["url"]}
 
-    def img_update_handler(self, event):
+    async def img_update_handler(self, event):
         """handle new urls of Strava images"""
 
         # Append new images to the urls dict, keyed by url hash.
@@ -267,14 +270,14 @@ class UrlCam(Camera):  # pylint: disable=W0223
             ]
         )
 
-        self._store_pickle_urls()
+        await self._store_pickle_urls()
 
     @property
     def entity_registry_enabled_default(self) -> bool:
         return self._default_enabled
 
     async def async_added_to_hass(self):
-        self.hass.bus.async_listen(CONF_IMG_UPDATE_EVENT, self.img_update_handler)
+        self.hass.bus.async_listen(CONF_IMG_UPDATE_EVENT, await self.img_update_handler)
 
     async def async_will_remove_from_hass(self):
         await super().async_will_remove_from_hass()
