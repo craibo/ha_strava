@@ -65,13 +65,15 @@ Follow the steps in the configuration wizard, and eventually obtain your Strava 
 
 **!!! IMPORTANT !!!** The **Authorization Callback Domain** must be set to: **my.home-assistant.io**
 
-### 3. Add the Strava Home Assistant Integration to your Home Assistant Installation
+### 3. Add the Strava Home Assistant Integration to your Home Assistant
 
 As of now, the Strava Home Assistant Integration can only be installed as a custom repository through the Home Assistant Community Store (HACS). The installation process is super easy
 
-- Install HACS follwing the instructions [here](https://hacs.xyz/docs/setup/download)
-- Add this repository **https://github.com/craibo/ha_strava** in `HACS` > `Integrations` as a Custom Repository
-- Add the HA Strava integration using the `+Explore & Download Respoitories` button
+1. Install [HACS](#hacs) follwing the instructions [here](https://hacs.xyz/docs/setup/download)
+2. [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=craibo&repository=ha_strava&category=integration)
+3. Press the Download button
+4. Restart Home Assistant
+5. [![Open your Home Assistant instance and start setting up a new integration.](https://my.home-assistant.io/badges/config_flow_start.svg)](https://my.home-assistant.io/redirect/config_flow_start/?domain=ha_strava)
 
 ### 4. Make a connection between your Strava account and Home Assistant
 
