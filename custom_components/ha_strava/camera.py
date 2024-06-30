@@ -8,7 +8,7 @@ import pickle
 from datetime import timedelta
 from hashlib import md5
 
-import aiofiles
+import aiofiles  # pylint: disable=import-error
 import requests
 from homeassistant.components.camera import Camera
 from homeassistant.helpers.event import async_track_time_interval
@@ -186,7 +186,8 @@ class UrlCam(Camera):  # pylint: disable=abstract-method
 
     async def _load_pickle_urls(self):
         async with aiofiles.open(self._url_dump_filepath, "rb") as file:
-            self._urls = pickle.load(await file.read)
+            content = await file.read()
+            self._urls = pickle.load(content)
 
     async def _store_pickle_urls(self):
         """store image urls persistently on hard drive"""
