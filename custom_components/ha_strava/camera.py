@@ -135,7 +135,7 @@ class ActivityCamera(
         if len(self._urls) == 0:
             return
         self._url_index = (self._url_index + 1) % len(self._urls)
-        self.async_write_ha_state()
+        self.schedule_update_ha_state()
 
     def img_update_handler(self, event):
         """handle new urls of Strava images"""
@@ -293,7 +293,7 @@ class UrlCam(Camera):  # pylint: disable=abstract-method
         return self._default_enabled
 
     async def async_added_to_hass(self):
-        self.hass.bus.async_listen(CONF_IMG_UPDATE_EVENT, await self.img_update_handler)
+        self.hass.bus.async_listen(CONF_IMG_UPDATE_EVENT, self.img_update_handler)
 
     async def async_will_remove_from_hass(self):
         await super().async_will_remove_from_hass()
