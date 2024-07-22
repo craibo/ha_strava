@@ -189,13 +189,13 @@ class UrlCam(Camera):  # pylint: disable=abstract-method
         try:
             async with aiofiles.open(self._url_dump_filepath, "rb") as file:
                 content = await file.read()
-                self._urls = pickle.load(content)
+                self._urls = pickle.loads(content)
         except FileNotFoundError:
             _LOGGER.error("File not found")
         except pickle.UnpicklingError as pe:
-            _LOGGER.error(f"Invalid data in file: {pe}")
+            _LOGGER.error(f"Invalid data in file: {pe}", exc_info=pe)
         except Exception as e:  # pylint: disable=broad-exception-caught
-            _LOGGER.error(f"Error reading from file: {e}")
+            _LOGGER.error(f"Error reading from file: {e}", exc_info=e)
 
     async def _store_pickle_urls(self):
         """store image urls persistently on hard drive"""
@@ -205,9 +205,9 @@ class UrlCam(Camera):  # pylint: disable=abstract-method
         except FileNotFoundError:
             _LOGGER.error("File not found")
         except pickle.PickleError as pe:
-            _LOGGER.error(f"Invalid data in file: {pe}")
+            _LOGGER.error(f"Invalid data in file: {pe}", exc_info=pe)
         except Exception as e:  # pylint: disable=broad-exception-caught
-            _LOGGER.error(f"Error storing images to file: {e}")
+            _LOGGER.error(f"Error storing images to file: {e}", exc_info=e)
 
     def _return_default_img(self):
         img_response = requests.get(  # pylint: disable=unused-argument
