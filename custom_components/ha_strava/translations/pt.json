@@ -1,0 +1,43 @@
+{
+  "config": {
+    "title": "Integração Strava com Home Assistant (Não Oficial)",
+    "create_entry": {
+      "default": "A sua integração Strava com Home Assistant foi instalada com sucesso"
+    },
+    "abort": {
+      "already_configured": "Já foi instalada uma integração Strava com Home Assistant. Apenas pode ter uma instalação de cada vez",
+      "no_public_url": "A sua instância do Home Assistant parece não ter um URL público. A integração Strava com Home Assistant requer um URL público",
+      "webhook_fail": "O Strava Home Assistant falhou ao subscrever o Webhook do Strava"
+    },
+    "step": {
+      "get_oauth_info": {
+        "title": "Por favor, insira as suas credenciais da API do Strava",
+        "description": "Pode encontrar mais informações sobre como obter as suas credenciais da API do Strava aqui: https://www.strava.com/settings/api",
+        "data": {
+          "client_id": "ID do Cliente",
+          "client_secret": "Segredo do Cliente",
+          "conf_photos": "Importar fotos do Strava?"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Configuração do Strava com Home Assistant",
+        "description": "Configurações da integração Strava com Home Assistant. Pode encontrar mais informações sobre as opções aqui: https://github.com/craibo/ha_strava",
+        "data": {
+          "nb_activities": "Número de atividades do Strava em simultâneo",
+          "img_update_interval_seconds": "Rotação de imagem (segundos)",
+          "conf_photos": "Importar fotos do Strava?",
+          "conf_distance_unit": "Sistema de unidades de distância a usar",
+          "geocode_xyz_api_key": "Chave API do geocode.xyz (Opcional)"
+        }
+      }
+    },
+    "abort": {
+      "no_config": "Não foi possível encontrar a configuração do Strava com Home Assistant",
+      "update_success": "A configuração do Strava com Home Assistant foi atualizada com sucesso!"
+    }
+  }
+}
