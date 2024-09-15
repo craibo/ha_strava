@@ -18,6 +18,7 @@ from homeassistant.const import (
     EVENT_CORE_CONFIG_UPDATE,
     EVENT_HOMEASSISTANT_START,
 )
+
 # HASS imports
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_entry_oauth2_flow
@@ -820,7 +821,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         return
 
     def strava_config_update_handler(event):  # pylint: disable=unused-argument
-        asyncio.run_coroutine_threadsafe(async_strava_config_update_handler(), hass.loop)
+        asyncio.run_coroutine_threadsafe(
+            async_strava_config_update_handler(), hass.loop
+        )
 
     def core_config_update_handler(event):
         """
@@ -865,10 +868,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         entry.add_update_listener(strava_config_update_helper)
     ]
 
-    for component in PLATFORMS:
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, component)
-        )
+    hass.async_create_task(
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    )
 
     return True
 

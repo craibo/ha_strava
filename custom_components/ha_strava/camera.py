@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import logging
 import os
 import pickle
@@ -9,7 +10,7 @@ from datetime import timedelta
 from hashlib import md5
 
 import aiofiles  # pylint: disable=import-error
-import requests
+import aiohttp
 from homeassistant.components.camera import Camera
 from homeassistant.helpers.event import async_track_time_interval
 
@@ -113,31 +114,32 @@ class ActivityCamera(
             return _DEFAULT_IMAGE_URL
         return self._urls[self._url_index]["url"]
 
-    def camera_image(
+    async def async_camera_image(
         self, width: int | None = None, height: int | None = None
     ) -> bytes | None:
         """Return image response."""
         if len(self._urls) == 0:
             _LOGGER.debug(f"{self._device_id}: serving default image")
-            return _return_default_img()
+            return await _return_default_img()
 
         url = self._urls[self._url_index]["url"]
-        response = requests.get(url=url, timeout=60000)
-        if response.status_code != 200:
-            _LOGGER.error(
-                f"{self._device_id}: Invalid Image: {response.status_code}: {url}"
-            )
-            return _return_default_img()
-        return response.content
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url=url, timeout=60) as response:
+                if response.status != 200:
+                    _LOGGER.error(
+                        f"{self._device_id}: Invalid Image: {response.status}: {url}"
+                    )
+                    return await _return_default_img()
+                return await response.read()
 
     def rotate_img(self):  # pylint: disable=missing-function-docstring
         _LOGGER.debug(f"{self._device_id}: Strava Image Count: {len(self._urls)}")
         if len(self._urls) == 0:
             return
         self._url_index = (self._url_index + 1) % len(self._urls)
-        self.schedule_update_ha_state()
+        self.async_write_ha_state()
 
-    def img_update_handler(self, event):
+    async def img_update_handler(self, event):
         """handle new urls of Strava images"""
         _LOGGER.debug(f"{self._device_id}: Received image update: {event}")
         if event.data["activity_index"] != self._activity_index:
@@ -189,13 +191,13 @@ class UrlCam(Camera):  # pylint: disable=abstract-method
         try:
             async with aiofiles.open(self._url_dump_filepath, "rb") as file:
                 content = await file.read()
-                self._urls = pickle.loads(content)
+                self._urls = pickle.load(io.BytesIO(content))
         except FileNotFoundError:
             _LOGGER.error("File not found")
         except pickle.UnpicklingError as pe:
-            _LOGGER.error(f"Invalid data in file: {pe}", exc_info=pe)
+            _LOGGER.error(f"Invalid data in file: {pe}")
         except Exception as e:  # pylint: disable=broad-exception-caught
-            _LOGGER.error(f"Error reading from file: {e}", exc_info=e)
+            _LOGGER.error(f"Error reading from file: {e}")
 
     async def _store_pickle_urls(self):
         """store image urls persistently on hard drive"""
@@ -205,46 +207,45 @@ class UrlCam(Camera):  # pylint: disable=abstract-method
         except FileNotFoundError:
             _LOGGER.error("File not found")
         except pickle.PickleError as pe:
-            _LOGGER.error(f"Invalid data in file: {pe}", exc_info=pe)
+            _LOGGER.error(f"Invalid data in file: {pe}")
         except Exception as e:  # pylint: disable=broad-exception-caught
-            _LOGGER.error(f"Error storing images to file: {e}", exc_info=e)
+            _LOGGER.error(f"Error storing images to file: {e}")
 
-    def _return_default_img(self):
-        img_response = requests.get(  # pylint: disable=unused-argument
-            url=self._default_url, timeout=60000
-        )
-        return img_response.content
+    async def _return_default_img(self):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url=self._default_url, timeout=60) as img_response:
+                return await img_response.read()
 
-    def is_url_valid(self, url):
+    async def is_url_valid(self, url):
         """test whether an image URL returns a valid response"""
-        img_response = requests.get(  # pylint: disable=unused-argument
-            url=url, timeout=60000
-        )
-        if img_response.status_code == 200:
-            return True
-        _LOGGER.error(
-            f"{url} did not return a valid image | Response: {img_response.status_code}"
-        )
-        return False
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url=url, timeout=60) as img_response:
+                if img_response.status == 200:
+                    return True
+                _LOGGER.error(
+                    f"{url} did not return a valid image | Response: {img_response.status}"
+                )
+                return False
 
-    def camera_image(
+    async def async_camera_image(
         self, width: int | None = None, height: int | None = None
     ) -> bytes | None:
         """Return image response."""
         if len(self._urls) == self._url_index:
             _LOGGER.debug("No custom image urls....serving default image")
-            return self._return_default_img()
+            return await self._return_default_img()
 
-        img_response = requests.get(  # pylint: disable=unused-argument
-            url=self._urls[list(self._urls.keys())[self._url_index]]["url"],
-            timeout=60000,
-        )
-        if img_response.status_code == 200:
-            return img_response.content
-        _LOGGER.error(
-            f"{self._urls[list(self._urls.keys())[self._url_index]]['url']} did not return a valid image. Response: {img_response.status_code}"  # noqa: E501
-        )
-        return self._return_default_img()
+        async with aiohttp.ClientSession() as session:
+            async with session.get(  # pylint: disable=unused-argument
+                url=self._urls[list(self._urls.keys())[self._url_index]]["url"],
+                timeout=60,
+            ) as img_response:
+                if img_response.status == 200:
+                    return await img_response.read()
+                _LOGGER.error(
+                    f"{self._urls[list(self._urls.keys())[self._url_index]]['url']} did not return a valid image. Response: {img_response.status}"  # noqa: E501
+                )
+                return await self._return_default_img()
 
     def rotate_img(self):  # pylint: disable=missing-function-docstring
         _LOGGER.debug(f"Number of images available from Strava: {len(self._urls)}")
@@ -273,7 +274,7 @@ class UrlCam(Camera):  # pylint: disable=abstract-method
 
         # Append new images to the urls dict, keyed by url hash.
         for img_url in event.data["img_urls"]:
-            if self.is_url_valid(url=img_url["url"]):
+            if await self.is_url_valid(url=img_url["url"]):
                 self._urls[md5(img_url["url"].encode()).hexdigest()] = {**img_url}
 
         # Ensure the urls dict is sorted by date and truncated to max # images.
@@ -299,7 +300,7 @@ class UrlCam(Camera):  # pylint: disable=abstract-method
         await super().async_will_remove_from_hass()
 
 
-def _return_default_img():
-    return requests.get(  # pylint: disable=unused-argument
-        url=_DEFAULT_IMAGE_URL, timeout=60000
-    ).content
+async def _return_default_img():
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url=_DEFAULT_IMAGE_URL, timeout=60) as img_response:
+            return await img_response.read()
