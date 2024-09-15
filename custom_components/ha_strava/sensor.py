@@ -438,7 +438,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
 
         if metric == CONF_SENSOR_DISTANCE:
             distance = self._data[CONF_SENSOR_DISTANCE] / 1000
-            if self._is_unit_metric_default or self._is_unit_metric: 
+            if self._is_unit_metric_default or self._is_unit_metric:
                 return round(distance, 2)
             return round(
                 DistanceConverter.convert(
@@ -720,8 +720,16 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
 
     def strava_data_update_event_handler(self, event):
         """Handle Strava API data which is emitted from a Strava Update Event"""
-        self._data = event.data["activities"][self._activity_index]
-        self.schedule_update_ha_state()
+        activities = event.data.get("activities", [])
+        if 0 <= self._activity_index < len(activities):
+            self._data = activities[self._activity_index]
+            self.schedule_update_ha_state()
+        else:
+            _LOGGER.info(
+                "Invalid activity index: %s. Number of activities returned from Strava API: %s",
+                self._activity_index + 1,
+                len(activities),
+            )
 
     async def async_added_to_hass(self):
         self.hass.bus.async_listen(
