@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import io
 import logging
 import os
@@ -137,7 +138,8 @@ class ActivityCamera(
         if len(self._urls) == 0:
             return
         self._url_index = (self._url_index + 1) % len(self._urls)
-        self.async_write_ha_state()
+        asyncio.run_coroutine_threadsafe(self.async_write_ha_state(), self.hass.loop)
+        return
 
     async def img_update_handler(self, event):
         """handle new urls of Strava images"""
