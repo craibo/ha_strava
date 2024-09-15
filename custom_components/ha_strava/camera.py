@@ -59,14 +59,14 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         )
     async_add_entities(cameras)
 
-    def image_update_listener(  # pylint: disable=inconsistent-return-statements
+    async def image_update_listener(  # pylint: disable=inconsistent-return-statements
         now,
     ):  # pylint: disable=unused-argument
         if len(ha_strava_config_entries) != 1:
             return -1
 
         for camera in cameras:
-            camera.rotate_img()
+            await camera.rotate_img()
 
     ha_strava_config_entries = hass.config_entries.async_entries(domain=DOMAIN)
     img_update_interval_seconds = int(
@@ -132,7 +132,7 @@ class ActivityCamera(
                     return await _return_default_img()
                 return await response.read()
 
-    def rotate_img(self):  # pylint: disable=missing-function-docstring
+    async def rotate_img(self):  # pylint: disable=missing-function-docstring
         _LOGGER.debug(f"{self._device_id}: Strava Image Count: {len(self._urls)}")
         if len(self._urls) == 0:
             return
@@ -247,14 +247,12 @@ class UrlCam(Camera):  # pylint: disable=abstract-method
                 )
                 return await self._return_default_img()
 
-    def rotate_img(self):  # pylint: disable=missing-function-docstring
+    async def rotate_img(self):  # pylint: disable=missing-function-docstring
         _LOGGER.debug(f"Number of images available from Strava: {len(self._urls)}")
         if len(self._urls) == 0:
             return
         self._url_index = (self._url_index + 1) % len(self._urls)
         self.async_write_ha_state()
-        return
-        # self.schedule_update_ha_state()
 
     @property
     def state(self):  # pylint: disable=overridden-final-method

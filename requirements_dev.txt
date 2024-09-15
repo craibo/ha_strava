@@ -1,4 +1,8 @@
 homeassistant
+aiohttp
+aiofiles
+numpy
+voluptuous
 
 black
 flake8
