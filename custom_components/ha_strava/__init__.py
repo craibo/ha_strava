@@ -914,13 +914,13 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
             },
         )
 
-        if delete_response.status == 204:
+        if delete_response.status in [204, 404]:
             _LOGGER.debug(
                 f"Successfully deleted strava webhook subscription for {entry.data[CONF_CALLBACK_URL]}"  # noqa:E501
             )
         else:
             _LOGGER.error(
-                f"Strava webhook for {entry.data[CONF_CALLBACK_URL]} could not be deleted: {await delete_response.text()}"  # noqa:E501
+                f"Code {delete_response.status}: Strava webhook for {entry.data[CONF_CALLBACK_URL]} could not be deleted: {await delete_response.text()}"  # noqa:E501
             )
             return False
     else:
