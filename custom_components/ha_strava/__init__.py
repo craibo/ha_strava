@@ -798,10 +798,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     # event listeners
     async def strava_startup_functions():
+        await strava_webhook_view.fetch_strava_data()
         await renew_webhook_subscription(
             hass=hass, entry=entry, webhook_view=strava_webhook_view
         )
-        await strava_webhook_view.fetch_strava_data()
         return True
 
     def ha_start_handler(event):  # pylint: disable=unused-argument
@@ -868,8 +868,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         entry.add_update_listener(strava_config_update_helper)
     ]
 
-    hass.async_create_task(
-        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    await hass.async_create_task(
+        hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     )
 
     return True
