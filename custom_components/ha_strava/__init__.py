@@ -352,8 +352,8 @@ class StravaWebhookView(HomeAssistantView):
                 activity.get("start_date_local", "2000-01-01T00:00:00Z"),
                 "%Y-%m-%dT%H:%M:%SZ",
             ),
-            CONF_SENSOR_ELAPSED_TIME: float(activity.get("elapsed_time", -1)),
-            CONF_SENSOR_MOVING_TIME: float(activity.get("moving_time", -1)),
+            CONF_SENSOR_ELAPSED_TIME: int(activity.get("elapsed_time", -1)),
+            CONF_SENSOR_MOVING_TIME: int(activity.get("moving_time", -1)),
             CONF_SENSOR_KUDOS: int(activity.get("kudos_count", -1)),
             CONF_SENSOR_CALORIES: int(
                 activity.get(
@@ -393,7 +393,7 @@ class StravaWebhookView(HomeAssistantView):
                             "count", 0
                         )
                     ),
-                    CONF_SENSOR_MOVING_TIME: float(
+                    CONF_SENSOR_MOVING_TIME: int(
                         summary_stats.get("recent_ride_totals", {"moving_time": 0}).get(
                             "moving_time", 0
                         )
@@ -416,7 +416,7 @@ class StravaWebhookView(HomeAssistantView):
                             "count", 0
                         )
                     ),
-                    CONF_SENSOR_MOVING_TIME: float(
+                    CONF_SENSOR_MOVING_TIME: int(
                         summary_stats.get("ytd_ride_totals", {"moving_time": 0}).get(
                             "moving_time", 0
                         )
@@ -439,7 +439,7 @@ class StravaWebhookView(HomeAssistantView):
                             "count", 0
                         )
                     ),
-                    CONF_SENSOR_MOVING_TIME: float(
+                    CONF_SENSOR_MOVING_TIME: int(
                         summary_stats.get("all_ride_totals", {"moving_time": 0}).get(
                             "moving_time", 0
                         )
@@ -470,7 +470,7 @@ class StravaWebhookView(HomeAssistantView):
                             "count", 0
                         )
                     ),
-                    CONF_SENSOR_MOVING_TIME: float(
+                    CONF_SENSOR_MOVING_TIME: int(
                         summary_stats.get("recent_run_totals", {"moving_time": 0}).get(
                             "moving_time", 0
                         )
@@ -493,7 +493,7 @@ class StravaWebhookView(HomeAssistantView):
                             "count", 0
                         )
                     ),
-                    CONF_SENSOR_MOVING_TIME: float(
+                    CONF_SENSOR_MOVING_TIME: int(
                         summary_stats.get("ytd_run_totals", {"moving_time": 0}).get(
                             "moving_time", 0
                         )
@@ -516,7 +516,7 @@ class StravaWebhookView(HomeAssistantView):
                             "count", 0
                         )
                     ),
-                    CONF_SENSOR_MOVING_TIME: float(
+                    CONF_SENSOR_MOVING_TIME: int(
                         summary_stats.get("all_run_totals", {"moving_time": 0}).get(
                             "moving_time", 0
                         )
@@ -541,7 +541,7 @@ class StravaWebhookView(HomeAssistantView):
                             "count", 0
                         )
                     ),
-                    CONF_SENSOR_MOVING_TIME: float(
+                    CONF_SENSOR_MOVING_TIME: int(
                         summary_stats.get("recent_swim_totals", {"moving_time": 0}).get(
                             "moving_time", 0
                         )
@@ -559,7 +559,7 @@ class StravaWebhookView(HomeAssistantView):
                             "count", 0
                         )
                     ),
-                    CONF_SENSOR_MOVING_TIME: float(
+                    CONF_SENSOR_MOVING_TIME: int(
                         summary_stats.get("ytd_swim_totals", {"moving_time": 0}).get(
                             "moving_time", 0
                         )
@@ -577,7 +577,7 @@ class StravaWebhookView(HomeAssistantView):
                             "count", 0
                         )
                     ),
-                    CONF_SENSOR_MOVING_TIME: float(
+                    CONF_SENSOR_MOVING_TIME: int(
                         summary_stats.get("all_swim_totals", {"moving_time": 0}).get(
                             "moving_time", 0
                         )
