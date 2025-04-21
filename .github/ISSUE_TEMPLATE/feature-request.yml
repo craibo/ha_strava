@@ -1,0 +1,51 @@
+name: Feature request
+description: Request a feature or enhancement for the HA Strava integration
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This form is for requesting a feature or enhancement for the HA Strava integration. Requests should be detailed and expected outcomes clear to help developers with the implementation.
+
+        If requesting additional fields be included on the sensors please confirm they are available on the [Strava API](https://developers.strava.com/docs/reference/#api-models-DetailedActivity)
+
+        If you are intending to create a pull request, a feature request is required and must be referenced in the PR
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: |
+        A clear and concise description of the feature or enhancement.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: |
+        A clear and concise description of what you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional information
+      description: |
+        Any other relevant information that might be helpful.
+    validations:
+      required: false
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirmation
+      description: |
+        Please confirm the following
+      options:
+        - label: |
+            I have confirmed that this feature or enhancement has **not** previously been requested.
+          required: true
+        - label: I am sure this feature request is well enough described it can be implemented.
+          required: true
+        - label: (If applicable) I have confirmed the required Strava fields are available on the Strava API.
+          required: true

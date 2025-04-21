@@ -1,0 +1,70 @@
+name: Maintenance report
+description: Report an HA deprecation warning for the HA Strava integration
+labels: ["maintenance"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This form is for reporting Home Assistant deprecation warnings for the HA Strava integration.
+
+        If you are reporting a bug, you must use the bug report form.
+
+        If you are intending to create a pull request, a maintenance report is not required, but please clearly describe the deprecation warning being addressed in the description of the PR.
+  - type: textarea
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+      description: |
+        Home Assistant version
+      placeholder: 2025.1.0
+    validations:
+      required: true
+  - type: textarea
+    id: strava_version
+    attributes:
+      label: HA Strava version
+      description: |
+        HA Strava version
+      placeholder: 3.2.43
+    validations:
+      required: true
+  - type: textarea
+    id: warnings
+    attributes:
+      label: Deprecation warnings
+      description: |
+        Copy and past the deprecation messages from the logs
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        If applicable, please add any additional log messages
+    validations:
+      required: false
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional information
+      description: |
+        Any other relevant information that might be helpful.
+    validations:
+      required: false
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Confirmation
+      description: |
+        Please confirm the following
+      options:
+        - label: |
+            I have confirmed that this maintenance report has **not** already been reported.
+          required: true
+        - label: |
+            I confirmed this is a maintenance report, not a bug.
+          required: true
+        - label: |
+            Log messages or diagnostics relevant to the required maintenance are included.
+          required: true
