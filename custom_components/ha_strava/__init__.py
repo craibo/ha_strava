@@ -37,6 +37,7 @@ from .const import (  # noqa: F401
     CONF_ATTR_PRIVATE,
     CONF_ATTR_SPORT_TYPE,
     CONF_ATTR_START_LATLONG,
+    CONF_ATTR_POLYLINE,
     CONF_CALLBACK_URL,
     CONF_GEOCODE_XYZ_API_KEY,
     CONF_IMG_UPDATE_EVENT,
@@ -375,6 +376,8 @@ class StravaWebhookView(HomeAssistantView):
             CONF_ATTR_SPORT_TYPE: activity.get("sport_type"),
             CONF_ATTR_COMMUTE: activity.get("commute", False),
             CONF_ATTR_PRIVATE: activity.get("private", False),
+            CONF_ATTR_POLYLINE:
+                activity.get("map", {}).get("summary_polyline", ""),
         }
 
     def _sensor_summary_stats(self, summary_stats: dict) -> dict:
