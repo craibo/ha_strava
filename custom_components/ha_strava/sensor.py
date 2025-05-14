@@ -45,6 +45,7 @@ from .const import (
     CONF_ATTR_SPORT_TYPE,
     CONF_ATTR_START_LATLONG,
     CONF_ATTR_TITLE,
+    CONF_ATTR_POLYLINE,
     CONF_DISTANCE_UNIT_OVERRIDE,
     CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT,
     CONF_DISTANCE_UNIT_OVERRIDE_METRIC,
@@ -669,6 +670,7 @@ class StravaStatsSensor(SensorEntity):  # pylint: disable=missing-class-docstrin
                 attr[CONF_LONGITUDE] = float(
                     self._data[CONF_ATTR_START_LATLONG][1]
                 )  # noqa: E501
+            attr[CONF_ATTR_POLYLINE] = self._data[CONF_ATTR_POLYLINE]
             return attr
 
         self.set_distance_units()
