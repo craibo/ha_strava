@@ -19,9 +19,6 @@ __pycache__/
 # IntelliJ
 .idea/*
 
-# Cursor
-.cursor/*
-
 # Code assistants
 GEMINI.md
 CLAUDE.md

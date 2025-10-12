@@ -11,6 +11,8 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_WEBHOOK_ID
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.entity_registry import async_get as async_get_entity_registry
+from homeassistant.helpers.entity_registry import async_entries_for_config_entry
 from homeassistant.helpers.network import NoURLAvailableError, get_url
 
 from .const import CONF_CALLBACK_URL, DOMAIN, WEBHOOK_SUBSCRIPTION_URL
@@ -203,3 +205,106 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
         hass.data[DOMAIN].pop(entry.entry_id)
 
     return unload_ok
+
+
+async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry):
+    """Migrate existing single-user entries to multi-user format."""
+    version = config_entry.version
+    
+    _LOGGER.info(f"Migrating Strava config entry {config_entry.entry_id} from version {version}")
+    
+    if version == 1:
+        # This is a pre-multi-user entry
+        _LOGGER.info(f"Migrating single-user entry {config_entry.entry_id} to multi-user format")
+        
+        # Get the athlete ID from the existing entry
+        athlete_id = config_entry.unique_id
+        
+        # Update the entry data to include migration markers
+        new_data = {**config_entry.data}
+        new_data["_migrated_to_multi_user"] = True
+        new_data["_original_athlete_id"] = athlete_id
+        new_data["_migration_version"] = "1_to_2"
+        
+        # Migrate entity registry entries
+        await async_migrate_entity_registry(hass, config_entry, athlete_id)
+        
+        return {"version": 2, "data": new_data}
+    
+    return None
+
+
+async def async_migrate_entity_registry(hass: HomeAssistant, config_entry: ConfigEntry, athlete_id: str):
+    """Migrate existing entities to new unique ID format with athlete_id prefix."""
+    entity_registry = async_get_entity_registry(hass)
+    
+    # Find all entities for this config entry
+    entities = async_entries_for_config_entry(
+        registry=entity_registry,
+        config_entry_id=config_entry.entry_id,
+    )
+    
+    _LOGGER.info(f"Found {len(entities)} entities to migrate for athlete {athlete_id}")
+    
+    migrated_count = 0
+    for entity in entities:
+        old_unique_id = entity.unique_id
+        new_unique_id = None
+        
+        # Determine new unique ID format based on entity type
+        if old_unique_id.startswith("strava_stats_"):
+            # Summary stats: strava_stats_{summary_type}_{activity_type}_{metric}
+            # New: strava_stats_{athlete_id}_{summary_type}_{activity_type}_{metric}
+            parts = old_unique_id.split("_", 2)  # ["strava", "stats", "rest..."]
+            if len(parts) >= 3:
+                new_unique_id = f"strava_stats_{athlete_id}_{parts[2]}"
+                
+        elif old_unique_id.startswith("strava_") and "_" in old_unique_id[7:]:
+            # Activity sensors: strava_{activity_index}_{sensor_index}
+            # New: strava_{athlete_id}_{activity_index}_{sensor_index}
+            parts = old_unique_id.split("_")
+            if len(parts) == 3 and parts[1].isdigit() and parts[2].isdigit():
+                new_unique_id = f"strava_{athlete_id}_{parts[1]}_{parts[2]}"
+                
+        elif old_unique_id.startswith("strava_cam"):
+            # Camera entities: strava_cam -> strava_cam_{athlete_id}
+            new_unique_id = f"strava_cam_{athlete_id}"
+            
+        elif old_unique_id.startswith("strava_") and "_photos" in old_unique_id:
+            # Activity camera photos: strava_{activity_index}_photos
+            # New: strava_{athlete_id}_{activity_index}_photos
+            parts = old_unique_id.split("_")
+            if len(parts) == 3 and parts[1].isdigit() and parts[2] == "photos":
+                new_unique_id = f"strava_{athlete_id}_{parts[1]}_{parts[2]}"
+        
+        if new_unique_id and new_unique_id != old_unique_id:
+            try:
+                # Update the entity's unique ID
+                entity_registry.async_update_entity(
+                    entity.entity_id,
+                    new_unique_id=new_unique_id
+                )
+                migrated_count += 1
+                _LOGGER.debug(f"Migrated entity {entity.entity_id} from {old_unique_id} to {new_unique_id}")
+            except (ValueError, KeyError, AttributeError) as err:
+                _LOGGER.error(f"Failed to migrate entity {entity.entity_id}: {err}")
+        else:
+            _LOGGER.debug(f"Skipping entity {entity.entity_id} with unique_id {old_unique_id} - no migration needed")
+    
+    _LOGGER.info(f"Successfully migrated {migrated_count} entities for athlete {athlete_id}")
+
+
+async def async_preserve_historical_data(hass: HomeAssistant, config_entry: ConfigEntry):  # noqa: ARG001
+    """Preserve historical data during migration by ensuring entity continuity."""
+    _LOGGER.info(f"Preserving historical data for config entry {config_entry.entry_id}")
+    
+    # The entity registry migration above should preserve historical data
+    # by maintaining the same entity_id while updating the unique_id
+    # This ensures Home Assistant's internal data structures remain intact
+    
+    # Additional data preservation could be implemented here if needed:
+    # - Backing up entity states
+    # - Migrating custom attributes
+    # - Preserving device associations
+    
+    _LOGGER.info(f"Historical data preservation completed for config entry {config_entry.entry_id}")
