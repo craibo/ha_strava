@@ -13,6 +13,7 @@ from homeassistant.const import (
 )
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.util.unit_conversion import DistanceConverter, SpeedConverter
+from homeassistant.util.unit_system import METRIC_SYSTEM
 
 from .const import (
     CONF_ACTIVITY_TYPE_CANOEING,
@@ -281,7 +282,7 @@ class StravaSummaryStatsSensor(CoordinatorEntity, SensorEntity):
         if override == CONF_DISTANCE_UNIT_OVERRIDE_METRIC:
             return True
         if override == CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT:
-            return self.hass.config.units.is_metric
+            return self.hass.config.units is METRIC_SYSTEM
         return False
 
 
@@ -541,5 +542,5 @@ class StravaStatsSensor(CoordinatorEntity, SensorEntity):
         if override == CONF_DISTANCE_UNIT_OVERRIDE_METRIC:
             return True
         if override == CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT:
-            return self.hass.config.units.is_metric
+            return self.hass.config.units is METRIC_SYSTEM
         return False
