@@ -21,14 +21,14 @@ CONF_MAX_NB_IMAGES = 100
 CONF_WEBHOOK_ID = "webhook_id"
 CONF_CALLBACK_URL = "callback_url"
 WEBHOOK_SUBSCRIPTION_URL = "https://www.strava.com/api/v3/push_subscriptions"
-CONF_NB_ACTIVITIES = "nb_activities"
-DEFAULT_NB_ACTIVITIES = 2
-MAX_NB_ACTIVITIES = 10
 CONF_DISTANCE_UNIT_OVERRIDE = "conf_distance_unit"
 CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT = "default"
 CONF_DISTANCE_UNIT_OVERRIDE_METRIC = "metric"
 CONF_DISTANCE_UNIT_OVERRIDE_IMPERIAL = "imperial"
-CONF_GEOCODE_XYZ_API_KEY = "geocode_xyz_api_key"
+
+# Activity Type Selection
+CONF_ACTIVITY_TYPES_TO_TRACK = "activity_types_to_track"
+DEFAULT_ACTIVITY_TYPES = ["Run", "Ride", "Walk", "Swim", "Hike"]
 
 STRAVA_ACTIVITY_BASE_URL = "https://www.strava.com/activities/"
 STRAVA_ACTHLETE_BASE_URL = "https://www.strava.com/dashboard"
@@ -66,19 +66,34 @@ CONF_SENSOR_HEART_RATE_MAX = "max_heartrate"
 CONF_SENSOR_BIGGEST_RIDE_DISTANCE = "biggest_ride_distance"
 CONF_SENSOR_BIGGEST_ELEVATION_GAIN = "biggest_climb_elevation_gain"
 
-CONF_ACTIVITY_TYPE_RUN = "run"
-CONF_ACTIVITY_TYPE_RIDE = "ride"
-CONF_ACTIVITY_TYPE_MTB_RIDE = "mountainbikeride"
-CONF_ACTIVITY_TYPE_SWIM = "swim"
-CONF_ACTIVITY_TYPE_HIKE = "hike"
-CONF_ACTIVITY_TYPE_WALK = "walk"
-CONF_ACTIVITY_TYPE_GOLF = "golf"
-CONF_ACTIVITY_TYPE_OTHER = "other"
-CONF_ACTIVITY_TYPE_KAYAKING = "kayaking"
-CONF_ACTIVITY_TYPE_CANOEING = "canoeing"
-CONF_ACTIVITY_TYPE_GYM = "weighttraining"
-CONF_ACTIVITY_TYPE_WORKOUT = "workout"
-CONF_ACTIVITY_TYPE_SNOWBOARD = "snowboard"
+# All 50 Supported Activity Types
+SUPPORTED_ACTIVITY_TYPES = [
+    "AlpineSki", "BackcountrySki", "Badminton", "Canoeing", "Crossfit",
+    "EBikeRide", "Elliptical", "EMountainBikeRide", "Golf", "GravelRide",
+    "Handcycle", "HighIntensityIntervalTraining", "Hike", "IceSkate",
+    "InlineSkate", "Kayaking", "Kitesurf", "MountainBikeRide", "NordicSki",
+    "Pickleball", "Pilates", "Racquetball", "Ride", "RockClimbing",
+    "RollerSki", "Rowing", "Run", "Sail", "Skateboard", "Snowboard",
+    "Snowshoe", "Soccer", "Squash", "StairStepper", "StandUpPaddling",
+    "Surfing", "Swim", "TableTennis", "Tennis", "TrailRun", "Velomobile",
+    "VirtualRide", "VirtualRow", "VirtualRun", "Walk", "WeightTraining",
+    "Wheelchair", "Windsurf", "Workout", "Yoga"
+]
+
+# Legacy activity type constants for backward compatibility
+CONF_ACTIVITY_TYPE_RUN = "Run"
+CONF_ACTIVITY_TYPE_RIDE = "Ride"
+CONF_ACTIVITY_TYPE_MTB_RIDE = "MountainBikeRide"
+CONF_ACTIVITY_TYPE_SWIM = "Swim"
+CONF_ACTIVITY_TYPE_HIKE = "Hike"
+CONF_ACTIVITY_TYPE_WALK = "Walk"
+CONF_ACTIVITY_TYPE_GOLF = "Golf"
+CONF_ACTIVITY_TYPE_OTHER = "Other"
+CONF_ACTIVITY_TYPE_KAYAKING = "Kayaking"
+CONF_ACTIVITY_TYPE_CANOEING = "Canoeing"
+CONF_ACTIVITY_TYPE_GYM = "WeightTraining"
+CONF_ACTIVITY_TYPE_WORKOUT = "Workout"
+CONF_ACTIVITY_TYPE_SNOWBOARD = "Snowboard"
 
 CONF_ACTIVITES_RIDE = [CONF_ACTIVITY_TYPE_RIDE, CONF_ACTIVITY_TYPE_MTB_RIDE]
 
@@ -107,35 +122,75 @@ FACTOR_METER_TO_FEET = 3.28084
 FACTOR_KILOJOULES_TO_KILOCALORIES = 0.239006
 FACTOR_KILOMETER_TO_MILE = 0.621371
 
-CONF_SENSOR_1 = "sensor_1"
-CONF_SENSOR_2 = "sensor_2"
-CONF_SENSOR_3 = "sensor_3"
-CONF_SENSOR_4 = "sensor_4"
-CONF_SENSOR_5 = "sensor_5"
-CONF_SENSOR_6 = "sensor_6"
-CONF_SENSOR_7 = "sensor_7"
-CONF_SENSOR_8 = "sensor_8"
-CONF_SENSOR_9 = "sensor_9"
-CONF_SENSOR_10 = "sensor_10"
-CONF_SENSOR_11 = "sensor_11"
-CONF_SENSOR_12 = "sensor_12"
-CONF_SENSOR_13 = "sensor_13"
+# Activity Type Sensor Configuration
+CONF_ACTIVITY_TYPE_SENSOR_METRICS = [
+    CONF_SENSOR_ACTIVITY_COUNT,
+    CONF_SENSOR_DISTANCE,
+    CONF_SENSOR_MOVING_TIME,
+    CONF_SENSOR_ELEVATION,
+    CONF_SENSOR_CALORIES,
+    CONF_SENSOR_PACE,
+    CONF_SENSOR_SPEED,
+    CONF_SENSOR_HEART_RATE_AVG,
+    CONF_SENSOR_HEART_RATE_MAX,
+    CONF_SENSOR_CADENCE_AVG,
+    CONF_SENSOR_POWER,
+    CONF_SENSOR_TROPHIES,
+    CONF_SENSOR_KUDOS,
+]
 
-CONF_SENSOR_DEFAULT = {
-    "icon": "mdi:run",
-    CONF_SENSOR_1: CONF_SENSOR_MOVING_TIME,
-    CONF_SENSOR_2: CONF_SENSOR_PACE,
-    CONF_SENSOR_3: CONF_SENSOR_DISTANCE,
-    CONF_SENSOR_4: CONF_SENSOR_SPEED,
-    CONF_SENSOR_5: CONF_SENSOR_ELEVATION,
-    CONF_SENSOR_6: CONF_SENSOR_POWER,
-    CONF_SENSOR_7: CONF_SENSOR_CALORIES,
-    CONF_SENSOR_8: CONF_SENSOR_HEART_RATE_AVG,
-    CONF_SENSOR_9: CONF_SENSOR_HEART_RATE_MAX,
-    CONF_SENSOR_10: CONF_SENSOR_ELAPSED_TIME,
-    CONF_SENSOR_11: CONF_SENSOR_TROPHIES,
-    CONF_SENSOR_12: CONF_SENSOR_KUDOS,
-    CONF_SENSOR_13: CONF_SENSOR_CADENCE_AVG,
+# Activity Type Icon Mapping
+ACTIVITY_TYPE_ICONS = {
+    "AlpineSki": "mdi:ski",
+    "BackcountrySki": "mdi:ski",
+    "Badminton": "mdi:badminton",
+    "Canoeing": "mdi:kayaking",
+    "Crossfit": "mdi:weight-lifter",
+    "EBikeRide": "mdi:bike",
+    "Elliptical": "mdi:elliptical",
+    "EMountainBikeRide": "mdi:bike",
+    "Golf": "mdi:golf",
+    "GravelRide": "mdi:bike",
+    "Handcycle": "mdi:bike",
+    "HighIntensityIntervalTraining": "mdi:weight-lifter",
+    "Hike": "mdi:hiking",
+    "IceSkate": "mdi:ice-skate",
+    "InlineSkate": "mdi:skate",
+    "Kayaking": "mdi:kayaking",
+    "Kitesurf": "mdi:kitesurfing",
+    "MountainBikeRide": "mdi:bike",
+    "NordicSki": "mdi:ski",
+    "Pickleball": "mdi:tennis",
+    "Pilates": "mdi:yoga",
+    "Racquetball": "mdi:tennis",
+    "Ride": "mdi:bike",
+    "RockClimbing": "mdi:climbing",
+    "RollerSki": "mdi:ski",
+    "Rowing": "mdi:rowing",
+    "Run": "mdi:run",
+    "Sail": "mdi:sail-boat",
+    "Skateboard": "mdi:skateboard",
+    "Snowboard": "mdi:snowboard",
+    "Snowshoe": "mdi:snowshoe",
+    "Soccer": "mdi:soccer",
+    "Squash": "mdi:tennis",
+    "StairStepper": "mdi:stairs",
+    "StandUpPaddling": "mdi:kayaking",
+    "Surfing": "mdi:surfing",
+    "Swim": "mdi:swim",
+    "TableTennis": "mdi:tennis",
+    "Tennis": "mdi:tennis",
+    "TrailRun": "mdi:run",
+    "Velomobile": "mdi:bike",
+    "VirtualRide": "mdi:bike",
+    "VirtualRow": "mdi:rowing",
+    "VirtualRun": "mdi:run",
+    "Walk": "mdi:walk",
+    "WeightTraining": "mdi:weight-lifter",
+    "Wheelchair": "mdi:wheelchair",
+    "Windsurf": "mdi:kitesurfing",
+    "Workout": "mdi:weight-lifter",
+    "Yoga": "mdi:yoga",
 }
 
 DEVICE_CLASS_DURATION = "duration"
@@ -154,11 +209,13 @@ CONF_ATTR_COMMUTE = "commute"
 CONF_ATTR_PRIVATE = "private"
 CONF_ATTR_POLYLINE = "polyline"
 
+# Device Source Tracking
+CONF_ATTR_DEVICE_NAME = "device_name"
+CONF_ATTR_DEVICE_TYPE = "device_type"
+CONF_ATTR_DEVICE_MANUFACTURER = "device_manufacturer"
+
 UNIT_BEATS_PER_MINUTE = "bpm"
 UNIT_PACE_MINUTES_PER_KILOMETER = "min/km"
 UNIT_PACE_MINUTES_PER_MILE = "min/mi"
 UNIT_KILO_CALORIES = "kcal"
 UNIT_STEPS_PER_MINUTE = "spm"
-
-GEOCODE_XYZ_THROTTLED = "Throttled! See geocode.xyz/pricing"
-UNKNOWN_AREA = None
