@@ -3,6 +3,7 @@
 # generic imports
 import logging
 
+import aiohttp
 import voluptuous as vol
 
 # HASS imports
@@ -29,7 +30,6 @@ from .const import (
     CONF_IMG_UPDATE_INTERVAL_SECONDS_DEFAULT,
     CONF_NB_ACTIVITIES,
     CONF_PHOTOS,
-    CONFIG_ENTRY_TITLE,
     DEFAULT_NB_ACTIVITIES,
     DOMAIN,
     MAX_NB_ACTIVITIES,
@@ -51,7 +51,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     Data Entry flow to allow runtime changes to the Strava Home Assistant Config
     """
 
-    def __init__(self):
+    def __init__(self, config_entry):
+        """Initialize the options flow."""
+        self.config_entry = config_entry
         self._nb_activities = None
         self._config_entry_title = None
         self._import_strava_images = None
@@ -63,18 +65,13 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         """
         Show form to customize the number of Strava activities to track in HASS
         """
-        ha_strava_config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
-
-        if len(ha_strava_config_entries) != 1:
-            return self.async_abort(reason="no_config")
-
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(
                 {
                     vol.Required(
                         CONF_NB_ACTIVITIES,
-                        default=ha_strava_config_entries[0].options.get(
+                        default=self.config_entry.options.get(
                             CONF_NB_ACTIVITIES, DEFAULT_NB_ACTIVITIES
                         ),
                     ): vol.All(
@@ -87,7 +84,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     ),
                     vol.Required(
                         CONF_IMG_UPDATE_INTERVAL_SECONDS,
-                        default=ha_strava_config_entries[0].options.get(
+                        default=self.config_entry.options.get(
                             CONF_IMG_UPDATE_INTERVAL_SECONDS,
                             CONF_IMG_UPDATE_INTERVAL_SECONDS_DEFAULT,
                         ),
@@ -101,21 +98,21 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     ),
                     vol.Required(
                         CONF_PHOTOS,
-                        default=ha_strava_config_entries[0].options.get(
+                        default=self.config_entry.options.get(
                             CONF_PHOTOS,
-                            ha_strava_config_entries[0].data.get(CONF_PHOTOS),
+                            self.config_entry.data.get(CONF_PHOTOS),
                         ),
                     ): bool,
                     vol.Required(
                         CONF_DISTANCE_UNIT_OVERRIDE,
-                        default=ha_strava_config_entries[0].options.get(
+                        default=self.config_entry.options.get(
                             CONF_DISTANCE_UNIT_OVERRIDE,
                             CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT,
                         ),
                     ): vol.In(DISTANCE_UNIT_OVERRIDE_OPTIONS),
                     vol.Optional(
                         CONF_GEOCODE_XYZ_API_KEY,
-                        default=ha_strava_config_entries[0].options.get(
+                        default=self.config_entry.options.get(
                             CONF_GEOCODE_XYZ_API_KEY,
                             "",
                         ),
@@ -129,20 +126,14 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         Initial OptionsFlow step - asks for the number of Strava activities to
         track in HASS
         """
-        ha_strava_config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
-
-        if len(ha_strava_config_entries) != 1:
-            return self.async_abort(reason="no_config")
-
         if user_input is not None:
             _entity_registry = async_get(hass=self.hass)
             entities = async_entries_for_config_entry(
                 registry=_entity_registry,
-                config_entry_id=ha_strava_config_entries[0].entry_id,
+                config_entry_id=self.config_entry.entry_id,
             )
 
             for entity in entities:
-
                 try:
                     entity_id_1 = entity.entity_id.split("_")[1]
                     if "stats" not in entity_id_1 and int(entity_id_1) >= int(
@@ -177,23 +168,23 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 CONF_DISTANCE_UNIT_OVERRIDE
             )
             self._config_geocode_xyz_api_key = user_input.get(CONF_GEOCODE_XYZ_API_KEY)
-            self._config_entry_title = ha_strava_config_entries[0].title
+            self._config_entry_title = self.config_entry.title
 
             ha_strava_options = {  # pylint: disable=unnecessary-comprehension
-                k: v for k, v in ha_strava_config_entries[0].options.items()
+                k: v for k, v in self.config_entry.options.items()
             }
 
             ha_strava_options[CONF_NB_ACTIVITIES] = self._nb_activities
-            ha_strava_options[CONF_IMG_UPDATE_INTERVAL_SECONDS] = (
-                self._img_update_interval_seconds
-            )
+            ha_strava_options[
+                CONF_IMG_UPDATE_INTERVAL_SECONDS
+            ] = self._img_update_interval_seconds
             ha_strava_options[CONF_PHOTOS] = self._import_strava_images
-            ha_strava_options[CONF_DISTANCE_UNIT_OVERRIDE] = (
-                self._config_distance_unit_override
-            )
-            ha_strava_options[CONF_GEOCODE_XYZ_API_KEY] = (
-                self._config_geocode_xyz_api_key
-            )
+            ha_strava_options[
+                CONF_DISTANCE_UNIT_OVERRIDE
+            ] = self._config_distance_unit_override
+            ha_strava_options[
+                CONF_GEOCODE_XYZ_API_KEY
+            ] = self._config_geocode_xyz_api_key
 
             _LOGGER.debug(f"Strava Config Options: {ha_strava_options}")
             return self.async_create_entry(
@@ -232,7 +223,7 @@ class OAuth2FlowHandler(
         _LOGGER.debug("renew webhook subscription")
         return
 
-    async def async_step_get_oauth_info(self, user_input=None):
+    async def async_step_user(self, user_input=None):
         """Ask user to provide Strava API Credentials"""
         data_schema = {
             vol.Required(CONF_CLIENT_ID): str,
@@ -241,9 +232,6 @@ class OAuth2FlowHandler(
         }
 
         assert self.hass is not None
-
-        if self.hass.config_entries.async_entries(self.DOMAIN):
-            return self.async_abort(reason="already_configured")
 
         try:
             get_url(self.hass, allow_internal=False, allow_ip=False)
@@ -266,23 +254,37 @@ class OAuth2FlowHandler(
             )
             return await self.async_step_pick_implementation()
 
-        return self.async_show_form(
-            step_id="get_oauth_info", data_schema=vol.Schema(data_schema)
-        )
+        return self.async_show_form(step_id="user", data_schema=vol.Schema(data_schema))
 
     async def async_oauth_create_entry(self, data: dict) -> dict:
-        data[CONF_CALLBACK_URL] = (
-            f"{get_url(self.hass, allow_internal=False, allow_ip=False)}/api/strava/webhook"  # noqa: E501
-        )
+        """Create an entry for the flow."""
+        # Fetch athlete info
+        headers = {
+            "Authorization": f"Bearer {data['token']['access_token']}",
+        }
+        async with aiohttp.ClientSession() as session, session.get(
+            "https://www.strava.com/api/v3/athlete", headers=headers
+        ) as response:
+            if response.status != 200:
+                return self.async_abort(reason="cannot_connect")
+            athlete_info = await response.json()
+
+        athlete_id = athlete_info["id"]
+        await self.async_set_unique_id(str(athlete_id))
+        self._abort_if_unique_id_configured()
+
+        title = f"Strava: {athlete_info.get('firstname', '')} {athlete_info.get('lastname', '')}".strip()
+
+        data[
+            CONF_CALLBACK_URL
+        ] = f"{get_url(self.hass, allow_internal=False, allow_ip=False)}/api/strava/webhook"  # noqa: E501
         data[CONF_CLIENT_ID] = self.flow_impl.client_id
         data[CONF_CLIENT_SECRET] = self.flow_impl.client_secret
         data[CONF_PHOTOS] = self._import_photos_from_strava
 
-        return self.async_create_entry(title=CONFIG_ENTRY_TITLE, data=data)
-
-    async_step_user = async_step_get_oauth_info
+        return self.async_create_entry(title=title, data=data)
 
     @staticmethod
     @callback
     def async_get_options_flow(config_entry):
-        return OptionsFlowHandler()
+        return OptionsFlowHandler(config_entry)

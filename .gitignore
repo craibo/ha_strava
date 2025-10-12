@@ -18,3 +18,7 @@ __pycache__/
 
 # IntelliJ
 .idea/*
+
+# Code assistants
+GEMINI.md
+CLAUDE.md
