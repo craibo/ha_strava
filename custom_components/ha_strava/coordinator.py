@@ -1,4 +1,5 @@
 """Data update coordinator for the Strava Home Assistant integration."""
+
 import logging
 from datetime import datetime as dt
 from datetime import timedelta
@@ -152,16 +153,16 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             reverse=True,
         )
 
-
     async def _fetch_summary_stats(self, athlete_id: str) -> dict:
         _LOGGER.debug("Fetching summary stats")
         response = await self.oauth_session.async_request(
             method="GET", url=_STATS_URL_TEMPLATE % (athlete_id,)
         )
         response.raise_for_status()
-        summary_stats = self._sensor_summary_stats(await response.json())
-        summary_stats[CONF_SENSOR_ID] = athlete_id
-        return summary_stats
+        # Return raw API response instead of processed data
+        raw_data = await response.json()
+        raw_data[CONF_SENSOR_ID] = athlete_id
+        return raw_data
 
     async def _fetch_images(self, activities: list[dict]):
         if not self.entry.options.get(CONF_PHOTOS, False):
@@ -198,7 +199,7 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
         device_name = "Unknown"
         device_type = "Unknown"
         device_manufacturer = "Unknown"
-        
+
         if activity_dto:
             # Try to get device info from activity details
             if gear := activity_dto.get("gear"):
@@ -212,10 +213,14 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             elif activity_dto.get("trainer"):
                 device_name = "Trainer"
                 device_type = "Trainer"
-        
+
         # Fallback to basic location info
-        location = activity.get("location_city") or activity.get("location_state") or "Unknown Location"
-        
+        location = (
+            activity.get("location_city")
+            or activity.get("location_state")
+            or "Unknown Location"
+        )
+
         return {
             CONF_SENSOR_ID: activity.get("id"),
             CONF_SENSOR_TITLE: activity.get("name", "Strava Activity"),
@@ -260,16 +265,16 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
         """Generate summary statistics for all supported activity types."""
         athlete_id = str(summary_stats.get(CONF_SENSOR_ID, ""))
         result = {}
-        
+
         # Get selected activity types from config
         selected_activity_types = self.entry.options.get(
             CONF_ACTIVITY_TYPES_TO_TRACK, DEFAULT_ACTIVITY_TYPES
         )
-        
+
         # Activity type mapping to Strava API field names
         activity_type_mapping = {
             "Ride": "ride",
-            "Run": "run", 
+            "Run": "run",
             "Swim": "swim",
             "Walk": "walk",
             "Hike": "hike",
@@ -281,14 +286,14 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             "VirtualRun": "run",  # Maps to run totals
             "VirtualRow": "swim",  # Maps to swim totals
         }
-        
+
         for activity_type in selected_activity_types:
             if activity_type not in SUPPORTED_ACTIVITY_TYPES:
                 continue
-                
+
             # Map activity type to Strava API field
             api_field = activity_type_mapping.get(activity_type, activity_type.lower())
-            
+
             # Create summary stats for this activity type
             result[activity_type] = {
                 CONF_SUMMARY_RECENT: self._create_summary_period(
@@ -301,33 +306,37 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
                     athlete_id, summary_stats, f"all_{api_field}_totals"
                 ),
             }
-            
+
             # Add special metrics for cycling activities
             if activity_type in ["Ride", "MountainBikeRide", "GravelRide", "EBikeRide"]:
-                result[activity_type][CONF_SUMMARY_ALL].update({
-                    CONF_SENSOR_BIGGEST_RIDE_DISTANCE: float(
-                        summary_stats.get("biggest_ride_distance", 0) or 0
-                    ),
-                    CONF_SENSOR_BIGGEST_ELEVATION_GAIN: float(
-                        summary_stats.get("biggest_climb_elevation_gain", 0) or 0
-                    ),
-                })
-        
+                result[activity_type][CONF_SUMMARY_ALL].update(
+                    {
+                        CONF_SENSOR_BIGGEST_RIDE_DISTANCE: float(
+                            summary_stats.get("biggest_ride_distance", 0) or 0
+                        ),
+                        CONF_SENSOR_BIGGEST_ELEVATION_GAIN: float(
+                            summary_stats.get("biggest_climb_elevation_gain", 0) or 0
+                        ),
+                    }
+                )
+
         return result
-    
-    def _create_summary_period(self, athlete_id: str, summary_stats: dict, period_key: str) -> dict:
+
+    def _create_summary_period(
+        self, athlete_id: str, summary_stats: dict, period_key: str
+    ) -> dict:
         """Create summary statistics for a specific time period."""
         period_data = summary_stats.get(period_key, {})
-        
+
         result = {
             CONF_SENSOR_ID: athlete_id,
             CONF_SENSOR_DISTANCE: float(period_data.get("distance", 0)),
             CONF_SENSOR_ACTIVITY_COUNT: int(period_data.get("count", 0)),
             CONF_SENSOR_MOVING_TIME: int(period_data.get("moving_time", 0)),
         }
-        
+
         # Add elevation for non-swimming activities
         if "swim" not in period_key:
             result[CONF_SENSOR_ELEVATION] = float(period_data.get("elevation_gain", 0))
-        
+
         return result

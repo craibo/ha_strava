@@ -1,21 +1,33 @@
 """Test sensor platform for ha_strava."""
-import pytest
+
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from homeassistant.components.sensor import SensorDeviceClass
-from homeassistant.const import UnitOfLength, UnitOfTime
+from homeassistant.const import (
+    CONF_CLIENT_ID,
+    CONF_CLIENT_SECRET,
+    UnitOfLength,
+    UnitOfTime,
+)
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.ha_strava.const import (
     CONF_ACTIVITY_TYPES_TO_TRACK,
+    CONF_ATTR_ACTIVITY_ID,
     CONF_ATTR_DEVICE_NAME,
     CONF_ATTR_DEVICE_TYPE,
-    CONF_ATTR_ACTIVITY_ID,
+    CONF_DISTANCE_UNIT_OVERRIDE,
+    CONF_DISTANCE_UNIT_OVERRIDE_METRIC,
     DOMAIN,
     SUPPORTED_ACTIVITY_TYPES,
 )
-from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from custom_components.ha_strava.sensor import (
+    StravaActivityDateSensor,
+    StravaActivityDeviceSensor,
+    StravaActivityMetricSensor,
+    StravaActivityTitleSensor,
     StravaActivityTypeSensor,
     StravaSummaryStatsSensor,
     async_setup_entry,
@@ -29,14 +41,17 @@ class TestStravaActivityTypeSensor:
     async def test_sensor_creation(self, hass: HomeAssistant, mock_strava_activities):
         """Test sensor creation."""
         coordinator = MagicMock()
-        coordinator.data = {"activities": [], "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"}}
-        
+        coordinator.data = {
+            "activities": [],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+
         sensor = StravaActivityTypeSensor(
             coordinator=coordinator,
             activity_type="Run",
             athlete_id="12345",
         )
-        
+
         assert sensor._activity_type == "Run"
         assert sensor.name == "Strava Run"
         assert sensor.unique_id == "strava_activity_12345_run"
@@ -44,63 +59,113 @@ class TestStravaActivityTypeSensor:
     def test_sensor_state_with_activity(self, mock_strava_activities):
         """Test sensor state when activity data is available."""
         coordinator = MagicMock()
-        coordinator.data = {"activities": mock_strava_activities, "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"}}
-        
+        coordinator.data = {
+            "activities": mock_strava_activities,
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+
         sensor = StravaActivityTypeSensor(
             coordinator=coordinator,
             activity_type="Run",
             athlete_id="12345",
         )
-        
+
         state = sensor.native_value
         assert state == "Morning Run"  # Latest Run activity name
 
     @pytest.mark.asyncio
-    async def test_sensor_state_without_activity(self, hass: HomeAssistant, mock_strava_activities):
+    async def test_sensor_state_without_activity(
+        self, hass: HomeAssistant, mock_strava_activities
+    ):
         """Test sensor state when no activity data is available."""
         coordinator = MagicMock()
-        coordinator.data = {"activities": [], "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"}}
-        
+        coordinator.data = {
+            "activities": [],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+
         sensor = StravaActivityTypeSensor(
             coordinator=coordinator,
             activity_type="Run",
             athlete_id="12345",
         )
-        
+
         state = sensor.native_value
         assert state is None
 
     def test_sensor_attributes(self, mock_strava_activities):
         """Test sensor attributes."""
         coordinator = MagicMock()
-        coordinator.data = {"activities": mock_strava_activities, "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"}}
-        
+        coordinator.data = {
+            "activities": mock_strava_activities,
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+
         sensor = StravaActivityTypeSensor(
             coordinator=coordinator,
             activity_type="Run",
             athlete_id="12345",
         )
-        
+
         attributes = sensor.extra_state_attributes
         assert attributes[CONF_ATTR_ACTIVITY_ID] == "1"
-        assert attributes["distance"] == 5000.0
-        assert attributes["moving_time"] == 1800
-        assert attributes[CONF_ATTR_DEVICE_NAME] == "Garmin Forerunner 945"
-        assert attributes[CONF_ATTR_DEVICE_TYPE] == "Unknown"
+        # Note: commute and private are not in mock_strava_activities, so they won't be present
+        # Note: latitude and longitude are not in mock_strava_activities, so they won't be present
+
+    def test_sensor_attributes_with_location(self):
+        """Test sensor attributes with latitude and longitude."""
+        # Create activity with location data
+        activity_with_location = {
+            "id": 1,
+            "name": "Test Run",
+            "type": "Run",
+            "sport_type": "Run",
+            "distance": 5000.0,
+            "moving_time": 1800,
+            "elapsed_time": 1900,
+            "total_elevation_gain": 100.0,
+            "elevation_gain": 100.0,
+            "start_date": "2024-01-01T06:00:00Z",
+            "date": "2024-01-01T06:00:00Z",
+            "device_name": "Garmin Forerunner 945",
+            "commute": False,
+            "private": False,
+            "start_latlng": [40.7128, -74.0060],  # New York coordinates
+        }
+
+        coordinator = MagicMock()
+        coordinator.data = {
+            "activities": [activity_with_location],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+        coordinator.entry = MagicMock()
+
+        sensor = StravaActivityTypeSensor(
+            coordinator=coordinator,
+            activity_type="Run",
+            athlete_id="12345",
+        )
+
+        attributes = sensor.extra_state_attributes
+        assert attributes["latitude"] == 40.7128
+        assert attributes["longitude"] == -74.0060
 
     @pytest.mark.asyncio
     async def test_sensor_icon_mapping(self, hass: HomeAssistant):
         """Test sensor icon mapping."""
         coordinator = MagicMock()
-        coordinator.data = {"activities": [], "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"}}
-        
+        coordinator.data = {
+            "activities": [],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+
         icon_tests = [
             ("Run", "mdi:run"),
             ("Ride", "mdi:bike"),
             ("Swim", "mdi:swim"),
             ("Hike", "mdi:hiking"),
         ]
-        
+
         for activity_type, expected_icon in icon_tests:
             sensor = StravaActivityTypeSensor(
                 coordinator=coordinator,
@@ -113,15 +178,18 @@ class TestStravaActivityTypeSensor:
     async def test_sensor_unit_mapping(self, hass: HomeAssistant):
         """Test sensor unit mapping."""
         coordinator = MagicMock()
-        coordinator.data = {"activities": [], "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"}}
-        
+        coordinator.data = {
+            "activities": [],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+
         unit_tests = [
             ("Run", None),
             ("Ride", None),
             ("Swim", None),
             ("Badminton", None),
         ]
-        
+
         for activity_type, expected_unit in unit_tests:
             sensor = StravaActivityTypeSensor(
                 coordinator=coordinator,
@@ -134,15 +202,18 @@ class TestStravaActivityTypeSensor:
     async def test_sensor_device_class_mapping(self, hass: HomeAssistant):
         """Test sensor device class mapping."""
         coordinator = MagicMock()
-        coordinator.data = {"activities": [], "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"}}
-        
+        coordinator.data = {
+            "activities": [],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+
         device_class_tests = [
             ("Run", None),
             ("Ride", None),
             ("Swim", None),
             ("Badminton", None),
         ]
-        
+
         for activity_type, expected_device_class in device_class_tests:
             sensor = StravaActivityTypeSensor(
                 coordinator=coordinator,
@@ -159,100 +230,164 @@ class TestStravaSummaryStatsSensor:
     async def test_sensor_creation(self, hass: HomeAssistant):
         """Test sensor creation."""
         coordinator = MagicMock()
-        coordinator.data = {"activities": [], "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"}}
-        
+        coordinator.data = {
+            "activities": [],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+
         sensor = StravaSummaryStatsSensor(
             coordinator=coordinator,
-            activity_type="Run",
-            metric="distance",
-            summary_type="recent",
+            api_key="recent_run_totals",
+            display_name="Recent Run Distance",
+            metric_key="distance",
             athlete_id="12345",
         )
-        
-        assert sensor.name == " Run Distance"
-        assert sensor.unique_id == "strava_stats_12345_recent_Run_distance"
+
+        assert sensor.name == "Strava Recent Run Distance"
+        assert sensor.unique_id == "strava_stats_12345_recent_run_totals_distance"
 
     def test_sensor_state_with_stats(self, mock_strava_stats):
         """Test sensor state when stats data is available."""
-        # Create proper summary_stats structure
+        # Create proper summary_stats structure with raw API data
         summary_stats = {
-            "Run": {
-                "recent": {"distance": 5000, "activity_count": 5},
-                "ytd": {"distance": 50000, "activity_count": 50},
-                "all": {"distance": 500000, "activity_count": 500}
+            "recent_run_totals": {
+                "distance": 5000.0,
+                "moving_time": 1800,
+                "count": 5,
+                "elevation_gain": 100.0,
             }
         }
         coordinator = MagicMock()
-        coordinator.data = {"summary_stats": summary_stats, "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"}}
-        
+        coordinator.data = {
+            "summary_stats": summary_stats,
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+        coordinator.entry = MagicMock()
+        coordinator.entry.options = {
+            CONF_DISTANCE_UNIT_OVERRIDE: CONF_DISTANCE_UNIT_OVERRIDE_METRIC
+        }
+
         sensor = StravaSummaryStatsSensor(
             coordinator=coordinator,
-            activity_type="Run",
-            metric="distance",
-            summary_type="recent",
+            api_key="recent_run_totals",
+            display_name="Recent Run Distance",
+            metric_key="distance",
             athlete_id="12345",
         )
-        
+
         state = sensor.native_value
-        assert state == 3.11  # 5000m converted to km with rounding
+        assert state == 5.0  # distance converted from meters to km
 
     @pytest.mark.asyncio
     async def test_sensor_state_without_stats(self, hass: HomeAssistant):
         """Test sensor state when no stats data is available."""
         coordinator = MagicMock()
-        coordinator.data = {"summary_stats": {}, "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"}}
-        
+        coordinator.data = {
+            "summary_stats": {},
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+
         sensor = StravaSummaryStatsSensor(
             coordinator=coordinator,
-            activity_type="Run",
-            metric="distance",
-            summary_type="recent",
+            api_key="recent_run_totals",
+            display_name="Recent Run Distance",
+            metric_key="distance",
             athlete_id="12345",
         )
-        
+
         state = sensor.native_value
         assert state is None
 
     def test_sensor_attributes(self, mock_strava_stats):
         """Test sensor attributes."""
+        # Create proper summary_stats structure with raw API data
+        summary_stats = {
+            "recent_run_totals": {
+                "distance": 5000.0,
+                "moving_time": 1800,
+                "count": 5,
+                "elevation_gain": 100.0,
+            }
+        }
         coordinator = MagicMock()
-        coordinator.data = {"summary_stats": mock_strava_stats, "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"}}
-        
+        coordinator.data = {
+            "summary_stats": summary_stats,
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+
         sensor = StravaSummaryStatsSensor(
             coordinator=coordinator,
-            activity_type="Run",
-            metric="distance",
-            summary_type="recent",
+            api_key="recent_run_totals",
+            display_name="Recent Run Distance",
+            metric_key="distance",
             athlete_id="12345",
         )
-        
+
         attributes = sensor.extra_state_attributes
-        assert attributes is None  # Summary stats sensors don't have extra attributes
+        assert "count" in attributes
+        assert "moving_time" in attributes
+        assert "elevation_gain" in attributes
+        assert attributes["count"] == 5
 
 
 class TestSensorPlatform:
     """Test sensor platform setup."""
 
     @pytest.mark.asyncio
-    async def test_async_setup_entry_success(self, hass: HomeAssistant, mock_config_entry):
+    async def test_async_setup_entry_success(
+        self, hass: HomeAssistant, mock_config_entry
+    ):
         """Test successful sensor platform setup."""
-        async for hass_instance in hass: hass = hass_instance; break
-        
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+
         coordinator = MagicMock()
-        coordinator.data = {"activities": [], "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"}}
-        
+        coordinator.data = {
+            "activities": [],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+
         # Setup hass.data with coordinator
         hass.data[DOMAIN] = {mock_config_entry.entry_id: coordinator}
-        
-        with patch("custom_components.ha_strava.sensor.StravaDataUpdateCoordinator", return_value=coordinator):
-            await async_setup_entry(hass, mock_config_entry, AsyncMock())
-            # Function doesn't return a value, just completes successfully
+
+        async_add_entities_mock = AsyncMock()
+
+        with patch(
+            "custom_components.ha_strava.sensor.StravaDataUpdateCoordinator",
+            return_value=coordinator,
+        ):
+            await async_setup_entry(hass, mock_config_entry, async_add_entities_mock)
+
+            # Verify that entities were added
+            async_add_entities_mock.assert_called_once()
+            call_args = async_add_entities_mock.call_args[0][0]
+
+            # Should create main activity sensors + individual attribute sensors + summary stats sensors
+            # 4 activity types × (1 main + 1 title + 3 device + 1 date + 13 metric) + 35 summary stats = 111 sensors total
+            expected_sensor_count = (
+                len(mock_config_entry.options[CONF_ACTIVITY_TYPES_TO_TRACK]) * 19 + 35
+            )
+            assert len(call_args) == expected_sensor_count
+
+            # Verify that different sensor types are created
+            sensor_types = [type(sensor).__name__ for sensor in call_args]
+            assert "StravaActivityTypeSensor" in sensor_types
+            assert "StravaActivityTitleSensor" in sensor_types
+            assert "StravaActivityDeviceSensor" in sensor_types
+            assert "StravaActivityDateSensor" in sensor_types
+            assert "StravaActivityMetricSensor" in sensor_types
+            assert "StravaSummaryStatsSensor" in sensor_types
 
     @pytest.mark.asyncio
-    async def test_async_setup_entry_with_activity_types(self, hass: HomeAssistant, mock_config_entry):
+    async def test_async_setup_entry_with_activity_types(
+        self, hass: HomeAssistant, mock_config_entry
+    ):
         """Test sensor platform setup with specific activity types."""
-        async for hass_instance in hass: hass = hass_instance; break
-        
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+
         # Create new config entry with options
         config_entry = MockConfigEntry(
             domain=DOMAIN,
@@ -264,55 +399,77 @@ class TestSensorPlatform:
             options={CONF_ACTIVITY_TYPES_TO_TRACK: ["Run", "Ride", "Walk"]},
             title="Test Strava User",
         )
-        
+
         coordinator = MagicMock()
-        coordinator.data = {"activities": [], "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"}}
-        
+        coordinator.data = {
+            "activities": [],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+
         # Setup hass.data with coordinator
         hass.data[DOMAIN] = {config_entry.entry_id: coordinator}
-        
-        with patch("custom_components.ha_strava.sensor.StravaDataUpdateCoordinator", return_value=coordinator):
+
+        with patch(
+            "custom_components.ha_strava.sensor.StravaDataUpdateCoordinator",
+            return_value=coordinator,
+        ):
             await async_setup_entry(hass, config_entry, AsyncMock())
             # Function doesn't return a value, just completes successfully
 
     @pytest.mark.asyncio
-    async def test_async_setup_entry_with_all_activity_types(self, hass: HomeAssistant, mock_config_entry_all_activities):
+    async def test_async_setup_entry_with_all_activity_types(
+        self, hass: HomeAssistant, mock_config_entry_all_activities
+    ):
         """Test sensor platform setup with all activity types."""
-        async for hass_instance in hass: hass = hass_instance; break
-        
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+
         coordinator = MagicMock()
-        coordinator.data = {"activities": [], "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"}}
-        
+        coordinator.data = {
+            "activities": [],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+
         # Setup hass.data with coordinator
         hass.data[DOMAIN] = {mock_config_entry_all_activities.entry_id: coordinator}
-        
-        with patch("custom_components.ha_strava.sensor.StravaDataUpdateCoordinator", return_value=coordinator):
+
+        with patch(
+            "custom_components.ha_strava.sensor.StravaDataUpdateCoordinator",
+            return_value=coordinator,
+        ):
             await async_setup_entry(hass, mock_config_entry_all_activities, AsyncMock())
             # Function doesn't return a value, just completes successfully
 
     @pytest.mark.asyncio
-    async def test_async_setup_entry_error_handling(self, hass: HomeAssistant, mock_config_entry):
+    async def test_async_setup_entry_error_handling(
+        self, hass: HomeAssistant, mock_config_entry
+    ):
         """Test sensor platform setup error handling."""
-        async for hass_instance in hass: hass = hass_instance; break
-        
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+
         coordinator = MagicMock()
         hass.data[DOMAIN] = {mock_config_entry.entry_id: coordinator}
-        
+
         # Mock async_add_entities to raise an exception
         async_add_entities_mock = AsyncMock(side_effect=Exception("Test error"))
-        
+
         # The function doesn't handle exceptions from async_add_entities, so it should complete
         # but the exception will be raised when async_add_entities is called
         await async_setup_entry(hass, mock_config_entry, async_add_entities_mock)
-        
+
         # Verify that async_add_entities was called (which would raise the exception in real usage)
         async_add_entities_mock.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_async_setup_entry_missing_config(self, hass: HomeAssistant):
         """Test sensor platform setup with missing config."""
-        async for hass_instance in hass: hass = hass_instance; break
-        
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+
         # Create config entry without required data
         config_entry = MockConfigEntry(
             domain=DOMAIN,
@@ -320,7 +477,7 @@ class TestSensorPlatform:
             data={},  # Empty data
             title="Test Strava User",
         )
-        
+
         # Don't set up coordinator in hass.data to trigger KeyError
         with pytest.raises(KeyError):
             await async_setup_entry(hass, config_entry, AsyncMock())
@@ -328,8 +485,10 @@ class TestSensorPlatform:
     @pytest.mark.asyncio
     async def test_async_setup_entry_invalid_activity_types(self, hass: HomeAssistant):
         """Test sensor platform setup with invalid activity types."""
-        async for hass_instance in hass: hass = hass_instance; break
-        
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+
         # Create config entry with invalid activity types
         config_entry = MockConfigEntry(
             domain=DOMAIN,
@@ -341,18 +500,20 @@ class TestSensorPlatform:
             options={CONF_ACTIVITY_TYPES_TO_TRACK: ["InvalidType1", "InvalidType2"]},
             title="Test Strava User",
         )
-        
+
         coordinator = MagicMock()
         hass.data[DOMAIN] = {config_entry.entry_id: coordinator}
-        
+
         await async_setup_entry(hass, config_entry, AsyncMock())
         # Function doesn't return a value, just completes successfully
 
     @pytest.mark.asyncio
     async def test_async_setup_entry_empty_activity_types(self, hass: HomeAssistant):
         """Test sensor platform setup with empty activity types."""
-        async for hass_instance in hass: hass = hass_instance; break
-        
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+
         # Create config entry with empty activity types
         config_entry = MockConfigEntry(
             domain=DOMAIN,
@@ -364,18 +525,20 @@ class TestSensorPlatform:
             options={CONF_ACTIVITY_TYPES_TO_TRACK: []},
             title="Test Strava User",
         )
-        
+
         coordinator = MagicMock()
         hass.data[DOMAIN] = {config_entry.entry_id: coordinator}
-        
+
         await async_setup_entry(hass, config_entry, AsyncMock())
         # Function doesn't return a value, just completes successfully
 
     @pytest.mark.asyncio
     async def test_async_setup_entry_none_activity_types(self, hass: HomeAssistant):
         """Test sensor platform setup with None activity types."""
-        async for hass_instance in hass: hass = hass_instance; break
-        
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+
         # Create config entry with None activity types
         config_entry = MockConfigEntry(
             domain=DOMAIN,
@@ -387,10 +550,10 @@ class TestSensorPlatform:
             options={CONF_ACTIVITY_TYPES_TO_TRACK: None},
             title="Test Strava User",
         )
-        
+
         coordinator = MagicMock()
         hass.data[DOMAIN] = {config_entry.entry_id: coordinator}
-        
+
         # This should raise a TypeError because None is not iterable
         with pytest.raises(TypeError, match="'NoneType' object is not iterable"):
             await async_setup_entry(hass, config_entry, AsyncMock())
@@ -398,8 +561,10 @@ class TestSensorPlatform:
     @pytest.mark.asyncio
     async def test_async_setup_entry_missing_activity_types(self, hass: HomeAssistant):
         """Test sensor platform setup with missing activity types."""
-        async for hass_instance in hass: hass = hass_instance; break
-        
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+
         # Create config entry without activity types
         config_entry = MockConfigEntry(
             domain=DOMAIN,
@@ -410,9 +575,9 @@ class TestSensorPlatform:
             },
             title="Test Strava User",
         )
-        
+
         coordinator = MagicMock()
         hass.data[DOMAIN] = {config_entry.entry_id: coordinator}
-        
+
         await async_setup_entry(hass, config_entry, AsyncMock())
         # Function doesn't return a value, just completes successfully
