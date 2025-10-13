@@ -1,10 +1,12 @@
 """Test configuration for ha_strava."""
+
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from aioresponses import aioresponses
 from homeassistant import config_entries
+from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_entry_oauth2_flow
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -16,7 +18,6 @@ from custom_components.ha_strava.const import (
     DOMAIN,
     SUPPORTED_ACTIVITY_TYPES,
 )
-from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 
 # Import the hass fixture from pytest-homeassistant-custom-component
 pytest_plugins = ["pytest_homeassistant_custom_component"]
@@ -31,13 +32,15 @@ def mock_config_entry():
         data={
             CONF_CLIENT_ID: "test_client_id",
             CONF_CLIENT_SECRET: "test_client_secret",
-            CONF_ACTIVITY_TYPES_TO_TRACK: ["Run", "Ride", "Walk", "Swim"],
             "token": {
                 "access_token": "test_access_token",
                 "refresh_token": "test_refresh_token",
                 "expires_at": 4102444800,
                 "token_type": "Bearer",
             },
+        },
+        options={
+            CONF_ACTIVITY_TYPES_TO_TRACK: ["Run", "Ride", "Walk", "Swim"],
         },
         title="Test Strava User",
     )
@@ -174,26 +177,28 @@ def mock_strava_activities_all_types():
     """Mock Strava activities data for all 50 activity types."""
     activities = []
     for i, activity_type in enumerate(SUPPORTED_ACTIVITY_TYPES):
-        activities.append({
-            "id": i + 1,
-            "name": f"Test {activity_type}",
-            "title": f"Test {activity_type}",
-            "type": activity_type,
-            "sport_type": activity_type,
-            "athlete": {"id": 12345},
-            "distance": 1000.0 + (i * 100),
-            "moving_time": 1800 + (i * 60),
-            "elapsed_time": 1900 + (i * 60),
-            "total_elevation_gain": 50.0 + (i * 10),
-            "elevation_gain": 50.0 + (i * 10),
-            "start_date": f"2024-01-{(i % 28) + 1:02d}T06:00:00Z",
-            "date": f"2024-01-{(i % 28) + 1:02d}T06:00:00Z",
-            "device_name": f"Test Device {i + 1}",
-            "gear": {"name": f"Test Gear {i + 1}"},
-            "average_speed": 2.0 + (i * 0.1),
-            "max_speed": 5.0 + (i * 0.2),
-            "calories": 200 + (i * 10),
-        })
+        activities.append(
+            {
+                "id": i + 1,
+                "name": f"Test {activity_type}",
+                "title": f"Test {activity_type}",
+                "type": activity_type,
+                "sport_type": activity_type,
+                "athlete": {"id": 12345},
+                "distance": 1000.0 + (i * 100),
+                "moving_time": 1800 + (i * 60),
+                "elapsed_time": 1900 + (i * 60),
+                "total_elevation_gain": 50.0 + (i * 10),
+                "elevation_gain": 50.0 + (i * 10),
+                "start_date": f"2024-01-{(i % 28) + 1:02d}T06:00:00Z",
+                "date": f"2024-01-{(i % 28) + 1:02d}T06:00:00Z",
+                "device_name": f"Test Device {i + 1}",
+                "gear": {"name": f"Test Gear {i + 1}"},
+                "average_speed": 2.0 + (i * 0.1),
+                "max_speed": 5.0 + (i * 0.2),
+                "calories": 200 + (i * 10),
+            }
+        )
     return activities
 
 

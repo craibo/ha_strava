@@ -15,8 +15,8 @@ CONFIG_IMG_SIZE = 512
 CONFIG_URL_DUMP_FILENAME = "strava_img_urls.pickle"
 CONF_IMG_UPDATE_INTERVAL_SECONDS = "img_update_interval_seconds"
 CONF_IMG_UPDATE_INTERVAL_SECONDS_DEFAULT = 15
-CONF_MAX_NB_IMAGES = 100
-MAX_NB_ACTIVITIES = 200
+CONF_MAX_NB_IMAGES = 30
+MAX_NB_ACTIVITIES = 30
 
 # Webhook & API Specs
 CONF_WEBHOOK_ID = "webhook_id"
@@ -69,16 +69,56 @@ CONF_SENSOR_BIGGEST_ELEVATION_GAIN = "biggest_climb_elevation_gain"
 
 # All 50 Supported Activity Types
 SUPPORTED_ACTIVITY_TYPES = [
-    "AlpineSki", "BackcountrySki", "Badminton", "Canoeing", "Crossfit",
-    "EBikeRide", "Elliptical", "EMountainBikeRide", "Golf", "GravelRide",
-    "Handcycle", "HighIntensityIntervalTraining", "Hike", "IceSkate",
-    "InlineSkate", "Kayaking", "Kitesurf", "MountainBikeRide", "NordicSki",
-    "Pickleball", "Pilates", "Racquetball", "Ride", "RockClimbing",
-    "RollerSki", "Rowing", "Run", "Sail", "Skateboard", "Snowboard",
-    "Snowshoe", "Soccer", "Squash", "StairStepper", "StandUpPaddling",
-    "Surfing", "Swim", "TableTennis", "Tennis", "TrailRun", "Velomobile",
-    "VirtualRide", "VirtualRow", "VirtualRun", "Walk", "WeightTraining",
-    "Wheelchair", "Windsurf", "Workout", "Yoga"
+    "AlpineSki",
+    "BackcountrySki",
+    "Badminton",
+    "Canoeing",
+    "Crossfit",
+    "EBikeRide",
+    "Elliptical",
+    "EMountainBikeRide",
+    "Golf",
+    "GravelRide",
+    "Handcycle",
+    "HighIntensityIntervalTraining",
+    "Hike",
+    "IceSkate",
+    "InlineSkate",
+    "Kayaking",
+    "Kitesurf",
+    "MountainBikeRide",
+    "NordicSki",
+    "Pickleball",
+    "Pilates",
+    "Racquetball",
+    "Ride",
+    "RockClimbing",
+    "RollerSki",
+    "Rowing",
+    "Run",
+    "Sail",
+    "Skateboard",
+    "Snowboard",
+    "Snowshoe",
+    "Soccer",
+    "Squash",
+    "StairStepper",
+    "StandUpPaddling",
+    "Surfing",
+    "Swim",
+    "TableTennis",
+    "Tennis",
+    "TrailRun",
+    "Velomobile",
+    "VirtualRide",
+    "VirtualRow",
+    "VirtualRun",
+    "Walk",
+    "WeightTraining",
+    "Wheelchair",
+    "Windsurf",
+    "Workout",
+    "Yoga",
 ]
 
 # Legacy activity type constants for backward compatibility
@@ -102,6 +142,15 @@ CONF_SUMMARY_RECENT = "summary_recent"
 CONF_SUMMARY_YTD = "summary_ytd"
 CONF_SUMMARY_ALL = "summary_all"
 
+# Individual Attribute Sensors
+CONF_SENSOR_TITLE = "title"
+CONF_SENSOR_DEVICE_NAME = "device_name"
+CONF_SENSOR_DEVICE_TYPE = "device_type"
+CONF_SENSOR_DEVICE_MANUFACTURER = "device_manufacturer"
+CONF_SENSOR_DATE = "date"
+CONF_SENSOR_LATITUDE = "latitude"
+CONF_SENSOR_LONGITUDE = "longitude"
+
 CONF_SENSORS = {
     CONF_SENSOR_DATE: {"icon": "mdi:run"},
     CONF_SENSOR_MOVING_TIME: {"icon": "mdi:timer"},
@@ -118,6 +167,118 @@ CONF_SENSORS = {
     CONF_SENSOR_HEART_RATE_AVG: {"icon": "mdi:heart-pulse"},
     CONF_SENSOR_HEART_RATE_MAX: {"icon": "mdi:heart-pulse"},
 }
+
+# Individual Attribute Sensor Configurations
+CONF_ATTRIBUTE_SENSORS = {
+    CONF_SENSOR_TITLE: {
+        "icon": "mdi:text",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+    CONF_SENSOR_DEVICE_NAME: {
+        "icon": "mdi:devices",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+    CONF_SENSOR_DEVICE_TYPE: {
+        "icon": "mdi:devices",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+    CONF_SENSOR_DEVICE_MANUFACTURER: {
+        "icon": "mdi:factory",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+    CONF_SENSOR_DATE: {
+        "icon": "mdi:calendar",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+    CONF_SENSOR_DISTANCE: {
+        "icon": "mdi:map-marker-distance",
+        "device_class": "distance",
+        "unit": "m",
+        "state_class": "measurement",
+    },
+    CONF_SENSOR_MOVING_TIME: {
+        "icon": "mdi:timer",
+        "device_class": "duration",
+        "unit": "s",
+        "state_class": "measurement",
+    },
+    CONF_SENSOR_ELAPSED_TIME: {
+        "icon": "mdi:clock",
+        "device_class": "duration",
+        "unit": "s",
+        "state_class": "measurement",
+    },
+    CONF_SENSOR_ELEVATION: {
+        "icon": "mdi:elevation-rise",
+        "device_class": "distance",
+        "unit": "m",
+        "state_class": "measurement",
+    },
+    CONF_SENSOR_CALORIES: {
+        "icon": "mdi:fire",
+        "device_class": "energy",
+        "unit": "kcal",
+        "state_class": "measurement",
+    },
+    CONF_SENSOR_PACE: {
+        "icon": "mdi:clock-fast",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+    CONF_SENSOR_SPEED: {
+        "icon": "mdi:speedometer",
+        "device_class": "speed",
+        "unit": "m/s",
+        "state_class": "measurement",
+    },
+    CONF_SENSOR_HEART_RATE_AVG: {
+        "icon": "mdi:heart-pulse",
+        "device_class": "frequency",
+        "unit": "bpm",
+        "state_class": "measurement",
+    },
+    CONF_SENSOR_HEART_RATE_MAX: {
+        "icon": "mdi:heart-pulse",
+        "device_class": "frequency",
+        "unit": "bpm",
+        "state_class": "measurement",
+    },
+    CONF_SENSOR_CADENCE_AVG: {
+        "icon": "mdi:shoe-print",
+        "device_class": "frequency",
+        "unit": "spm",
+        "state_class": "measurement",
+    },
+    CONF_SENSOR_POWER: {
+        "icon": "mdi:dumbbell",
+        "device_class": "power",
+        "unit": "W",
+        "state_class": "measurement",
+    },
+    CONF_SENSOR_TROPHIES: {
+        "icon": "mdi:trophy",
+        "device_class": None,
+        "unit": None,
+        "state_class": "measurement",
+    },
+    CONF_SENSOR_KUDOS: {
+        "icon": "mdi:thumb-up-outline",
+        "device_class": None,
+        "unit": None,
+        "state_class": "measurement",
+    },
+}
 FACTOR_METER_TO_MILE = 0.000621371
 FACTOR_METER_TO_FEET = 3.28084
 FACTOR_KILOJOULES_TO_KILOCALORIES = 0.239006
@@ -128,6 +289,28 @@ CONF_ACTIVITY_TYPE_SENSOR_METRICS = [
     CONF_SENSOR_ACTIVITY_COUNT,
     CONF_SENSOR_DISTANCE,
     CONF_SENSOR_MOVING_TIME,
+    CONF_SENSOR_ELEVATION,
+    CONF_SENSOR_CALORIES,
+    CONF_SENSOR_PACE,
+    CONF_SENSOR_SPEED,
+    CONF_SENSOR_HEART_RATE_AVG,
+    CONF_SENSOR_HEART_RATE_MAX,
+    CONF_SENSOR_CADENCE_AVG,
+    CONF_SENSOR_POWER,
+    CONF_SENSOR_TROPHIES,
+    CONF_SENSOR_KUDOS,
+]
+
+# Individual Attribute Sensors to Create
+CONF_ATTRIBUTE_SENSOR_TYPES = [
+    CONF_SENSOR_TITLE,
+    CONF_SENSOR_DEVICE_NAME,
+    CONF_SENSOR_DEVICE_TYPE,
+    CONF_SENSOR_DEVICE_MANUFACTURER,
+    CONF_SENSOR_DATE,
+    CONF_SENSOR_DISTANCE,
+    CONF_SENSOR_MOVING_TIME,
+    CONF_SENSOR_ELAPSED_TIME,
     CONF_SENSOR_ELEVATION,
     CONF_SENSOR_CALORIES,
     CONF_SENSOR_PACE,
