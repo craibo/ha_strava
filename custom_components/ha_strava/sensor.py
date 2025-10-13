@@ -107,10 +107,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                     CONF_SUMMARY_ALL,
                 ]:
                     # Skip elevation for swimming activities
-                    if (
-                        metric is CONF_SENSOR_ELEVATION
-                        and activity_type == "Swim"
-                    ):
+                    if metric is CONF_SENSOR_ELEVATION and activity_type == "Swim":
                         continue
 
                     entries.append(
@@ -282,8 +279,6 @@ class StravaSummaryStatsSensor(CoordinatorEntity, SensorEntity):
 class StravaActivityTypeSensor(CoordinatorEntity, SensorEntity):
     """A sensor for specific activity type with latest activity data."""
 
-    _attr_state_class = SensorStateClass.MEASUREMENT
-
     def __init__(
         self,
         coordinator: StravaDataUpdateCoordinator,
@@ -300,7 +295,9 @@ class StravaActivityTypeSensor(CoordinatorEntity, SensorEntity):
     def device_info(self):
         """Return device information."""
         return {
-            "identifiers": {(DOMAIN, f"strava_activity_{self._athlete_id}_{self._activity_type}")},
+            "identifiers": {
+                (DOMAIN, f"strava_activity_{self._athlete_id}_{self._activity_type}")
+            },
             "name": f"Strava {self._activity_type}: {self.coordinator.entry.title}",
             "manufacturer": "Powered by Strava",
             "model": f"{self._activity_type} Activity",
@@ -312,7 +309,7 @@ class StravaActivityTypeSensor(CoordinatorEntity, SensorEntity):
         """Get the latest activity of this type."""
         if not self.coordinator.data or not self.coordinator.data.get("activities"):
             return None
-        
+
         for activity in self.coordinator.data["activities"]:
             if activity.get(CONF_ATTR_SPORT_TYPE) == self._activity_type:
                 return activity
@@ -333,7 +330,7 @@ class StravaActivityTypeSensor(CoordinatorEntity, SensorEntity):
         """Return the state of the sensor."""
         if not self.available:
             return None
-        
+
         activity = self._latest_activity
         return activity.get(CONF_SENSOR_TITLE, f"Latest {self._activity_type}")
 
@@ -347,10 +344,10 @@ class StravaActivityTypeSensor(CoordinatorEntity, SensorEntity):
         """Return the state attributes."""
         if not self.available:
             return {}
-        
+
         activity = self._latest_activity
         activity_id = str(activity.get(CONF_SENSOR_ID))
-        
+
         attrs = {
             CONF_ATTR_ACTIVITY_ID: activity_id,
             CONF_ATTR_SPORT_TYPE: activity.get(CONF_ATTR_SPORT_TYPE),
@@ -362,7 +359,9 @@ class StravaActivityTypeSensor(CoordinatorEntity, SensorEntity):
             CONF_ATTR_POLYLINE: activity.get(CONF_ATTR_POLYLINE),
             CONF_ATTR_DEVICE_NAME: activity.get(CONF_ATTR_DEVICE_NAME, "Unknown"),
             CONF_ATTR_DEVICE_TYPE: activity.get(CONF_ATTR_DEVICE_TYPE, "Unknown"),
-            CONF_ATTR_DEVICE_MANUFACTURER: activity.get(CONF_ATTR_DEVICE_MANUFACTURER, "Unknown"),
+            CONF_ATTR_DEVICE_MANUFACTURER: activity.get(
+                CONF_ATTR_DEVICE_MANUFACTURER, "Unknown"
+            ),
             # Activity metrics
             CONF_SENSOR_DATE: activity.get(CONF_SENSOR_DATE),
             CONF_SENSOR_DISTANCE: activity.get(CONF_SENSOR_DISTANCE),
@@ -379,35 +378,33 @@ class StravaActivityTypeSensor(CoordinatorEntity, SensorEntity):
             CONF_SENSOR_TROPHIES: activity.get(CONF_SENSOR_TROPHIES),
             CONF_SENSOR_KUDOS: activity.get(CONF_SENSOR_KUDOS),
         }
-        
+
         if start_latlng := activity.get(CONF_ATTR_START_LATLONG):
             attrs[CONF_LATITUDE] = float(start_latlng[0])
             attrs[CONF_LONGITUDE] = float(start_latlng[1])
-        
+
         return attrs
 
     def _calculate_pace(self, activity):
         """Calculate pace for the activity."""
         distance = activity.get(CONF_SENSOR_DISTANCE, 0)
         moving_time = activity.get(CONF_SENSOR_MOVING_TIME, 0)
-        
+
         if distance == 0 or moving_time == 0:
             return "0:00"
-        
+
         pace = moving_time / (distance / 1000)  # seconds per km
         is_metric = self._is_metric()
-        
+
         if not is_metric:
             pace = DistanceConverter.convert(
                 pace, UnitOfLength.KILOMETERS, UnitOfLength.MILES
             )
-        
+
         minutes = int(pace // 60)
         seconds = int(pace % 60)
         unit = (
-            UNIT_PACE_MINUTES_PER_KILOMETER
-            if is_metric
-            else UNIT_PACE_MINUTES_PER_MILE
+            UNIT_PACE_MINUTES_PER_KILOMETER if is_metric else UNIT_PACE_MINUTES_PER_MILE
         )
         return f"{minutes}:{seconds:02} {unit}"
 
@@ -415,13 +412,13 @@ class StravaActivityTypeSensor(CoordinatorEntity, SensorEntity):
         """Calculate speed for the activity."""
         distance = activity.get(CONF_SENSOR_DISTANCE, 0)
         moving_time = activity.get(CONF_SENSOR_MOVING_TIME, 1)
-        
+
         speed = (distance / 1000) / (moving_time / 3600)  # km/h
         is_metric = self._is_metric()
-        
+
         if is_metric:
             return round(speed, 2)
-        
+
         return round(
             SpeedConverter.convert(
                 speed, UnitOfSpeed.KILOMETERS_PER_HOUR, UnitOfSpeed.MILES_PER_HOUR
@@ -437,5 +434,3 @@ class StravaActivityTypeSensor(CoordinatorEntity, SensorEntity):
         if override == CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT:
             return self.hass.config.units is METRIC_SYSTEM
         return False
-
-
