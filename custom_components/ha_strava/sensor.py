@@ -151,7 +151,7 @@ class StravaSummaryStatsSensor(CoordinatorEntity, SensorEntity):
         metric: str,
         summary_type: str,
         athlete_id: str,
-    ):
+    ):  # pylint: disable=too-many-arguments
         """Initialize the sensor."""
         super().__init__(coordinator)
         self._metric = metric
@@ -200,7 +200,7 @@ class StravaSummaryStatsSensor(CoordinatorEntity, SensorEntity):
         )
 
     @property
-    def native_value(self):
+    def native_value(self):  # pylint: disable=too-many-return-statements
         """Return the state of the sensor."""
         if not self.available:
             return None
@@ -278,6 +278,9 @@ class StravaSummaryStatsSensor(CoordinatorEntity, SensorEntity):
 
 class StravaActivityTypeSensor(CoordinatorEntity, SensorEntity):
     """A sensor for specific activity type with latest activity data."""
+
+    _attr_state_class = None
+    _attr_device_class = None
 
     def __init__(
         self,
