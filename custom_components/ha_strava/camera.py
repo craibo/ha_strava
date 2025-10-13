@@ -45,22 +45,10 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         coordinator, default_enabled=default_enabled, athlete_id=athlete_id
     )
     await url_cam.setup_pickle_urls()
-    cameras = [url_cam]
-
-    for i in range(MAX_NB_ACTIVITIES):
-        cameras.append(
-            ActivityCamera(
-                coordinator,
-                activity_index=i,
-                default_enabled=default_enabled,
-                athlete_id=athlete_id,
-            )
-        )
-    async_add_entities(cameras)
+    async_add_entities([url_cam])
 
     async def image_update_listener(_):
-        for camera in cameras:
-            await camera.rotate_img()
+        await url_cam.rotate_img()
 
     img_update_interval_seconds = int(
         config_entry.options.get(
@@ -72,86 +60,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     async_track_time_interval(
         hass, image_update_listener, timedelta(seconds=img_update_interval_seconds)
     )
-
-
-class ActivityCamera(CoordinatorEntity, Camera):
-    """Representation of a camera entity for a single Strava activity."""
-
-    _attr_should_poll = False
-
-    def __init__(
-        self,
-        coordinator: StravaDataUpdateCoordinator,
-        activity_index: int,
-        athlete_id: str,
-        default_enabled=True,
-    ):
-        """Initialize Camera component."""
-        super().__init__(coordinator)
-        Camera.__init__(self)
-        self._activity_index = activity_index
-        self._athlete_id = athlete_id
-        self._attr_name = f"Strava Activity {activity_index} Photos"
-        self._attr_unique_id = f"strava_{athlete_id}_{activity_index}_photos"
-        self._attr_entity_registry_enabled_default = default_enabled
-        self._url_index = 0
-
-    @property
-    def _urls(self):
-        if (
-            self.coordinator.data
-            and self.coordinator.data["images"]
-            and 0 <= self._activity_index < len(self.coordinator.data["activities"])
-        ):
-            activity_id = self.coordinator.data["activities"][self._activity_index][
-                "id"
-            ]
-            return [
-                img
-                for img in self.coordinator.data["images"]
-                if img.get("activity_id") == activity_id
-            ]
-        return []
-
-    @property
-    def device_info(self):
-        """Return device information."""
-        return {
-            "identifiers": {
-                (DOMAIN, f"strava_activity_{self._athlete_id}_{self._activity_index}")
-            },
-        }
-
-    @property
-    def state(self):  # pylint: disable=overridden-final-method
-        """Return the state of the sensor."""
-        if not self._urls:
-            return _DEFAULT_IMAGE_URL
-        return self._urls[self._url_index]["url"]
-
-    async def async_camera_image(
-        self, width: int | None = None, height: int | None = None
-    ) -> bytes | None:
-        """Return image response."""
-        if not self._urls:
-            return await _return_default_img()
-
-        url = self._urls[self._url_index]["url"]
-        try:
-            async with aiohttp.ClientSession() as session, session.get(
-                url=url, timeout=10
-            ) as response:
-                if response.status == 200:
-                    return await response.read()
-        except aiohttp.ClientError as err:
-            _LOGGER.error(f"Error fetching image from {url}: {err}")
-        return await _return_default_img()
-
-    async def rotate_img(self):
-        """Rotate to the next image."""
-        if self._urls:
-            self._url_index = (self._url_index + 1) % len(self._urls)
-            self.async_write_ha_state()
 
 
 class UrlCam(CoordinatorEntity, Camera):
@@ -201,7 +109,9 @@ class UrlCam(CoordinatorEntity, Camera):
             _LOGGER.error(f"Error storing pickled URLs: {err}")
 
     async def async_camera_image(
-        self, width: int | None = None, height: int | None = None
+        self,
+        width: int | None = None,
+        height: int | None = None,  # pylint: disable=unused-argument
     ) -> bytes | None:
         """Return the image for the current URL."""
         if not self._urls:
@@ -240,9 +150,23 @@ class UrlCam(CoordinatorEntity, Camera):
 
     async def _update_urls(self):
         if self.coordinator.data and self.coordinator.data.get("images"):
-            for img_url in self.coordinator.data["images"]:
-                self._urls[md5(img_url["url"].encode()).hexdigest()] = img_url
+            # Get the 30 most recent activities
+            activities = self.coordinator.data.get("activities", [])
+            recent_activity_ids = set()
 
+            if activities:
+                # Sort activities by date and take the 30 most recent
+                sorted_activities = sorted(
+                    activities, key=lambda x: x.get("start_date", ""), reverse=True
+                )[:MAX_NB_ACTIVITIES]
+                recent_activity_ids = {activity["id"] for activity in sorted_activities}
+
+            # Filter images to only include those from recent activities
+            for img_url in self.coordinator.data["images"]:
+                if img_url.get("activity_id") in recent_activity_ids:
+                    self._urls[md5(img_url["url"].encode()).hexdigest()] = img_url
+
+            # Sort by date and limit to max number of images
             self._urls = dict(
                 sorted(self._urls.items(), key=lambda item: item[1]["date"])[
                     -CONF_MAX_NB_IMAGES:
