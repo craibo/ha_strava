@@ -27,11 +27,10 @@
         "title": "Configuração do Strava com Home Assistant",
         "description": "Configurações da integração Strava com Home Assistant. Pode encontrar mais informações sobre as opções aqui: https://github.com/craibo/ha_strava",
         "data": {
-          "nb_activities": "Número de atividades do Strava em simultâneo",
+          "activity_types_to_track": "Tipos de Atividade para Rastrear",
           "img_update_interval_seconds": "Rotação de imagem (segundos)",
           "conf_photos": "Importar fotos do Strava?",
-          "conf_distance_unit": "Sistema de unidades de distância a usar",
-          "geocode_xyz_api_key": "Chave API do geocode.xyz (Opcional)"
+          "conf_distance_unit": "Sistema de unidades de distância a usar"
         }
       }
     },
