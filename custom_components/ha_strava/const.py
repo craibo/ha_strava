@@ -228,7 +228,7 @@ CONF_ATTRIBUTE_SENSORS = {
         "icon": "mdi:fire",
         "device_class": "energy",
         "unit": "kcal",
-        "state_class": None,
+        "state_class": "total",
     },
     CONF_SENSOR_PACE: {
         "icon": "mdi:clock-fast",
@@ -246,13 +246,13 @@ CONF_ATTRIBUTE_SENSORS = {
         "icon": "mdi:heart-pulse",
         "device_class": None,
         "unit": "bpm",
-        "state_class": "measurement",
+        "state_class": "total",
     },
     CONF_SENSOR_HEART_RATE_MAX: {
         "icon": "mdi:heart-pulse",
         "device_class": None,
         "unit": "bpm",
-        "state_class": "measurement",
+        "state_class": "total",
     },
     CONF_SENSOR_CADENCE_AVG: {
         "icon": "mdi:shoe-print",
