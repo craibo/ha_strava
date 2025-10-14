@@ -47,8 +47,8 @@ class TestStravaActivityTypeSensor:
         for i, sensor in enumerate(sensors):
             activity_type = SUPPORTED_ACTIVITY_TYPES[i]
             assert sensor._activity_type == activity_type
-            assert sensor.name == f"Strava {activity_type}"
-            assert sensor.unique_id == f"strava_activity_12345_{activity_type.lower()}"
+            assert sensor.name == f"Strava Test User {activity_type}"
+            assert sensor.unique_id == f"strava_12345_{activity_type.lower()}"
 
     def test_sensor_creation_selected_activity_types(
         self, mock_config_entry
@@ -82,7 +82,7 @@ class TestStravaActivityTypeSensor:
         for sensor in sensors:
             assert sensor._activity_type in selected_types
             assert sensor.name.startswith("Strava ")
-            assert sensor.unique_id.startswith("strava_activity_12345_")
+            assert sensor.unique_id.startswith("strava_12345_")
 
     def test_sensor_attributes_with_activity_data(
         self, mock_strava_activities
@@ -293,8 +293,8 @@ class TestStravaActivityTypeSensor:
         device_info = sensor.device_info
         
         # Verify device info
-        assert device_info["identifiers"] == {("ha_strava", "strava_activity_12345_Run")}
-        assert device_info["name"] == "Strava Run: Test User"
+        assert device_info["identifiers"] == {("ha_strava", "strava_12345_run")}
+        assert device_info["name"] == "Strava Test User Run"
         assert device_info["manufacturer"] == "Powered by Strava"
         assert device_info["model"] == "Run Activity"
 

@@ -403,3 +403,46 @@ UNIT_PACE_MINUTES_PER_KILOMETER = "min/km"
 UNIT_PACE_MINUTES_PER_MILE = "min/mi"
 UNIT_KILO_CALORIES = "kcal"
 UNIT_STEPS_PER_MINUTE = "spm"
+
+
+# Naming Helper Functions
+def get_athlete_name_from_title(title: str) -> str:
+    """Extract clean athlete name from config entry title."""
+    if not title or not title.startswith("Strava:"):
+        return "Unknown"
+    
+    # Remove "Strava:" prefix and strip whitespace
+    name = title.replace("Strava:", "").strip()
+    return name if name else "Unknown"
+
+
+def generate_device_id(athlete_id: str, device_type: str) -> str:
+    """Generate standardized device ID."""
+    return f"strava_{athlete_id}_{device_type}"
+
+
+def generate_device_name(athlete_name: str, device_type: str) -> str:
+    """Generate standardized device name."""
+    return f"Strava {athlete_name} {device_type.title()}"
+
+
+def generate_sensor_id(athlete_id: str, activity_type: str, sensor_type: str) -> str:
+    """Generate standardized sensor ID."""
+    return f"strava_{athlete_id}_{activity_type}_{sensor_type}"
+
+
+def generate_sensor_name(athlete_name: str, activity_type: str, sensor_type: str) -> str:
+    """Generate standardized sensor name."""
+    # Format sensor type for display (replace underscores with spaces and title case)
+    formatted_sensor = sensor_type.replace("_", " ").title()
+    return f"Strava {athlete_name} {activity_type.title()} {formatted_sensor}"
+
+
+def normalize_activity_type(activity_type: str) -> str:
+    """Normalize activity type for consistent naming."""
+    return activity_type.lower().replace(" ", "_")
+
+
+def format_activity_type_display(activity_type: str) -> str:
+    """Format activity type for display in names."""
+    return activity_type.title()
