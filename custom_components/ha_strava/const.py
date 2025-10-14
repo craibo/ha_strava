@@ -1,5 +1,7 @@
 """Constants for the Strava Home Assistant integration."""
 
+import re
+
 DOMAIN = "ha_strava"
 CONFIG_ENTRY_TITLE = "Strava"
 
@@ -410,7 +412,7 @@ def get_athlete_name_from_title(title: str) -> str:
     """Extract clean athlete name from config entry title."""
     if not title or not title.startswith("Strava:"):
         return "Unknown"
-    
+
     # Remove "Strava:" prefix and strip whitespace
     name = title.replace("Strava:", "").strip()
     return name if name else "Unknown"
@@ -431,7 +433,9 @@ def generate_sensor_id(athlete_id: str, activity_type: str, sensor_type: str) ->
     return f"strava_{athlete_id}_{activity_type}_{sensor_type}"
 
 
-def generate_sensor_name(athlete_name: str, activity_type: str, sensor_type: str) -> str:
+def generate_sensor_name(
+    athlete_name: str, activity_type: str, sensor_type: str
+) -> str:
     """Generate standardized sensor name."""
     # Format sensor type for display (replace underscores with spaces and title case)
     formatted_sensor = sensor_type.replace("_", " ").title()
@@ -445,4 +449,7 @@ def normalize_activity_type(activity_type: str) -> str:
 
 def format_activity_type_display(activity_type: str) -> str:
     """Format activity type for display in names."""
-    return activity_type.title()
+    # Handle camelCase by inserting spaces before uppercase letters (except the first one)
+    # Insert space before uppercase letters that follow lowercase letters
+    formatted = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", activity_type)
+    return formatted

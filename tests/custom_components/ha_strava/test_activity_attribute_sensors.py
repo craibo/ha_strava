@@ -2,14 +2,7 @@
 
 from unittest.mock import MagicMock
 
-import pytest
-from homeassistant.components.sensor import SensorDeviceClass
-from homeassistant.const import UnitOfLength, UnitOfSpeed, UnitOfTime
-from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
-
 from custom_components.ha_strava.const import (
-    CONF_ACTIVITY_TYPES_TO_TRACK,
     CONF_ATTR_DEVICE_MANUFACTURER,
     CONF_ATTR_DEVICE_NAME,
     CONF_ATTR_DEVICE_TYPE,
@@ -31,7 +24,6 @@ from custom_components.ha_strava.const import (
     CONF_SENSOR_SPEED,
     CONF_SENSOR_TITLE,
     CONF_SENSOR_TROPHIES,
-    SUPPORTED_ACTIVITY_TYPES,
 )
 from custom_components.ha_strava.sensor import (
     StravaActivityAttributeSensor,
@@ -75,7 +67,7 @@ class TestStravaActivityAttributeSensor:
             "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
         }
         coordinator.entry = MagicMock()
-        coordinator.entry.title = "Test User"
+        coordinator.entry.title = "Strava: Test User"
 
         sensor = StravaActivityAttributeSensor(
             coordinator=coordinator,
@@ -85,9 +77,7 @@ class TestStravaActivityAttributeSensor:
         )
 
         device_info = sensor.device_info
-        assert device_info["identifiers"] == {
-            ("ha_strava", "strava_12345_run")
-        }
+        assert device_info["identifiers"] == {("ha_strava", "strava_12345_run")}
         assert device_info["name"] == "Strava Test User Run"
         assert device_info["manufacturer"] == "Powered by Strava"
         assert device_info["model"] == "Run Activity"
@@ -175,6 +165,7 @@ class TestStravaActivityAttributeSensor:
             "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
         }
         coordinator.entry = MagicMock()
+        coordinator.entry.title = "Strava: Test User"
 
         sensor = StravaActivityAttributeSensor(
             coordinator=coordinator,
@@ -183,7 +174,7 @@ class TestStravaActivityAttributeSensor:
             athlete_id="12345",
         )
 
-        assert sensor.name == "Strava Run Test Attribute"
+        assert sensor.name == "Strava Test User Run Test Attribute"
 
 
 class TestStravaActivityTitleSensor:

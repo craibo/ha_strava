@@ -1,14 +1,10 @@
 """Test configuration for ha_strava."""
 
-import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from aioresponses import aioresponses
-from homeassistant import config_entries
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers import config_entry_oauth2_flow
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.ha_strava.const import (
@@ -42,7 +38,7 @@ def mock_config_entry():
         options={
             CONF_ACTIVITY_TYPES_TO_TRACK: ["Run", "Ride", "Walk", "Swim"],
         },
-        title="Test Strava User",
+        title="Strava: Test User",
     )
 
 
@@ -63,7 +59,7 @@ def mock_config_entry_all_activities():
                 "token_type": "Bearer",
             },
         },
-        title="Test Strava User",
+        title="Strava: Test User",
     )
 
 
