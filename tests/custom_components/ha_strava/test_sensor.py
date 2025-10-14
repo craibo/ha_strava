@@ -53,8 +53,8 @@ class TestStravaActivityTypeSensor:
         )
 
         assert sensor._activity_type == "Run"
-        assert sensor.name == "Strava Run"
-        assert sensor.unique_id == "strava_activity_12345_run"
+        assert sensor.name == "Strava Test User Run"
+        assert sensor.unique_id == "strava_12345_run"
 
     def test_sensor_state_with_activity(self, mock_strava_activities):
         """Test sensor state when activity data is available."""
@@ -243,8 +243,8 @@ class TestStravaSummaryStatsSensor:
             athlete_id="12345",
         )
 
-        assert sensor.name == "Strava Recent Run Distance"
-        assert sensor.unique_id == "strava_stats_12345_recent_run_totals_distance"
+        assert sensor.name == "Strava Test User Recent Run Distance"
+        assert sensor.unique_id == "strava_12345_stats_recent_run_totals_distance"
 
     def test_sensor_state_with_stats(self, mock_strava_stats):
         """Test sensor state when stats data is available."""

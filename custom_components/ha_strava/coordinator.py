@@ -2,7 +2,6 @@
 
 import logging
 from datetime import datetime as dt
-from datetime import timedelta
 from typing import Tuple
 
 import aiohttp
@@ -85,7 +84,6 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             hass,
             _LOGGER,
             name=DOMAIN,
-            update_interval=timedelta(minutes=15),
         )
 
     async def _async_update_data(self):

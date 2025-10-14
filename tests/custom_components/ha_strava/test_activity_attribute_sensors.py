@@ -65,7 +65,7 @@ class TestStravaActivityAttributeSensor:
         assert sensor._activity_type == "Run"
         assert sensor._attribute_type == "test_attribute"
         assert sensor._athlete_id == "12345"
-        assert sensor.unique_id == "strava_activity_12345_run_test_attribute"
+        assert sensor.unique_id == "strava_12345_run_test_attribute"
 
     def test_device_info(self):
         """Test device info."""
@@ -86,9 +86,9 @@ class TestStravaActivityAttributeSensor:
 
         device_info = sensor.device_info
         assert device_info["identifiers"] == {
-            ("ha_strava", "strava_activity_12345_Run")
+            ("ha_strava", "strava_12345_run")
         }
-        assert device_info["name"] == "Strava Run: Test User"
+        assert device_info["name"] == "Strava Test User Run"
         assert device_info["manufacturer"] == "Powered by Strava"
         assert device_info["model"] == "Run Activity"
 
@@ -206,7 +206,7 @@ class TestStravaActivityTitleSensor:
 
         assert sensor._activity_type == "Run"
         assert sensor._attribute_type == CONF_SENSOR_TITLE
-        assert sensor.unique_id == "strava_activity_12345_run_title"
+        assert sensor.unique_id == "strava_12345_run_title"
 
     def test_native_value_with_activity(self, mock_strava_activities):
         """Test native value when activity data is available."""
@@ -266,7 +266,7 @@ class TestStravaActivityDeviceSensor:
 
         assert sensor._activity_type == "Run"
         assert sensor._device_attribute == CONF_SENSOR_DEVICE_NAME
-        assert sensor.unique_id == "strava_activity_12345_run_device_name"
+        assert sensor.unique_id == "strava_12345_run_device_name"
 
     def test_native_value_with_activity(self, mock_strava_activities):
         """Test native value when activity data is available."""
@@ -356,7 +356,7 @@ class TestStravaActivityDateSensor:
 
         assert sensor._activity_type == "Run"
         assert sensor._attribute_type == CONF_SENSOR_DATE
-        assert sensor.unique_id == "strava_activity_12345_run_date"
+        assert sensor.unique_id == "strava_12345_run_date"
 
     def test_native_value_with_activity(self, mock_strava_activities):
         """Test native value when activity data is available."""
@@ -416,7 +416,7 @@ class TestStravaActivityMetricSensor:
 
         assert sensor._activity_type == "Run"
         assert sensor._metric_type == CONF_SENSOR_DISTANCE
-        assert sensor.unique_id == "strava_activity_12345_run_distance"
+        assert sensor.unique_id == "strava_12345_run_distance"
 
     def test_native_value_with_activity(self, mock_strava_activities):
         """Test native value when activity data is available."""

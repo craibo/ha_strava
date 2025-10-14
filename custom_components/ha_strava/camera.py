@@ -20,10 +20,12 @@ from .const import (
     CONF_IMG_UPDATE_INTERVAL_SECONDS_DEFAULT,
     CONF_MAX_NB_IMAGES,
     CONF_PHOTOS,
-    CONF_PHOTOS_ENTITY,
     CONFIG_URL_DUMP_FILENAME,
     DOMAIN,
     MAX_NB_ACTIVITIES,
+    get_athlete_name_from_title,
+    generate_device_id,
+    generate_device_name,
 )
 from .coordinator import StravaDataUpdateCoordinator
 
@@ -65,7 +67,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 class UrlCam(CoordinatorEntity, Camera):
     """A camera that cycles through a list of image URLs."""
 
-    _attr_name = CONF_PHOTOS_ENTITY
     _attr_should_poll = False
 
     def __init__(
@@ -78,7 +79,9 @@ class UrlCam(CoordinatorEntity, Camera):
         super().__init__(coordinator)
         Camera.__init__(self)
         self._athlete_id = athlete_id
-        self._attr_unique_id = f"{CONF_PHOTOS_ENTITY}_{self._athlete_id}"
+        self._athlete_name = get_athlete_name_from_title(self.coordinator.entry.title)
+        self._attr_unique_id = f"strava_{athlete_id}_photos"
+        self._attr_name = generate_device_name(self._athlete_name, "Photos")
         self._url_dump_filepath = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
             f"{self._athlete_id}_{CONFIG_URL_DUMP_FILENAME}",
@@ -147,6 +150,17 @@ class UrlCam(CoordinatorEntity, Camera):
         if not self._urls:
             return {"img_url": _DEFAULT_IMAGE_URL}
         return {"img_url": list(self._urls.values())[self._url_index]["url"]}
+
+    @property
+    def device_info(self):
+        """Return device information."""
+        return {
+            "identifiers": {(DOMAIN, generate_device_id(self._athlete_id, "photos"))},
+            "name": generate_device_name(self._athlete_name, "Photos"),
+            "manufacturer": "Powered by Strava",
+            "model": "Activity Photos",
+            "configuration_url": f"https://www.strava.com/dashboard/{self._athlete_id}",
+        }
 
     async def _update_urls(self):
         if self.coordinator.data and self.coordinator.data.get("images"):

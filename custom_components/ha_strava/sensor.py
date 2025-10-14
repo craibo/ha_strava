@@ -24,9 +24,6 @@ from .const import (
     CONF_DISTANCE_UNIT_OVERRIDE,
     CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT,
     CONF_DISTANCE_UNIT_OVERRIDE_METRIC,
-    CONF_SENSOR_ACTIVITY_COUNT,
-    CONF_SENSOR_BIGGEST_ELEVATION_GAIN,
-    CONF_SENSOR_BIGGEST_RIDE_DISTANCE,
     CONF_SENSOR_CADENCE_AVG,
     CONF_SENSOR_CALORIES,
     CONF_SENSOR_CITY,
@@ -47,10 +44,6 @@ from .const import (
     CONF_SENSOR_POWER,
     CONF_SENSOR_SPEED,
     CONF_SENSOR_TITLE,
-    CONF_SENSORS,
-    CONF_SUMMARY_ALL,
-    CONF_SUMMARY_RECENT,
-    CONF_SUMMARY_YTD,
     DEFAULT_ACTIVITY_TYPES,
     DOMAIN,
     STRAVA_ACTHLETE_BASE_URL,
@@ -58,6 +51,13 @@ from .const import (
     SUPPORTED_ACTIVITY_TYPES,
     UNIT_PACE_MINUTES_PER_KILOMETER,
     UNIT_PACE_MINUTES_PER_MILE,
+    get_athlete_name_from_title,
+    generate_device_id,
+    generate_device_name,
+    generate_sensor_id,
+    generate_sensor_name,
+    normalize_activity_type,
+    format_activity_type_display,
 )
 from .coordinator import StravaDataUpdateCoordinator
 
@@ -204,14 +204,15 @@ class StravaSummaryStatsSensor(CoordinatorEntity, SensorEntity):
         self._display_name = display_name
         self._metric_key = metric_key
         self._athlete_id = athlete_id
-        self._attr_unique_id = f"strava_stats_{athlete_id}_{api_key}_{metric_key}"
+        self._athlete_name = get_athlete_name_from_title(self.coordinator.entry.title)
+        self._attr_unique_id = f"strava_{athlete_id}_stats_{api_key}_{metric_key}"
 
     @property
     def device_info(self):
         """Return device information."""
         return {
-            "identifiers": {(DOMAIN, f"strava_stats_{self._athlete_id}")},
-            "name": f"Strava Summary: {self.coordinator.entry.title}",
+            "identifiers": {(DOMAIN, generate_device_id(self._athlete_id, "stats"))},
+            "name": generate_device_name(self._athlete_name, "Stats"),
             "manufacturer": "Powered by Strava",
             "model": "Activity Summary",
             "configuration_url": f"{STRAVA_ACTHLETE_BASE_URL}{self._athlete_id}",
@@ -347,7 +348,18 @@ class StravaSummaryStatsSensor(CoordinatorEntity, SensorEntity):
     @property
     def name(self):
         """Return the name of the sensor."""
-        return f"Strava {self._display_name}"
+        # Extract activity type and period from api_key (e.g., "recent_run_totals")
+        parts = self._api_key.split("_")
+        if len(parts) >= 3 and parts[-1] == "totals":
+            activity_type = parts[-2]
+            period = parts[0]
+            formatted_sensor = self._metric_key.replace("_", " ").title()
+            return f"Strava {self._athlete_name} {period.title()} {activity_type.title()} {formatted_sensor}"
+        elif self._api_key in ["biggest_ride_distance", "biggest_climb_elevation_gain"]:
+            formatted_sensor = self._metric_key.replace("_", " ").title()
+            return f"Strava {self._athlete_name} {formatted_sensor}"
+        else:
+            return f"Strava {self._athlete_name} {self._display_name}"
 
     @property
     def extra_state_attributes(self):
@@ -402,16 +414,18 @@ class StravaActivityTypeSensor(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
         self._activity_type = activity_type
         self._athlete_id = athlete_id
-        self._attr_unique_id = f"strava_activity_{athlete_id}_{activity_type.lower()}"
+        self._athlete_name = get_athlete_name_from_title(self.coordinator.entry.title)
+        self._normalized_activity_type = normalize_activity_type(activity_type)
+        self._attr_unique_id = f"strava_{athlete_id}_{self._normalized_activity_type}"
 
     @property
     def device_info(self):
         """Return device information."""
         return {
             "identifiers": {
-                (DOMAIN, f"strava_activity_{self._athlete_id}_{self._activity_type}")
+                (DOMAIN, generate_device_id(self._athlete_id, self._normalized_activity_type))
             },
-            "name": f"Strava {self._activity_type}: {self.coordinator.entry.title}",
+            "name": generate_device_name(self._athlete_name, format_activity_type_display(self._activity_type)),
             "manufacturer": "Powered by Strava",
             "model": f"{self._activity_type} Activity",
             "configuration_url": f"{STRAVA_ACTHLETE_BASE_URL}{self._athlete_id}",
@@ -450,7 +464,7 @@ class StravaActivityTypeSensor(CoordinatorEntity, SensorEntity):
     @property
     def name(self):
         """Return the name of the sensor."""
-        return f"Strava {self._activity_type}"
+        return f"Strava {self._athlete_name} {format_activity_type_display(self._activity_type)}"
 
     @property
     def extra_state_attributes(self):
@@ -543,8 +557,10 @@ class StravaActivityAttributeSensor(CoordinatorEntity, SensorEntity):
         self._activity_type = activity_type
         self._attribute_type = attribute_type
         self._athlete_id = athlete_id
-        self._attr_unique_id = (
-            f"strava_activity_{athlete_id}_{activity_type.lower()}_{attribute_type}"
+        self._athlete_name = get_athlete_name_from_title(self.coordinator.entry.title)
+        self._normalized_activity_type = normalize_activity_type(activity_type)
+        self._attr_unique_id = generate_sensor_id(
+            athlete_id, self._normalized_activity_type, attribute_type
         )
 
     @property
@@ -552,9 +568,9 @@ class StravaActivityAttributeSensor(CoordinatorEntity, SensorEntity):
         """Return device information."""
         return {
             "identifiers": {
-                (DOMAIN, f"strava_activity_{self._athlete_id}_{self._activity_type}")
+                (DOMAIN, generate_device_id(self._athlete_id, self._normalized_activity_type))
             },
-            "name": f"Strava {self._activity_type}: {self.coordinator.entry.title}",
+            "name": generate_device_name(self._athlete_name, format_activity_type_display(self._activity_type)),
             "manufacturer": "Powered by Strava",
             "model": f"{self._activity_type} Activity",
             "configuration_url": f"{STRAVA_ACTHLETE_BASE_URL}{self._athlete_id}",
@@ -596,7 +612,11 @@ class StravaActivityAttributeSensor(CoordinatorEntity, SensorEntity):
     @property
     def name(self):
         """Return the name of the sensor."""
-        return f"Strava {self._activity_type} {self._attribute_type.replace('_', ' ').title()}"
+        return generate_sensor_name(
+            self._athlete_name, 
+            format_activity_type_display(self._activity_type), 
+            self._attribute_type
+        )
 
     def _is_metric(self):
         """Determine if the user has configured metric units."""

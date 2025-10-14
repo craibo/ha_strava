@@ -8,10 +8,10 @@ import voluptuous as vol
 
 # HASS imports
 from homeassistant import config_entries
-from homeassistant.helpers import config_validation as cv
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from homeassistant.core import callback
 from homeassistant.helpers import config_entry_oauth2_flow
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.entity_registry import (
     RegistryEntryDisabler,
     async_entries_for_config_entry,
@@ -53,7 +53,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
     def __init__(self, config_entry):
         """Initialize the options flow."""
-        self.config_entry = config_entry
+        super().__init__(config_entry)
         self._config_entry_title = None
         self._import_strava_images = None
         self._img_update_interval_seconds = None
@@ -122,7 +122,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
             # Enable/disable entities based on selected activity types
             selected_activity_types = user_input.get(CONF_ACTIVITY_TYPES_TO_TRACK, [])
-            
+
             for entity in entities:
                 try:
                     # Enable/disable activity type sensors based on selection
@@ -166,7 +166,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                             )
                 except (ValueError, IndexError):
                     # Skip entities that don't match expected format
-                    _LOGGER.debug(f"Skipping entity with unexpected format: {entity.entity_id}")
+                    _LOGGER.debug(
+                        f"Skipping entity with unexpected format: {entity.entity_id}"
+                    )
                     continue
 
             self._selected_activity_types = selected_activity_types
@@ -183,14 +185,16 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 k: v for k, v in self.config_entry.options.items()
             }
 
-            ha_strava_options[CONF_ACTIVITY_TYPES_TO_TRACK] = self._selected_activity_types
-            ha_strava_options[
-                CONF_IMG_UPDATE_INTERVAL_SECONDS
-            ] = self._img_update_interval_seconds
+            ha_strava_options[CONF_ACTIVITY_TYPES_TO_TRACK] = (
+                self._selected_activity_types
+            )
+            ha_strava_options[CONF_IMG_UPDATE_INTERVAL_SECONDS] = (
+                self._img_update_interval_seconds
+            )
             ha_strava_options[CONF_PHOTOS] = self._import_strava_images
-            ha_strava_options[
-                CONF_DISTANCE_UNIT_OVERRIDE
-            ] = self._config_distance_unit_override
+            ha_strava_options[CONF_DISTANCE_UNIT_OVERRIDE] = (
+                self._config_distance_unit_override
+            )
 
             _LOGGER.debug(f"Strava Config Options: {ha_strava_options}")
             return self.async_create_entry(
@@ -281,9 +285,9 @@ class OAuth2FlowHandler(
 
         title = f"Strava: {athlete_info.get('firstname', '')} {athlete_info.get('lastname', '')}".strip()
 
-        data[
-            CONF_CALLBACK_URL
-        ] = f"{get_url(self.hass, allow_internal=False, allow_ip=False)}/api/strava/webhook"  # noqa: E501
+        data[CONF_CALLBACK_URL] = (
+            f"{get_url(self.hass, allow_internal=False, allow_ip=False)}/api/strava/webhook"  # noqa: E501
+        )
         data[CONF_CLIENT_ID] = self.flow_impl.client_id
         data[CONF_CLIENT_SECRET] = self.flow_impl.client_secret
         data[CONF_PHOTOS] = self._import_photos_from_strava
