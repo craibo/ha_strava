@@ -258,7 +258,7 @@ CONF_ATTRIBUTE_SENSORS = {
     },
     CONF_SENSOR_CADENCE_AVG: {
         "icon": "mdi:shoe-print",
-        "device_class": "frequency",
+        "device_class": None,
         "unit": "spm",
         "state_class": "measurement",
     },

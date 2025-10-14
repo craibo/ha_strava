@@ -53,7 +53,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
     def __init__(self, config_entry):
         """Initialize the options flow."""
-        super().__init__(config_entry)
+        self.config_entry = config_entry
         self._config_entry_title = None
         self._import_strava_images = None
         self._img_update_interval_seconds = None
