@@ -23,9 +23,9 @@ from .const import (
     CONFIG_URL_DUMP_FILENAME,
     DOMAIN,
     MAX_NB_ACTIVITIES,
-    get_athlete_name_from_title,
     generate_device_id,
     generate_device_name,
+    get_athlete_name_from_title,
 )
 from .coordinator import StravaDataUpdateCoordinator
 

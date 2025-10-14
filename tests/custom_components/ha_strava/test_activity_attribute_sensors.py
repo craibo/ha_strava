@@ -2,28 +2,20 @@
 
 from unittest.mock import MagicMock
 
+from homeassistant.components.sensor import SensorDeviceClass
+from homeassistant.const import UnitOfLength, UnitOfTime
+
 from custom_components.ha_strava.const import (
-    CONF_ATTR_DEVICE_MANUFACTURER,
-    CONF_ATTR_DEVICE_NAME,
-    CONF_ATTR_DEVICE_TYPE,
-    CONF_SENSOR_CADENCE_AVG,
     CONF_SENSOR_CALORIES,
     CONF_SENSOR_DATE,
-    CONF_SENSOR_DEVICE_MANUFACTURER,
     CONF_SENSOR_DEVICE_NAME,
-    CONF_SENSOR_DEVICE_TYPE,
     CONF_SENSOR_DISTANCE,
-    CONF_SENSOR_ELAPSED_TIME,
-    CONF_SENSOR_ELEVATION,
     CONF_SENSOR_HEART_RATE_AVG,
-    CONF_SENSOR_HEART_RATE_MAX,
-    CONF_SENSOR_KUDOS,
     CONF_SENSOR_MOVING_TIME,
     CONF_SENSOR_PACE,
     CONF_SENSOR_POWER,
     CONF_SENSOR_SPEED,
     CONF_SENSOR_TITLE,
-    CONF_SENSOR_TROPHIES,
 )
 from custom_components.ha_strava.sensor import (
     StravaActivityAttributeSensor,

@@ -91,8 +91,6 @@ class TestStravaActivityTypeSensor:
             CONF_ATTR_SPORT_TYPE,
             CONF_ATTR_START_LATLONG,
             CONF_SENSOR_ID,
-            CONF_SENSOR_LATITUDE,
-            CONF_SENSOR_LONGITUDE,
         )
 
         # Process the mock data to match the expected structure
@@ -189,8 +187,6 @@ class TestStravaActivityTypeSensor:
             CONF_ATTR_SPORT_TYPE,
             CONF_ATTR_START_LATLONG,
             CONF_SENSOR_ID,
-            CONF_SENSOR_LATITUDE,
-            CONF_SENSOR_LONGITUDE,
         )
 
         # Process the mock data to match the expected structure

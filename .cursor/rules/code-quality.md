@@ -11,11 +11,13 @@ This file defines the code quality standards and style guidelines for the ha_str
 ## Code Formatting
 
 ### Black Configuration
+
 - **Line Length**: 120 characters maximum
 - **Profile**: Black formatting standard
 - **Exclusions**: E203, F541 (compatible with Black)
 
 ### Import Organization
+
 - Use `isort` with Black profile
 - Group imports: standard library, third-party, local imports
 - Sort imports alphabetically within groups
@@ -40,6 +42,7 @@ from .coordinator import StravaDataUpdateCoordinator
 ## Type Hints
 
 ### Required Type Hints
+
 - All function parameters
 - All return types
 - Class attributes where beneficial
@@ -51,8 +54,8 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, Tuple
 
 async def fetch_activities(
-    self, 
-    athlete_id: str, 
+    self,
+    athlete_id: str,
     limit: int = 10
 ) -> List[Dict[str, Any]]:
     """Fetch activities from Strava API."""
@@ -67,6 +70,7 @@ def device_info(self) -> Optional[Dict[str, Any]]:
 ## Logging Standards
 
 ### Logger Setup
+
 ```python
 import logging
 
@@ -74,12 +78,14 @@ _LOGGER = logging.getLogger(__name__)
 ```
 
 ### Log Levels
+
 - **DEBUG**: Detailed information for debugging
 - **INFO**: General information about program execution
 - **WARNING**: Something unexpected happened but the program is still working
 - **ERROR**: A serious problem occurred
 
 ### Logging Patterns
+
 ```python
 # Debug logging for detailed flow
 _LOGGER.debug("Fetching activities for athlete %s", athlete_id)
@@ -95,6 +101,7 @@ _LOGGER.error("Error communicating with API: %s", err)
 ```
 
 ### Security Considerations
+
 - Never log sensitive data (tokens, API keys, personal information)
 - Use parameterized logging to avoid string formatting issues
 - Log only necessary information for debugging
@@ -102,6 +109,7 @@ _LOGGER.error("Error communicating with API: %s", err)
 ## Error Handling
 
 ### Exception Handling Patterns
+
 ```python
 try:
     response = await self.oauth_session.async_request(method="GET", url=url)
@@ -116,6 +124,7 @@ except json.JSONDecodeError as err:
 ```
 
 ### Custom Exceptions
+
 ```python
 class StravaAPIError(Exception):
     """Base exception for Strava API errors."""
@@ -129,6 +138,7 @@ class StravaAuthenticationError(StravaAPIError):
 ## Async/Await Patterns
 
 ### Proper Async Usage
+
 ```python
 # Use async/await consistently
 async def async_update_data(self) -> Dict[str, Any]:
@@ -149,6 +159,7 @@ async with aiohttp.ClientSession() as session:
 ## Function and Method Design
 
 ### Method Naming
+
 - Use descriptive, self-documenting method names
 - Prefix private methods with underscore
 - Use async prefix for async methods
@@ -170,6 +181,7 @@ def device_info(self) -> Dict[str, Any]:
 ```
 
 ### Method Documentation
+
 - Use docstrings for all public methods
 - Include parameter descriptions
 - Include return value descriptions
@@ -177,20 +189,20 @@ def device_info(self) -> Dict[str, Any]:
 
 ```python
 async def async_fetch_activities(
-    self, 
-    athlete_id: str, 
+    self,
+    athlete_id: str,
     limit: int = 10
 ) -> List[Dict[str, Any]]:
     """
     Fetch activities from Strava API for a specific athlete.
-    
+
     Args:
         athlete_id: The Strava athlete ID
         limit: Maximum number of activities to fetch (default: 10)
-        
+
     Returns:
         List of activity dictionaries
-        
+
     Raises:
         UpdateFailed: If API request fails
         StravaAuthenticationError: If authentication fails
@@ -201,6 +213,7 @@ async def async_fetch_activities(
 ## Constants and Configuration
 
 ### Constants Management
+
 - Define all constants in `const.py`
 - Use descriptive constant names
 - Group related constants together
@@ -230,19 +243,23 @@ CONF_SENSORS = {
 ## Pylint Configuration
 
 ### Disabled Rules
+
 - `format` - Handled by Black
 - `logging-fstring-interpolation` - Use parameterized logging
 - `f-string-without-interpolation` - Use regular strings when no interpolation
 
 ### Enabled Rules
+
 - `use-symbolic-message-instead` - Use symbolic message names
 
 ### Line Length
+
 - Maximum 120 characters (consistent with Black)
 
 ## Testing Standards
 
 ### Test File Organization
+
 - Mirror the source code structure in tests
 - Use descriptive test names
 - Group related tests in classes
@@ -250,17 +267,18 @@ CONF_SENSORS = {
 ```python
 class TestStravaCoordinator:
     """Test cases for StravaDataUpdateCoordinator."""
-    
+
     async def test_fetch_activities_success(self):
         """Test successful activity fetching."""
         pass
-    
+
     async def test_fetch_activities_api_error(self):
         """Test API error handling during activity fetching."""
         pass
 ```
 
 ### Test Naming
+
 - Use descriptive test method names
 - Include the scenario being tested
 - Use `test_` prefix for all test methods
@@ -268,12 +286,14 @@ class TestStravaCoordinator:
 ## Performance Considerations
 
 ### Efficient Data Processing
+
 - Use list comprehensions where appropriate
 - Avoid unnecessary API calls
 - Cache frequently accessed data
 - Use appropriate data structures
 
 ### Memory Management
+
 - Clean up resources properly
 - Use context managers for file operations
 - Avoid storing large objects in memory unnecessarily
@@ -281,11 +301,13 @@ class TestStravaCoordinator:
 ## Security Best Practices
 
 ### Input Validation
+
 - Validate all external inputs
 - Sanitize data before processing
 - Use proper type checking
 
 ### API Security
+
 - Never log sensitive information
 - Use secure HTTP methods
 - Implement proper error handling for authentication failures

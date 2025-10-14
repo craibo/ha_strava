@@ -3,31 +3,18 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from homeassistant.components.sensor import SensorDeviceClass
-from homeassistant.const import (
-    CONF_CLIENT_ID,
-    CONF_CLIENT_SECRET,
-    UnitOfLength,
-    UnitOfTime,
-)
+from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.ha_strava.const import (
     CONF_ACTIVITY_TYPES_TO_TRACK,
     CONF_ATTR_ACTIVITY_ID,
-    CONF_ATTR_DEVICE_NAME,
-    CONF_ATTR_DEVICE_TYPE,
     CONF_DISTANCE_UNIT_OVERRIDE,
     CONF_DISTANCE_UNIT_OVERRIDE_METRIC,
     DOMAIN,
-    SUPPORTED_ACTIVITY_TYPES,
 )
 from custom_components.ha_strava.sensor import (
-    StravaActivityDateSensor,
-    StravaActivityDeviceSensor,
-    StravaActivityMetricSensor,
-    StravaActivityTitleSensor,
     StravaActivityTypeSensor,
     StravaSummaryStatsSensor,
     async_setup_entry,
@@ -366,7 +353,8 @@ class TestSensorPlatform:
             call_args = async_add_entities_mock.call_args[0][0]
 
             # Should create main activity sensors + individual attribute sensors + summary stats sensors
-            # 4 activity types × (1 main + 1 title + 3 device + 1 date + 13 metric) + 35 summary stats = 111 sensors total
+            # 4 activity types × (1 main + 1 title + 3 device + 1 date + 13 metric) + 35 summary stats
+            # = 111 sensors total
             expected_sensor_count = (
                 len(mock_config_entry.options[CONF_ACTIVITY_TYPES_TO_TRACK]) * 19 + 35
             )

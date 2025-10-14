@@ -28,11 +28,13 @@ When configuring the Strava API, the **Authorization Callback Domain** must be s
 The Strava Home Assistant Integration creates **sensor entities** for each activity type you choose to track. For each selected activity type, you get:
 
 **Activity Sensors:**
+
 - **Latest Activity**: Shows the name of your most recent activity of that type
 - **Activity Details**: Includes distance, time, elevation, heart rate, power, and more
 - **Device Information**: Automatically detects and displays the device used (Garmin, Apple Watch, etc.)
 
 **Summary Statistics Sensors:**
+
 - **Recent** (last 4 weeks): Distance, activity count, and other metrics
 - **Year-to-Date**: Cumulative statistics for the current year
 - **All-Time**: Lifetime statistics for each activity type
