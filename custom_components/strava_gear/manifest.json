@@ -1,0 +1,13 @@
+{
+  "domain": "strava_gear",
+  "name": "Strava Gear",
+  "version": "0.1.0",
+  "documentation": "https://github.com/CraigBell/HA_Strava",
+  "issue_tracker": "https://github.com/CraigBell/HA_Strava/issues",
+  "codeowners": ["@CraigBell"],
+  "iot_class": "cloud_polling",
+  "config_flow": true,
+  "requirements": [],
+  "dependencies": ["application_credentials"]
+}
+

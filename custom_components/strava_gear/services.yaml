@@ -1,0 +1,15 @@
+set_activity_gear:
+  name: Set Activity Gear
+  description: Set the gear (shoe) for an activity by id.
+  fields:
+    activity_id:
+      required: true
+      example: 1234567890
+      selector:
+        text:
+    gear_id:
+      required: true
+      example: g23789926
+      selector:
+        text:
+
