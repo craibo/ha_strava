@@ -119,21 +119,12 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                             athlete_id=athlete_id,
                         )
                     )
-                elif attribute_type in [
-                    CONF_SENSOR_GEAR_ID,
-                    CONF_SENSOR_GEAR_NAME,
-                    CONF_SENSOR_GEAR_BRAND,
-                    CONF_SENSOR_GEAR_MODEL,
-                    CONF_SENSOR_GEAR_DISTANCE,
-                    CONF_SENSOR_GEAR_DESCRIPTION,
-                    CONF_SENSOR_GEAR_PRIMARY,
-                    CONF_SENSOR_GEAR_FRAME_TYPE,
-                ]:
+                elif attribute_type == CONF_SENSOR_GEAR_NAME:
+                    # Create only one gear sensor per activity type
                     entries.append(
                         StravaActivityGearSensor(
                             coordinator,
                             activity_type=activity_type,
-                            gear_attribute=attribute_type,
                             athlete_id=athlete_id,
                         )
                     )
@@ -688,43 +679,76 @@ class StravaActivityAttributeSensor(CoordinatorEntity, SensorEntity):
 
 
 class StravaActivityGearSensor(StravaActivityAttributeSensor):
-    """Sensor for gear-related attributes."""
+    """Sensor for gear information - shows gear name as value with other gear details as attributes."""
 
     def __init__(
         self,
         coordinator: StravaDataUpdateCoordinator,
         activity_type: str,
-        gear_attribute: str,
         athlete_id: str,
     ):
         """Initialize the sensor."""
-        super().__init__(coordinator, activity_type, gear_attribute, athlete_id)
-        self._gear_attribute = gear_attribute
+        super().__init__(coordinator, activity_type, CONF_SENSOR_GEAR_NAME, athlete_id)
 
     @property
     def native_value(self):
-        """Return the state of the sensor."""
+        """Return the gear name as the sensor value."""
         if not self.available:
             return None
 
         activity = self._latest_activity
-        return activity.get(self._gear_attribute, "Unknown")
+        return activity.get(CONF_SENSOR_GEAR_NAME, "No Gear")
 
     @property
-    def native_unit_of_measurement(self):
-        """Return the unit of measurement."""
-        config = CONF_ATTRIBUTE_SENSORS.get(self._gear_attribute, {})
-        unit = config.get("unit")
+    def extra_state_attributes(self):
+        """Return gear-related attributes."""
+        if not self.available:
+            return {}
 
-        if not unit:
-            return None
+        activity = self._latest_activity
+        attributes = {}
 
-        # Handle unit conversion for gear distance
-        if self._gear_attribute == CONF_SENSOR_GEAR_DISTANCE:
+        # Add all gear-related information as attributes
+        gear_id = activity.get(CONF_SENSOR_GEAR_ID)
+        if gear_id:
+            attributes["gear_id"] = gear_id
+
+        gear_brand = activity.get(CONF_SENSOR_GEAR_BRAND)
+        if gear_brand:
+            attributes["gear_brand"] = gear_brand
+
+        gear_model = activity.get(CONF_SENSOR_GEAR_MODEL)
+        if gear_model:
+            attributes["gear_model"] = gear_model
+
+        gear_distance = activity.get(CONF_SENSOR_GEAR_DISTANCE)
+        if gear_distance is not None:
+            # Convert distance to appropriate units
             is_metric = self._is_metric()
-            return UnitOfLength.METERS if is_metric else UnitOfLength.FEET
+            if is_metric:
+                attributes["gear_distance"] = round(
+                    gear_distance / 1000, 2
+                )  # Convert to km
+                attributes["gear_distance_unit"] = "km"
+            else:
+                attributes["gear_distance"] = round(
+                    gear_distance * 3.28084, 2
+                )  # Convert to miles
+                attributes["gear_distance_unit"] = "miles"
 
-        return unit
+        gear_description = activity.get(CONF_SENSOR_GEAR_DESCRIPTION)
+        if gear_description:
+            attributes["gear_description"] = gear_description
+
+        gear_primary = activity.get(CONF_SENSOR_GEAR_PRIMARY)
+        if gear_primary is not None:
+            attributes["gear_primary"] = gear_primary
+
+        gear_frame_type = activity.get(CONF_SENSOR_GEAR_FRAME_TYPE)
+        if gear_frame_type is not None:
+            attributes["gear_frame_type"] = gear_frame_type
+
+        return attributes
 
 
 class StravaActivityDeviceSensor(StravaActivityAttributeSensor):
