@@ -20,8 +20,6 @@ from .const import (
     CONF_PHOTOS,
     CONF_SENSOR_ACTIVITY_COUNT,
     CONF_SENSOR_ACTIVITY_TYPE,
-    CONF_SENSOR_BIGGEST_ELEVATION_GAIN,
-    CONF_SENSOR_BIGGEST_RIDE_DISTANCE,
     CONF_SENSOR_CADENCE_AVG,
     CONF_SENSOR_CALORIES,
     CONF_SENSOR_CITY,
@@ -48,16 +46,12 @@ from .const import (
     CONF_SENSOR_POWER,
     CONF_SENSOR_TITLE,
     CONF_SENSOR_TROPHIES,
-    CONF_SUMMARY_ALL,
-    CONF_SUMMARY_RECENT,
-    CONF_SUMMARY_YTD,
     CONFIG_IMG_SIZE,
     DEFAULT_ACTIVITY_TYPES,
     DOMAIN,
     FACTOR_KILOJOULES_TO_KILOCALORIES,
     OAUTH2_AUTHORIZE,
     OAUTH2_TOKEN,
-    SUPPORTED_ACTIVITY_TYPES,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -319,11 +313,6 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
         athlete_id = str(summary_stats.get(CONF_SENSOR_ID, ""))
         result = {}
 
-        # Get selected activity types from config
-        selected_activity_types = self.entry.options.get(
-            CONF_ACTIVITY_TYPES_TO_TRACK, DEFAULT_ACTIVITY_TYPES
-        )
-
         # Activity type mapping to Strava API field names
         activity_type_mapping = {
             "Ride": "ride",
@@ -349,22 +338,22 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             for period in periods:
                 # Create the API key that matches what the sensors expect
                 api_key = f"{period}_{activity_type}_totals"
-                
+
                 # Create summary period data
                 period_data = self._create_summary_period(
                     athlete_id, summary_stats, f"{period}_{api_field}_totals"
                 )
-                
+
                 # Store the data using the expected API key
                 result[api_key] = period_data
 
         # Add special metrics
-        result["biggest_ride_distance"] = {
-            "biggest_ride_distance": float(summary_stats.get("biggest_ride_distance", 0) or 0)
-        }
-        result["biggest_climb_elevation_gain"] = {
-            "biggest_climb_elevation_gain": float(summary_stats.get("biggest_climb_elevation_gain", 0) or 0)
-        }
+        result["biggest_ride_distance"] = float(
+            summary_stats.get("biggest_ride_distance", 0) or 0
+        )
+        result["biggest_climb_elevation_gain"] = float(
+            summary_stats.get("biggest_climb_elevation_gain", 0) or 0
+        )
 
         return result
 
