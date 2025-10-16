@@ -271,9 +271,21 @@ class StravaSummaryStatsSensor(CoordinatorEntity, SensorEntity):
             "biggest_ride_distance",
             "biggest_climb_elevation_gain",
         ]:
+            # Extract numeric value from data (handle both dict and numeric formats)
+            if isinstance(data, dict):
+                numeric_value = data.get(self._metric_key, 0)
+            else:
+                numeric_value = data if data else 0
+
+            # Ensure we have a numeric value
+            try:
+                numeric_value = float(numeric_value) if numeric_value is not None else 0
+            except (TypeError, ValueError):
+                numeric_value = 0
+
             if self._metric_key == "biggest_ride_distance":
                 # Convert from meters to km/miles
-                distance = data / 1000 if data else 0
+                distance = numeric_value / 1000
                 is_metric = self._is_metric()
                 if is_metric:
                     return round(distance, 2)
@@ -285,7 +297,7 @@ class StravaSummaryStatsSensor(CoordinatorEntity, SensorEntity):
                 )
             else:  # biggest_climb_elevation_gain
                 # Convert from meters to meters/feet
-                elevation = data if data else 0
+                elevation = numeric_value
                 is_metric = self._is_metric()
                 if is_metric:
                     return round(elevation, 2)
