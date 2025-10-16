@@ -1,6 +1,6 @@
 ---
 description: Core development rules that should always be applied to this project
-globs: 
+globs:
 alwaysApply: true
 ---
 

@@ -1,6 +1,12 @@
 ---
 description: ConfigEntry migration rules and patterns for the ha_strava project
-globs: ["custom_components/ha_strava/__init__.py", "tests/**/*migration*.py", "tests/test_migration_runner.py", "tests/validate_migration_logic.py"]
+globs:
+  [
+    "custom_components/ha_strava/__init__.py",
+    "tests/**/*migration*.py",
+    "tests/test_migration_runner.py",
+    "tests/validate_migration_logic.py",
+  ]
 alwaysApply: false
 ---
 
@@ -34,9 +40,9 @@ This rule documents how versioned ConfigEntry migrations are implemented for `ha
 
 ## Current Upgrade Path
 
-| From | To | Purpose |
-| --- | --- | --- |
-| 1 | 2 | Multi-user support: add athlete-specific prefixes to entity `unique_id`s; mark migration in `entry.data`. |
+| From | To  | Purpose                                                                                                   |
+| ---- | --- | --------------------------------------------------------------------------------------------------------- |
+| 1    | 2   | Multi-user support: add athlete-specific prefixes to entity `unique_id`s; mark migration in `entry.data`. |
 
 ### v1 → v2 Data Markers
 
@@ -49,14 +55,17 @@ This rule documents how versioned ConfigEntry migrations are implemented for `ha
 Update only `unique_id`. Do not change `entity_id`.
 
 - Summary stats
+
   - Old: `strava_stats_{summary}_{activity_type}_{metric}`
   - New: `strava_stats_{athlete_id}_{summary}_{activity_type}_{metric}`
 
 - Activity sensors
+
   - Old: `strava_{activity_index}_{sensor_index}`
   - New: `strava_{athlete_id}_{activity_index}_{sensor_index}`
 
 - Camera
+
   - Old: `strava_cam`
   - New: `strava_cam_{athlete_id}`
 
@@ -65,6 +74,7 @@ Update only `unique_id`. Do not change `entity_id`.
   - New: `strava_{athlete_id}_{activity_index}_photos`
 
 Idempotency rules:
+
 - Skip entities already matching new format.
 - If a mapping cannot be derived, skip safely and log at DEBUG.
 - On registry update errors, log at ERROR and continue.
@@ -101,6 +111,7 @@ Idempotency rules:
   - Error handling: individual failures do not abort the migration.
 
 Useful references in this repo:
+
 - `tests/custom_components/ha_strava/test_migration.py`
 - `tests/custom_components/ha_strava/test_migration_integration.py`
 - `tests/test_migration_runner.py`
@@ -118,11 +129,9 @@ Useful references in this repo:
 
 - "async_migrate_entry" in `custom_components/ha_strava/__init__.py`
 - "async_migrate_entity_registry" in `custom_components/ha_strava/__init__.py`
-- "_migrated_to_multi_user" across repo
-- "strava_stats_" and "strava_cam" in tests
+- "\_migrated_to_multi_user" across repo
+- "strava*stats*" and "strava_cam" in tests
 
 ## Related Rules
 
 - See `testing-patterns.md` for required test coverage and patterns.
-
-

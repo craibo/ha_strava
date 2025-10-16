@@ -91,8 +91,6 @@ class TestStravaActivityTypeSensor:
             CONF_ATTR_SPORT_TYPE,
             CONF_ATTR_START_LATLONG,
             CONF_SENSOR_ID,
-            CONF_SENSOR_LATITUDE,
-            CONF_SENSOR_LONGITUDE,
         )
 
         # Process the mock data to match the expected structure
@@ -133,7 +131,7 @@ class TestStravaActivityTypeSensor:
             a for a in processed_activities if a[CONF_ATTR_SPORT_TYPE] == "Run"
         ]
         assert len(run_activities) == 1
-        assert state == f"Latest Run"  # Default title when no CONF_SENSOR_TITLE
+        assert state == f"Latest Run"  # Default title when no activity name
 
         # Verify attributes
         assert attributes[CONF_ATTR_ACTIVITY_ID] == str(
@@ -189,8 +187,6 @@ class TestStravaActivityTypeSensor:
             CONF_ATTR_SPORT_TYPE,
             CONF_ATTR_START_LATLONG,
             CONF_SENSOR_ID,
-            CONF_SENSOR_LATITUDE,
-            CONF_SENSOR_LONGITUDE,
         )
 
         # Process the mock data to match the expected structure
@@ -311,7 +307,7 @@ class TestStravaActivityTypeSensor:
             "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
         }
         coordinator.entry = MagicMock()
-        coordinator.entry.title = "Test User"
+        coordinator.entry.title = "Strava: Test User"
 
         # Create sensor
         sensor = StravaActivityTypeSensor(

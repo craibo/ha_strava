@@ -34,6 +34,14 @@ from .const import (
     CONF_SENSOR_DISTANCE,
     CONF_SENSOR_ELAPSED_TIME,
     CONF_SENSOR_ELEVATION,
+    CONF_SENSOR_GEAR_BRAND,
+    CONF_SENSOR_GEAR_DESCRIPTION,
+    CONF_SENSOR_GEAR_DISTANCE,
+    CONF_SENSOR_GEAR_FRAME_TYPE,
+    CONF_SENSOR_GEAR_ID,
+    CONF_SENSOR_GEAR_MODEL,
+    CONF_SENSOR_GEAR_NAME,
+    CONF_SENSOR_GEAR_PRIMARY,
     CONF_SENSOR_HEART_RATE_AVG,
     CONF_SENSOR_HEART_RATE_MAX,
     CONF_SENSOR_ID,
@@ -90,15 +98,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
             # Create individual attribute sensors
             for attribute_type in CONF_ATTRIBUTE_SENSOR_TYPES:
-                if attribute_type == CONF_SENSOR_TITLE:
-                    entries.append(
-                        StravaActivityTitleSensor(
-                            coordinator,
-                            activity_type=activity_type,
-                            athlete_id=athlete_id,
-                        )
-                    )
-                elif attribute_type in [
+                if attribute_type in [
                     CONF_SENSOR_DEVICE_NAME,
                     CONF_SENSOR_DEVICE_TYPE,
                     CONF_SENSOR_DEVICE_MANUFACTURER,
@@ -116,6 +116,24 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                         StravaActivityDateSensor(
                             coordinator,
                             activity_type=activity_type,
+                            athlete_id=athlete_id,
+                        )
+                    )
+                elif attribute_type in [
+                    CONF_SENSOR_GEAR_ID,
+                    CONF_SENSOR_GEAR_NAME,
+                    CONF_SENSOR_GEAR_BRAND,
+                    CONF_SENSOR_GEAR_MODEL,
+                    CONF_SENSOR_GEAR_DISTANCE,
+                    CONF_SENSOR_GEAR_DESCRIPTION,
+                    CONF_SENSOR_GEAR_PRIMARY,
+                    CONF_SENSOR_GEAR_FRAME_TYPE,
+                ]:
+                    entries.append(
+                        StravaActivityGearSensor(
+                            coordinator,
+                            activity_type=activity_type,
+                            gear_attribute=attribute_type,
                             athlete_id=athlete_id,
                         )
                     )
@@ -490,6 +508,33 @@ class StravaActivityTypeSensor(CoordinatorEntity, SensorEntity):
             CONF_ATTR_PRIVATE: activity.get(CONF_ATTR_PRIVATE),
             CONF_ATTR_ACTIVITY_URL: f"{STRAVA_ACTIVITY_BASE_URL}{activity_id}",
             CONF_ATTR_POLYLINE: activity.get(CONF_ATTR_POLYLINE),
+            # Add activity data attributes
+            CONF_SENSOR_DISTANCE: activity.get(CONF_SENSOR_DISTANCE),
+            CONF_SENSOR_MOVING_TIME: activity.get(CONF_SENSOR_MOVING_TIME),
+            CONF_SENSOR_ELAPSED_TIME: activity.get(CONF_SENSOR_ELAPSED_TIME),
+            CONF_SENSOR_ELEVATION: activity.get(CONF_SENSOR_ELEVATION),
+            CONF_SENSOR_CALORIES: activity.get(CONF_SENSOR_CALORIES),
+            CONF_SENSOR_SPEED: activity.get(CONF_SENSOR_SPEED),
+            CONF_SENSOR_PACE: activity.get(CONF_SENSOR_PACE),
+            CONF_SENSOR_HEART_RATE_AVG: activity.get(CONF_SENSOR_HEART_RATE_AVG),
+            CONF_SENSOR_HEART_RATE_MAX: activity.get(CONF_SENSOR_HEART_RATE_MAX),
+            CONF_SENSOR_POWER: activity.get(CONF_SENSOR_POWER),
+            CONF_SENSOR_CADENCE_AVG: activity.get(CONF_SENSOR_CADENCE_AVG),
+            CONF_SENSOR_DEVICE_NAME: activity.get(CONF_SENSOR_DEVICE_NAME),
+            CONF_SENSOR_DEVICE_TYPE: activity.get(CONF_SENSOR_DEVICE_TYPE),
+            CONF_SENSOR_DEVICE_MANUFACTURER: activity.get(
+                CONF_SENSOR_DEVICE_MANUFACTURER
+            ),
+            CONF_SENSOR_DATE: activity.get(CONF_SENSOR_DATE),
+            # Add gear information
+            CONF_SENSOR_GEAR_ID: activity.get(CONF_SENSOR_GEAR_ID),
+            CONF_SENSOR_GEAR_NAME: activity.get(CONF_SENSOR_GEAR_NAME),
+            CONF_SENSOR_GEAR_BRAND: activity.get(CONF_SENSOR_GEAR_BRAND),
+            CONF_SENSOR_GEAR_MODEL: activity.get(CONF_SENSOR_GEAR_MODEL),
+            CONF_SENSOR_GEAR_DISTANCE: activity.get(CONF_SENSOR_GEAR_DISTANCE),
+            CONF_SENSOR_GEAR_DESCRIPTION: activity.get(CONF_SENSOR_GEAR_DESCRIPTION),
+            CONF_SENSOR_GEAR_PRIMARY: activity.get(CONF_SENSOR_GEAR_PRIMARY),
+            CONF_SENSOR_GEAR_FRAME_TYPE: activity.get(CONF_SENSOR_GEAR_FRAME_TYPE),
         }
 
         if start_latlng := activity.get(CONF_ATTR_START_LATLONG):
@@ -642,17 +687,19 @@ class StravaActivityAttributeSensor(CoordinatorEntity, SensorEntity):
         return False
 
 
-class StravaActivityTitleSensor(StravaActivityAttributeSensor):
-    """Sensor for activity title."""
+class StravaActivityGearSensor(StravaActivityAttributeSensor):
+    """Sensor for gear-related attributes."""
 
     def __init__(
         self,
         coordinator: StravaDataUpdateCoordinator,
         activity_type: str,
+        gear_attribute: str,
         athlete_id: str,
     ):
         """Initialize the sensor."""
-        super().__init__(coordinator, activity_type, CONF_SENSOR_TITLE, athlete_id)
+        super().__init__(coordinator, activity_type, gear_attribute, athlete_id)
+        self._gear_attribute = gear_attribute
 
     @property
     def native_value(self):
@@ -661,7 +708,23 @@ class StravaActivityTitleSensor(StravaActivityAttributeSensor):
             return None
 
         activity = self._latest_activity
-        return activity.get(CONF_SENSOR_TITLE, f"Latest {self._activity_type}")
+        return activity.get(self._gear_attribute, "Unknown")
+
+    @property
+    def native_unit_of_measurement(self):
+        """Return the unit of measurement."""
+        config = CONF_ATTRIBUTE_SENSORS.get(self._gear_attribute, {})
+        unit = config.get("unit")
+
+        if not unit:
+            return None
+
+        # Handle unit conversion for gear distance
+        if self._gear_attribute == CONF_SENSOR_GEAR_DISTANCE:
+            is_metric = self._is_metric()
+            return UnitOfLength.METERS if is_metric else UnitOfLength.FEET
+
+        return unit
 
 
 class StravaActivityDeviceSensor(StravaActivityAttributeSensor):

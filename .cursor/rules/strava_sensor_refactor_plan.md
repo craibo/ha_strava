@@ -1,11 +1,13 @@
 # Strava Sensor Refactor Implementation Plan
 
 ## Overview
+
 Refactor the Strava Home Assistant integration to use single sensors per activity type instead of individual activity sensors, remove geocode.xyz dependency, and add device source tracking.
 
 ## Project Status: 🚧 IN PROGRESS
-**Started**: 2024-12-19  
-**Target Completion**: TBD  
+
+**Started**: 2024-12-19
+**Target Completion**: TBD
 **Current Phase**: Planning Complete
 
 ---
@@ -13,6 +15,7 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 ## Phase Tracking
 
 ### ✅ Phase 1: Planning & Analysis (COMPLETED)
+
 - [x] Analyze current codebase structure
 - [x] Identify all 50 supported activity types
 - [x] Document current sensor architecture
@@ -21,6 +24,7 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 - [x] Identify breaking changes and migration requirements
 
 ### ✅ Phase 2: Constants & Configuration Updates (COMPLETED)
+
 - [x] Update `const.py` with new activity types
 - [x] Remove geocode.xyz related constants
 - [x] Remove activity count constants
@@ -28,6 +32,7 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 - [x] Add activity type selection constants
 
 ### ✅ Phase 3: Sensor Platform Refactor (COMPLETED)
+
 - [x] Remove `StravaStatsSensor` class
 - [x] Refactor `StravaSummaryStatsSensor` for all activity types
 - [x] Create new activity type sensor class
@@ -36,6 +41,7 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 - [x] Update icons for all activity types
 
 ### ✅ Phase 4: Configuration Flow Updates (COMPLETED)
+
 - [x] Remove `CONF_NB_ACTIVITIES` option
 - [x] Remove `CONF_GEOCODE_XYZ_API_KEY` option
 - [x] Add activity type multi-select
@@ -43,6 +49,7 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 - [x] Update translations
 
 ### ✅ Phase 5: Data Coordinator Updates (COMPLETED)
+
 - [x] Remove geocode.xyz methods
 - [x] Remove activity count limits
 - [x] Add device source detection
@@ -50,12 +57,14 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 - [x] Support all 50 activity types in summary stats
 
 ### ✅ Phase 6: Migration Logic Removal (COMPLETED)
+
 - [x] Delete migration test files
 - [x] Remove migration functions from `__init__.py`
 - [x] Clean up migration-related imports
 - [ ] Update documentation
 
 ### ✅ Phase 7: Test Updates (COMPLETED)
+
 - [x] Remove migration tests
 - [x] Remove individual activity sensor tests
 - [x] Add activity type selection tests
@@ -63,6 +72,7 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 - [x] Add comprehensive activity type tests
 
 ### ⏳ Phase 8: Documentation & Cleanup (IN PROGRESS)
+
 - [x] Update manifest.json version
 - [x] Update README.md
 - [x] Update translations
@@ -76,7 +86,9 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 ### Phase 2: Constants & Configuration Updates
 
 #### File: `custom_components/ha_strava/const.py`
+
 **Tasks:**
+
 - [ ] Remove geocode.xyz constants:
   - `CONF_GEOCODE_XYZ_API_KEY`
   - `GEOCODE_XYZ_THROTTLED`
@@ -112,7 +124,9 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 ### Phase 3: Sensor Platform Refactor
 
 #### File: `custom_components/ha_strava/sensor.py`
+
 **Tasks:**
+
 - [ ] Remove `StravaStatsSensor` class entirely
 - [ ] Refactor `async_setup_entry()` to create sensors per activity type
 - [ ] Update `StravaSummaryStatsSensor`:
@@ -130,7 +144,9 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 ### Phase 4: Configuration Flow Updates
 
 #### File: `custom_components/ha_strava/config_flow.py`
+
 **Tasks:**
+
 - [ ] Remove `CONF_NB_ACTIVITIES` from options flow
 - [ ] Remove `CONF_GEOCODE_XYZ_API_KEY` from options flow
 - [ ] Add activity type multi-select:
@@ -144,7 +160,9 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 - [ ] Update entity registry management logic
 
 #### File: `custom_components/ha_strava/translations/en.json`
+
 **Tasks:**
+
 - [ ] Remove `nb_activities` translation
 - [ ] Remove `geocode_xyz_api_key` translation
 - [ ] Add `activity_types` translation
@@ -154,7 +172,9 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 ### Phase 5: Data Coordinator Updates
 
 #### File: `custom_components/ha_strava/coordinator.py`
+
 **Tasks:**
+
 - [ ] Remove `_geocode_activity()` method
 - [ ] Remove `_make_geocode_request()` method
 - [ ] Remove geocode.xyz imports and constants
@@ -172,6 +192,7 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 ### Phase 6: Migration Logic Removal
 
 #### Files to Delete:
+
 - [ ] `tests/custom_components/ha_strava/test_migration.py`
 - [ ] `tests/custom_components/ha_strava/test_migration_integration.py`
 - [ ] `tests/custom_components/ha_strava/test_historical_data_preservation.py`
@@ -179,7 +200,9 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 - [ ] `tests/validate_migration_logic.py`
 
 #### File: `custom_components/ha_strava/__init__.py`
+
 **Tasks:**
+
 - [ ] Remove migration function imports
 - [ ] Remove migration logic
 - [ ] Clean up unused imports
@@ -187,11 +210,13 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 ### Phase 7: Test Updates
 
 #### New Test Files to Create:
+
 - [ ] `tests/custom_components/ha_strava/test_activity_type_sensors.py`
 - [ ] `tests/custom_components/ha_strava/test_device_source_detection.py`
 - [ ] `tests/custom_components/ha_strava/test_activity_type_selection.py`
 
 #### Test Coverage:
+
 - [ ] Activity type sensor creation
 - [ ] Device source detection accuracy
 - [ ] Activity type filtering
@@ -202,12 +227,16 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 ### Phase 8: Documentation & Cleanup
 
 #### File: `custom_components/ha_strava/manifest.json`
+
 **Tasks:**
+
 - [ ] Update version to reflect breaking changes
 - [ ] Remove geocode.xyz dependency if listed
 
 #### File: `README.md`
+
 **Tasks:**
+
 - [ ] Update installation instructions
 - [ ] Document new configuration options
 - [ ] Document breaking changes
@@ -218,12 +247,14 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 ## Breaking Changes
 
 ### For Users:
+
 1. **Complete Sensor Restructure**: All existing sensors will be removed and replaced
 2. **Configuration Changes**: Users must reconfigure activity types to track
 3. **Entity ID Changes**: All sensor entity IDs will change
 4. **No Migration Path**: Users must manually reconfigure
 
 ### For Developers:
+
 1. **API Changes**: Sensor creation logic completely changed
 2. **Configuration Schema**: New options structure
 3. **Data Structure**: Activity data structure updated
@@ -234,6 +265,7 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 ## Success Criteria
 
 ### Functional Requirements:
+
 - [ ] All 50 Strava activity types supported
 - [ ] Device source tracking working
 - [ ] Activity type selection functional
@@ -241,6 +273,7 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 - [ ] Performance improved (no external API calls)
 
 ### Quality Requirements:
+
 - [ ] All tests passing
 - [ ] Code coverage maintained
 - [ ] Documentation updated
@@ -252,30 +285,34 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 ## Risk Mitigation
 
 ### High Risk Items:
+
 1. **Breaking Changes**: Users will need to reconfigure
-   - *Mitigation*: Clear documentation and migration guide
+   - _Mitigation_: Clear documentation and migration guide
 2. **Data Loss**: Existing sensor data will be lost
-   - *Mitigation*: Historical data preserved in HA database
+   - _Mitigation_: Historical data preserved in HA database
 3. **Performance**: Fetching all activities vs limited count
-   - *Mitigation*: Implement efficient filtering and caching
+   - _Mitigation_: Implement efficient filtering and caching
 
 ### Medium Risk Items:
+
 1. **Activity Type Support**: Ensuring all 50 types work correctly
-   - *Mitigation*: Comprehensive testing for each type
+   - _Mitigation_: Comprehensive testing for each type
 2. **Device Detection**: Accurate device source identification
-   - *Mitigation*: Fallback to "Unknown" if detection fails
+   - _Mitigation_: Fallback to "Unknown" if detection fails
 
 ---
 
 ## Notes
 
 ### Design Decisions:
+
 1. **No Migration Path**: Given the complete architectural change, migration would be complex and error-prone
 2. **Activity Type Selection**: Multi-select approach provides flexibility while maintaining simplicity
 3. **Device Source Tracking**: Uses existing Strava API data where available
 4. **Icon Mapping**: Comprehensive mapping for all activity types for better UX
 
 ### Future Considerations:
+
 1. **Activity Filtering**: Could add date range filtering in future
 2. **Custom Metrics**: Could allow users to select which metrics to track per activity type
 3. **Device Grouping**: Could group activities by device type
@@ -286,6 +323,7 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 ## Phase Completion Log
 
 ### Phase 1 Completion: 2024-12-19
+
 - ✅ Planning and analysis completed
 - ✅ All 50 activity types identified
 - ✅ Current architecture documented
@@ -293,6 +331,7 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 - ✅ Breaking changes identified
 
 ### Phase 2 Completion: 2024-12-19
+
 - [x] Constants updated with all 50 activity types
 - [x] Geocode.xyz constants removed
 - [x] Activity count constants removed
@@ -302,6 +341,7 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 - [x] Comprehensive icon mapping added
 
 ### Phase 3 Completion: 2024-12-19
+
 - [x] Sensor platform refactored with new architecture
 - [x] StravaStatsSensor class completely removed
 - [x] StravaActivityTypeSensor class created
@@ -312,6 +352,7 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 - [x] Comprehensive sensor attributes with device information
 
 ### Phase 4 Completion: 2024-12-19
+
 - [x] Configuration flow updated with new options
 - [x] Activity type multi-select added with validation
 - [x] CONF_NB_ACTIVITIES option removed
@@ -321,6 +362,7 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 - [x] Validation logic updated for activity type selection
 
 ### Phase 5 Completion: 2024-12-19
+
 - [x] Data coordinator completely refactored
 - [x] Geocode.xyz methods removed
 - [x] Activity count limits removed (now fetches up to 200 activities)
@@ -331,13 +373,15 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 - [x] Special metrics for cycling activities maintained
 
 ### Phase 6 Completion: 2024-12-19
+
 - [x] All migration test files deleted
-- [x] Migration functions removed from __init__.py
+- [x] Migration functions removed from **init**.py
 - [x] Migration-related imports cleaned up
 - [x] Code simplified by removing complex migration logic
 - [x] No migration path - clean break with new architecture
 
 ### Phase 7 Completion: 2024-12-19
+
 - [x] New test files created and working
 - [x] test_activity_type_sensors.py - 12 tests passing
 - [x] test_device_source_detection.py - 24 tests passing
@@ -347,6 +391,7 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 - [x] All core functionality tested and working
 
 ### Phase 8 Progress: 2024-12-19
+
 - [x] manifest.json version updated to 4.0.0
 - [x] README.md updated with new features and breaking changes
 - [x] Translations updated for new configuration options
@@ -355,5 +400,5 @@ Refactor the Strava Home Assistant integration to use single sensors per activit
 
 ---
 
-*Last Updated: 2024-12-19*  
-*Next Review: After Phase 2 completion*
+_Last Updated: 2024-12-19_
+_Next Review: After Phase 2 completion_

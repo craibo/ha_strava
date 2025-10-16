@@ -1,8 +1,8 @@
 """Test device source detection for ha_strava."""
-import pytest
-from unittest.mock import MagicMock, patch
 
-from custom_components.ha_strava.const import CONF_ATTR_DEVICE_NAME, CONF_ATTR_DEVICE_TYPE
+from unittest.mock import patch
+
+from custom_components.ha_strava.const import CONF_ATTR_DEVICE_TYPE
 
 
 class TestDeviceSourceDetection:
@@ -10,16 +10,17 @@ class TestDeviceSourceDetection:
 
     def test_detect_device_type_garmin_watch(self):
         """Test device type detection for Garmin watches."""
-        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
         from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
 
         # Create a real coordinator instance
         config_entry = MockConfigEntry(
             domain="ha_strava",
             data={"client_id": "test", "client_secret": "test"},
-            options={"activity_types_to_track": ["Run", "Ride"]}
+            options={"activity_types_to_track": ["Run", "Ride"]},
         )
-        
+
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(None, entry=config_entry)
 
@@ -40,23 +41,31 @@ class TestDeviceSourceDetection:
         ]
 
         for device_name, expected_type in garmin_tests:
-            activity = {"id": 1, "name": "Test", "type": "Run", "start_date_local": "2024-01-01T00:00:00Z"}
+            activity = {
+                "id": 1,
+                "name": "Test",
+                "type": "Run",
+                "start_date_local": "2024-01-01T00:00:00Z",
+            }
             activity_dto = {"device_name": device_name}
             result = coordinator._sensor_activity(activity, activity_dto)
-            assert result[CONF_ATTR_DEVICE_TYPE] == expected_type, f"Wrong type for {device_name}"
+            assert (
+                result[CONF_ATTR_DEVICE_TYPE] == expected_type
+            ), f"Wrong type for {device_name}"
 
     def test_detect_device_type_wahoo_devices(self):
         """Test device type detection for Wahoo devices."""
-        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
         from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
 
         # Create a real coordinator instance
         config_entry = MockConfigEntry(
             domain="ha_strava",
             data={"client_id": "test", "client_secret": "test"},
-            options={"activity_types_to_track": ["Run", "Ride"]}
+            options={"activity_types_to_track": ["Run", "Ride"]},
         )
-        
+
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(None, entry=config_entry)
 
@@ -70,23 +79,31 @@ class TestDeviceSourceDetection:
         ]
 
         for device_name, expected_type in wahoo_tests:
-            activity = {"id": 1, "name": "Test", "type": "Run", "start_date_local": "2024-01-01T00:00:00Z"}
+            activity = {
+                "id": 1,
+                "name": "Test",
+                "type": "Run",
+                "start_date_local": "2024-01-01T00:00:00Z",
+            }
             activity_dto = {"device_name": device_name}
             result = coordinator._sensor_activity(activity, activity_dto)
-            assert result[CONF_ATTR_DEVICE_TYPE] == expected_type, f"Wrong type for {device_name}"
+            assert (
+                result[CONF_ATTR_DEVICE_TYPE] == expected_type
+            ), f"Wrong type for {device_name}"
 
     def test_detect_device_type_polar_devices(self):
         """Test device type detection for Polar devices."""
-        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
         from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
 
         # Create a real coordinator instance
         config_entry = MockConfigEntry(
             domain="ha_strava",
             data={"client_id": "test", "client_secret": "test"},
-            options={"activity_types_to_track": ["Run", "Ride"]}
+            options={"activity_types_to_track": ["Run", "Ride"]},
         )
-        
+
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(None, entry=config_entry)
 
@@ -104,23 +121,31 @@ class TestDeviceSourceDetection:
         ]
 
         for device_name, expected_type in polar_tests:
-            activity = {"id": 1, "name": "Test", "type": "Run", "start_date_local": "2024-01-01T00:00:00Z"}
+            activity = {
+                "id": 1,
+                "name": "Test",
+                "type": "Run",
+                "start_date_local": "2024-01-01T00:00:00Z",
+            }
             activity_dto = {"device_name": device_name}
             result = coordinator._sensor_activity(activity, activity_dto)
-            assert result[CONF_ATTR_DEVICE_TYPE] == expected_type, f"Wrong type for {device_name}"
+            assert (
+                result[CONF_ATTR_DEVICE_TYPE] == expected_type
+            ), f"Wrong type for {device_name}"
 
     def test_detect_device_type_suunto_devices(self):
         """Test device type detection for Suunto devices."""
-        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
         from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
 
         # Create a real coordinator instance
         config_entry = MockConfigEntry(
             domain="ha_strava",
             data={"client_id": "test", "client_secret": "test"},
-            options={"activity_types_to_track": ["Run", "Ride"]}
+            options={"activity_types_to_track": ["Run", "Ride"]},
         )
-        
+
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(None, entry=config_entry)
 
@@ -135,23 +160,31 @@ class TestDeviceSourceDetection:
         ]
 
         for device_name, expected_type in suunto_tests:
-            activity = {"id": 1, "name": "Test", "type": "Run", "start_date_local": "2024-01-01T00:00:00Z"}
+            activity = {
+                "id": 1,
+                "name": "Test",
+                "type": "Run",
+                "start_date_local": "2024-01-01T00:00:00Z",
+            }
             activity_dto = {"device_name": device_name}
             result = coordinator._sensor_activity(activity, activity_dto)
-            assert result[CONF_ATTR_DEVICE_TYPE] == expected_type, f"Wrong type for {device_name}"
+            assert (
+                result[CONF_ATTR_DEVICE_TYPE] == expected_type
+            ), f"Wrong type for {device_name}"
 
     def test_detect_device_type_apple_devices(self):
         """Test device type detection for Apple devices."""
-        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
         from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
 
         # Create a real coordinator instance
         config_entry = MockConfigEntry(
             domain="ha_strava",
             data={"client_id": "test", "client_secret": "test"},
-            options={"activity_types_to_track": ["Run", "Ride"]}
+            options={"activity_types_to_track": ["Run", "Ride"]},
         )
-        
+
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(None, entry=config_entry)
 
@@ -170,23 +203,31 @@ class TestDeviceSourceDetection:
         ]
 
         for device_name, expected_type in apple_tests:
-            activity = {"id": 1, "name": "Test", "type": "Run", "start_date_local": "2024-01-01T00:00:00Z"}
+            activity = {
+                "id": 1,
+                "name": "Test",
+                "type": "Run",
+                "start_date_local": "2024-01-01T00:00:00Z",
+            }
             activity_dto = {"device_name": device_name}
             result = coordinator._sensor_activity(activity, activity_dto)
-            assert result[CONF_ATTR_DEVICE_TYPE] == expected_type, f"Wrong type for {device_name}"
+            assert (
+                result[CONF_ATTR_DEVICE_TYPE] == expected_type
+            ), f"Wrong type for {device_name}"
 
     def test_detect_device_type_samsung_devices(self):
         """Test device type detection for Samsung devices."""
-        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
         from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
 
         # Create a real coordinator instance
         config_entry = MockConfigEntry(
             domain="ha_strava",
             data={"client_id": "test", "client_secret": "test"},
-            options={"activity_types_to_track": ["Run", "Ride"]}
+            options={"activity_types_to_track": ["Run", "Ride"]},
         )
-        
+
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(None, entry=config_entry)
 
@@ -204,23 +245,31 @@ class TestDeviceSourceDetection:
         ]
 
         for device_name, expected_type in samsung_tests:
-            activity = {"id": 1, "name": "Test", "type": "Run", "start_date_local": "2024-01-01T00:00:00Z"}
+            activity = {
+                "id": 1,
+                "name": "Test",
+                "type": "Run",
+                "start_date_local": "2024-01-01T00:00:00Z",
+            }
             activity_dto = {"device_name": device_name}
             result = coordinator._sensor_activity(activity, activity_dto)
-            assert result[CONF_ATTR_DEVICE_TYPE] == expected_type, f"Wrong type for {device_name}"
+            assert (
+                result[CONF_ATTR_DEVICE_TYPE] == expected_type
+            ), f"Wrong type for {device_name}"
 
     def test_detect_device_type_fitbit_devices(self):
         """Test device type detection for Fitbit devices."""
-        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
         from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
 
         # Create a real coordinator instance
         config_entry = MockConfigEntry(
             domain="ha_strava",
             data={"client_id": "test", "client_secret": "test"},
-            options={"activity_types_to_track": ["Run", "Ride"]}
+            options={"activity_types_to_track": ["Run", "Ride"]},
         )
-        
+
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(None, entry=config_entry)
 
@@ -237,23 +286,31 @@ class TestDeviceSourceDetection:
         ]
 
         for device_name, expected_type in fitbit_tests:
-            activity = {"id": 1, "name": "Test", "type": "Run", "start_date_local": "2024-01-01T00:00:00Z"}
+            activity = {
+                "id": 1,
+                "name": "Test",
+                "type": "Run",
+                "start_date_local": "2024-01-01T00:00:00Z",
+            }
             activity_dto = {"device_name": device_name}
             result = coordinator._sensor_activity(activity, activity_dto)
-            assert result[CONF_ATTR_DEVICE_TYPE] == expected_type, f"Wrong type for {device_name}"
+            assert (
+                result[CONF_ATTR_DEVICE_TYPE] == expected_type
+            ), f"Wrong type for {device_name}"
 
     def test_detect_device_type_other_brands(self):
         """Test device type detection for other brands."""
-        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
         from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
 
         # Create a real coordinator instance
         config_entry = MockConfigEntry(
             domain="ha_strava",
             data={"client_id": "test", "client_secret": "test"},
-            options={"activity_types_to_track": ["Run", "Ride"]}
+            options={"activity_types_to_track": ["Run", "Ride"]},
         )
-        
+
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(None, entry=config_entry)
 
@@ -273,23 +330,31 @@ class TestDeviceSourceDetection:
         ]
 
         for device_name, expected_type in other_tests:
-            activity = {"id": 1, "name": "Test", "type": "Run", "start_date_local": "2024-01-01T00:00:00Z"}
+            activity = {
+                "id": 1,
+                "name": "Test",
+                "type": "Run",
+                "start_date_local": "2024-01-01T00:00:00Z",
+            }
             activity_dto = {"device_name": device_name}
             result = coordinator._sensor_activity(activity, activity_dto)
-            assert result[CONF_ATTR_DEVICE_TYPE] == expected_type, f"Wrong type for {device_name}"
+            assert (
+                result[CONF_ATTR_DEVICE_TYPE] == expected_type
+            ), f"Wrong type for {device_name}"
 
     def test_detect_device_type_unknown_devices(self):
         """Test device type detection for unknown devices."""
-        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
         from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
 
         # Create a real coordinator instance
         config_entry = MockConfigEntry(
             domain="ha_strava",
             data={"client_id": "test", "client_secret": "test"},
-            options={"activity_types_to_track": ["Run", "Ride"]}
+            options={"activity_types_to_track": ["Run", "Ride"]},
         )
-        
+
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(None, entry=config_entry)
 
@@ -303,23 +368,33 @@ class TestDeviceSourceDetection:
         ]
 
         for device_name, expected_type in unknown_tests:
-            activity = {"id": 1, "name": "Test", "type": "Run", "start_date_local": "2024-01-01T00:00:00Z"}
-            activity_dto = {"device_name": device_name} if device_name is not None else {}
+            activity = {
+                "id": 1,
+                "name": "Test",
+                "type": "Run",
+                "start_date_local": "2024-01-01T00:00:00Z",
+            }
+            activity_dto = (
+                {"device_name": device_name} if device_name is not None else {}
+            )
             result = coordinator._sensor_activity(activity, activity_dto)
-            assert result[CONF_ATTR_DEVICE_TYPE] == expected_type, f"Wrong type for {device_name}"
+            assert (
+                result[CONF_ATTR_DEVICE_TYPE] == expected_type
+            ), f"Wrong type for {device_name}"
 
     def test_detect_device_type_case_insensitive(self):
         """Test device type detection is case insensitive."""
-        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
         from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
 
         # Create a real coordinator instance
         config_entry = MockConfigEntry(
             domain="ha_strava",
             data={"client_id": "test", "client_secret": "test"},
-            options={"activity_types_to_track": ["Run", "Ride"]}
+            options={"activity_types_to_track": ["Run", "Ride"]},
         )
-        
+
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(None, entry=config_entry)
 
@@ -336,23 +411,31 @@ class TestDeviceSourceDetection:
         ]
 
         for device_name, expected_type in case_tests:
-            activity = {"id": 1, "name": "Test", "type": "Run", "start_date_local": "2024-01-01T00:00:00Z"}
+            activity = {
+                "id": 1,
+                "name": "Test",
+                "type": "Run",
+                "start_date_local": "2024-01-01T00:00:00Z",
+            }
             activity_dto = {"device_name": device_name}
             result = coordinator._sensor_activity(activity, activity_dto)
-            assert result[CONF_ATTR_DEVICE_TYPE] == expected_type, f"Wrong type for {device_name}"
+            assert (
+                result[CONF_ATTR_DEVICE_TYPE] == expected_type
+            ), f"Wrong type for {device_name}"
 
     def test_detect_device_type_partial_matches(self):
         """Test device type detection with partial matches."""
-        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
         from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
 
         # Create a real coordinator instance
         config_entry = MockConfigEntry(
             domain="ha_strava",
             data={"client_id": "test", "client_secret": "test"},
-            options={"activity_types_to_track": ["Run", "Ride"]}
+            options={"activity_types_to_track": ["Run", "Ride"]},
         )
-        
+
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(None, entry=config_entry)
 
@@ -366,23 +449,31 @@ class TestDeviceSourceDetection:
         ]
 
         for device_name, expected_type in partial_tests:
-            activity = {"id": 1, "name": "Test", "type": "Run", "start_date_local": "2024-01-01T00:00:00Z"}
+            activity = {
+                "id": 1,
+                "name": "Test",
+                "type": "Run",
+                "start_date_local": "2024-01-01T00:00:00Z",
+            }
             activity_dto = {"device_name": device_name}
             result = coordinator._sensor_activity(activity, activity_dto)
-            assert result[CONF_ATTR_DEVICE_TYPE] == expected_type, f"Wrong type for {device_name}"
+            assert (
+                result[CONF_ATTR_DEVICE_TYPE] == expected_type
+            ), f"Wrong type for {device_name}"
 
     def test_detect_device_type_special_characters(self):
         """Test device type detection with special characters."""
-        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
         from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
 
         # Create a real coordinator instance
         config_entry = MockConfigEntry(
             domain="ha_strava",
             data={"client_id": "test", "client_secret": "test"},
-            options={"activity_types_to_track": ["Run", "Ride"]}
+            options={"activity_types_to_track": ["Run", "Ride"]},
         )
-        
+
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(None, entry=config_entry)
 
@@ -396,23 +487,31 @@ class TestDeviceSourceDetection:
         ]
 
         for device_name, expected_type in special_tests:
-            activity = {"id": 1, "name": "Test", "type": "Run", "start_date_local": "2024-01-01T00:00:00Z"}
+            activity = {
+                "id": 1,
+                "name": "Test",
+                "type": "Run",
+                "start_date_local": "2024-01-01T00:00:00Z",
+            }
             activity_dto = {"device_name": device_name}
             result = coordinator._sensor_activity(activity, activity_dto)
-            assert result[CONF_ATTR_DEVICE_TYPE] == expected_type, f"Wrong type for {device_name}"
+            assert (
+                result[CONF_ATTR_DEVICE_TYPE] == expected_type
+            ), f"Wrong type for {device_name}"
 
     def test_detect_device_type_multiple_keywords(self):
         """Test device type detection with multiple keywords."""
-        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
         from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
 
         # Create a real coordinator instance
         config_entry = MockConfigEntry(
             domain="ha_strava",
             data={"client_id": "test", "client_secret": "test"},
-            options={"activity_types_to_track": ["Run", "Ride"]}
+            options={"activity_types_to_track": ["Run", "Ride"]},
         )
-        
+
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(None, entry=config_entry)
 
@@ -424,215 +523,277 @@ class TestDeviceSourceDetection:
         ]
 
         for device_name, expected_type in multiple_tests:
-            activity = {"id": 1, "name": "Test", "type": "Run", "start_date_local": "2024-01-01T00:00:00Z"}
+            activity = {
+                "id": 1,
+                "name": "Test",
+                "type": "Run",
+                "start_date_local": "2024-01-01T00:00:00Z",
+            }
             activity_dto = {"device_name": device_name}
             result = coordinator._sensor_activity(activity, activity_dto)
-            assert result[CONF_ATTR_DEVICE_TYPE] == expected_type, f"Wrong type for {device_name}"
+            assert (
+                result[CONF_ATTR_DEVICE_TYPE] == expected_type
+            ), f"Wrong type for {device_name}"
 
     def test_detect_device_type_activity_without_device_name(self):
         """Test device type detection when activity has no device_name."""
-        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
         from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
 
         # Create a real coordinator instance
         config_entry = MockConfigEntry(
             domain="ha_strava",
             data={"client_id": "test", "client_secret": "test"},
-            options={"activity_types_to_track": ["Run", "Ride"]}
+            options={"activity_types_to_track": ["Run", "Ride"]},
         )
-        
+
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(None, entry=config_entry)
 
         # Test activity without device_name
-        activity = {"id": 1, "name": "Test Activity", "type": "Run", "start_date_local": "2024-01-01T00:00:00Z"}
+        activity = {
+            "id": 1,
+            "name": "Test Activity",
+            "type": "Run",
+            "start_date_local": "2024-01-01T00:00:00Z",
+        }
         activity_dto = {}
         result = coordinator._sensor_activity(activity, activity_dto)
         assert result[CONF_ATTR_DEVICE_TYPE] == "Unknown"
 
     def test_detect_device_type_activity_with_empty_device_name(self):
         """Test device type detection when device_name is empty."""
-        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
         from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
 
         # Create a real coordinator instance
         config_entry = MockConfigEntry(
             domain="ha_strava",
             data={"client_id": "test", "client_secret": "test"},
-            options={"activity_types_to_track": ["Run", "Ride"]}
+            options={"activity_types_to_track": ["Run", "Ride"]},
         )
-        
+
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(None, entry=config_entry)
 
         # Test activity with empty device_name
-        activity = {"id": 1, "name": "Test Activity", "type": "Run", "start_date_local": "2024-01-01T00:00:00Z"}
+        activity = {
+            "id": 1,
+            "name": "Test Activity",
+            "type": "Run",
+            "start_date_local": "2024-01-01T00:00:00Z",
+        }
         activity_dto = {"device_name": ""}
         result = coordinator._sensor_activity(activity, activity_dto)
         assert result[CONF_ATTR_DEVICE_TYPE] == "Unknown"
 
     def test_detect_device_type_activity_with_none_device_name(self):
         """Test device type detection when device_name is None."""
-        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
         from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
 
         # Create a real coordinator instance
         config_entry = MockConfigEntry(
             domain="ha_strava",
             data={"client_id": "test", "client_secret": "test"},
-            options={"activity_types_to_track": ["Run", "Ride"]}
+            options={"activity_types_to_track": ["Run", "Ride"]},
         )
-        
+
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(None, entry=config_entry)
 
         # Test activity with None device_name
-        activity = {"id": 1, "name": "Test Activity", "type": "Run", "start_date_local": "2024-01-01T00:00:00Z"}
+        activity = {
+            "id": 1,
+            "name": "Test Activity",
+            "type": "Run",
+            "start_date_local": "2024-01-01T00:00:00Z",
+        }
         activity_dto = {"device_name": None}
         result = coordinator._sensor_activity(activity, activity_dto)
         assert result[CONF_ATTR_DEVICE_TYPE] == "Unknown"
 
     def test_detect_device_type_activity_with_whitespace_device_name(self):
         """Test device type detection when device_name is only whitespace."""
-        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
         from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
 
         # Create a real coordinator instance
         config_entry = MockConfigEntry(
             domain="ha_strava",
             data={"client_id": "test", "client_secret": "test"},
-            options={"activity_types_to_track": ["Run", "Ride"]}
+            options={"activity_types_to_track": ["Run", "Ride"]},
         )
-        
+
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(None, entry=config_entry)
 
         # Test activity with whitespace device_name
-        activity = {"id": 1, "name": "Test Activity", "type": "Run", "start_date_local": "2024-01-01T00:00:00Z"}
+        activity = {
+            "id": 1,
+            "name": "Test Activity",
+            "type": "Run",
+            "start_date_local": "2024-01-01T00:00:00Z",
+        }
         activity_dto = {"device_name": "   "}
         result = coordinator._sensor_activity(activity, activity_dto)
         assert result[CONF_ATTR_DEVICE_TYPE] == "Device"
 
     def test_detect_device_type_activity_with_numeric_device_name(self):
         """Test device type detection when device_name is numeric."""
-        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
         from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
 
         # Create a real coordinator instance
         config_entry = MockConfigEntry(
             domain="ha_strava",
             data={"client_id": "test", "client_secret": "test"},
-            options={"activity_types_to_track": ["Run", "Ride"]}
+            options={"activity_types_to_track": ["Run", "Ride"]},
         )
-        
+
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(None, entry=config_entry)
 
         # Test activity with numeric device_name
-        activity = {"id": 1, "name": "Test Activity", "type": "Run", "start_date_local": "2024-01-01T00:00:00Z"}
+        activity = {
+            "id": 1,
+            "name": "Test Activity",
+            "type": "Run",
+            "start_date_local": "2024-01-01T00:00:00Z",
+        }
         activity_dto = {"device_name": "12345"}
         result = coordinator._sensor_activity(activity, activity_dto)
         assert result[CONF_ATTR_DEVICE_TYPE] == "Device"
 
     def test_detect_device_type_activity_with_special_characters_only(self):
         """Test device type detection when device_name is only special characters."""
-        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
         from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
 
         # Create a real coordinator instance
         config_entry = MockConfigEntry(
             domain="ha_strava",
             data={"client_id": "test", "client_secret": "test"},
-            options={"activity_types_to_track": ["Run", "Ride"]}
+            options={"activity_types_to_track": ["Run", "Ride"]},
         )
-        
+
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(None, entry=config_entry)
 
         # Test activity with special characters only
-        activity = {"id": 1, "name": "Test Activity", "type": "Run", "start_date_local": "2024-01-01T00:00:00Z"}
+        activity = {
+            "id": 1,
+            "name": "Test Activity",
+            "type": "Run",
+            "start_date_local": "2024-01-01T00:00:00Z",
+        }
         activity_dto = {"device_name": "!@#$%^&*()"}
         result = coordinator._sensor_activity(activity, activity_dto)
         assert result[CONF_ATTR_DEVICE_TYPE] == "Device"
 
     def test_detect_device_type_activity_with_very_long_device_name(self):
         """Test device type detection with very long device name."""
-        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
         from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
 
         # Create a real coordinator instance
         config_entry = MockConfigEntry(
             domain="ha_strava",
             data={"client_id": "test", "client_secret": "test"},
-            options={"activity_types_to_track": ["Run", "Ride"]}
+            options={"activity_types_to_track": ["Run", "Ride"]},
         )
-        
+
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(None, entry=config_entry)
 
         # Test activity with very long device_name
         long_name = "Garmin Forerunner 945 " * 100  # Very long name
-        activity = {"id": 1, "name": "Test Activity", "type": "Run", "start_date_local": "2024-01-01T00:00:00Z"}
+        activity = {
+            "id": 1,
+            "name": "Test Activity",
+            "type": "Run",
+            "start_date_local": "2024-01-01T00:00:00Z",
+        }
         activity_dto = {"device_name": long_name}
         result = coordinator._sensor_activity(activity, activity_dto)
         assert result[CONF_ATTR_DEVICE_TYPE] == "Device"  # Should still match
 
     def test_detect_device_type_activity_with_unicode_device_name(self):
         """Test device type detection with unicode device name."""
-        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
         from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
 
         # Create a real coordinator instance
         config_entry = MockConfigEntry(
             domain="ha_strava",
             data={"client_id": "test", "client_secret": "test"},
-            options={"activity_types_to_track": ["Run", "Ride"]}
+            options={"activity_types_to_track": ["Run", "Ride"]},
         )
-        
+
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(None, entry=config_entry)
 
         # Test activity with unicode device_name
         unicode_name = "Garmin Forerunner 945 中文"
-        activity = {"id": 1, "name": "Test Activity", "type": "Run", "start_date_local": "2024-01-01T00:00:00Z"}
+        activity = {
+            "id": 1,
+            "name": "Test Activity",
+            "type": "Run",
+            "start_date_local": "2024-01-01T00:00:00Z",
+        }
         activity_dto = {"device_name": unicode_name}
         result = coordinator._sensor_activity(activity, activity_dto)
         assert result[CONF_ATTR_DEVICE_TYPE] == "Device"  # Should still match
 
     def test_detect_device_type_activity_with_mixed_case_device_name(self):
         """Test device type detection with mixed case device name."""
-        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
         from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
 
         # Create a real coordinator instance
         config_entry = MockConfigEntry(
             domain="ha_strava",
             data={"client_id": "test", "client_secret": "test"},
-            options={"activity_types_to_track": ["Run", "Ride"]}
+            options={"activity_types_to_track": ["Run", "Ride"]},
         )
-        
+
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(None, entry=config_entry)
 
         # Test activity with mixed case device_name
         mixed_case_name = "gArMiN fOrErUnNeR 945"
-        activity = {"id": 1, "name": "Test Activity", "type": "Run", "start_date_local": "2024-01-01T00:00:00Z"}
+        activity = {
+            "id": 1,
+            "name": "Test Activity",
+            "type": "Run",
+            "start_date_local": "2024-01-01T00:00:00Z",
+        }
         activity_dto = {"device_name": mixed_case_name}
         result = coordinator._sensor_activity(activity, activity_dto)
         assert result[CONF_ATTR_DEVICE_TYPE] == "Device"  # Should still match
 
     def test_detect_device_type_activity_with_numbers_in_device_name(self):
         """Test device type detection with numbers in device name."""
-        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
         from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
 
         # Create a real coordinator instance
         config_entry = MockConfigEntry(
             domain="ha_strava",
             data={"client_id": "test", "client_secret": "test"},
-            options={"activity_types_to_track": ["Run", "Ride"]}
+            options={"activity_types_to_track": ["Run", "Ride"]},
         )
-        
+
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(None, entry=config_entry)
 
@@ -646,23 +807,31 @@ class TestDeviceSourceDetection:
         ]
 
         for device_name, expected_type in number_tests:
-            activity = {"id": 1, "name": "Test Activity", "type": "Run", "start_date_local": "2024-01-01T00:00:00Z"}
+            activity = {
+                "id": 1,
+                "name": "Test Activity",
+                "type": "Run",
+                "start_date_local": "2024-01-01T00:00:00Z",
+            }
             activity_dto = {"device_name": device_name}
             result = coordinator._sensor_activity(activity, activity_dto)
-            assert result[CONF_ATTR_DEVICE_TYPE] == expected_type, f"Wrong type for {device_name}"
+            assert (
+                result[CONF_ATTR_DEVICE_TYPE] == expected_type
+            ), f"Wrong type for {device_name}"
 
     def test_detect_device_type_activity_with_punctuation_in_device_name(self):
         """Test device type detection with punctuation in device name."""
-        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
         from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+        from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
 
         # Create a real coordinator instance
         config_entry = MockConfigEntry(
             domain="ha_strava",
             data={"client_id": "test", "client_secret": "test"},
-            options={"activity_types_to_track": ["Run", "Ride"]}
+            options={"activity_types_to_track": ["Run", "Ride"]},
         )
-        
+
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(None, entry=config_entry)
 
@@ -676,7 +845,14 @@ class TestDeviceSourceDetection:
         ]
 
         for device_name, expected_type in punctuation_tests:
-            activity = {"id": 1, "name": "Test Activity", "type": "Run", "start_date_local": "2024-01-01T00:00:00Z"}
+            activity = {
+                "id": 1,
+                "name": "Test Activity",
+                "type": "Run",
+                "start_date_local": "2024-01-01T00:00:00Z",
+            }
             activity_dto = {"device_name": device_name}
             result = coordinator._sensor_activity(activity, activity_dto)
-            assert result[CONF_ATTR_DEVICE_TYPE] == expected_type, f"Wrong type for {device_name}"
+            assert (
+                result[CONF_ATTR_DEVICE_TYPE] == expected_type
+            ), f"Wrong type for {device_name}"

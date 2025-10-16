@@ -11,6 +11,7 @@ This file contains specific patterns and best practices for developing Home Assi
 ## Component Structure
 
 ### Required Files
+
 - `__init__.py` - Main entry point with setup functions
 - `manifest.json` - Component metadata and dependencies
 - `config_flow.py` - OAuth2 and options configuration flows
@@ -44,12 +45,13 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 ## OAuth2 Implementation
 
 ### Config Flow Pattern
+
 ```python
 class OAuth2FlowHandler(
     config_entry_oauth2_flow.AbstractOAuth2FlowHandler, domain=DOMAIN
 ):
     """Config flow for OAuth2 authentication."""
-    
+
     @property
     def extra_authorize_data(self) -> dict:
         """Extra data for authorize URL."""
@@ -58,7 +60,7 @@ class OAuth2FlowHandler(
             "approval_prompt": "force",
             "response_type": "code",
         }
-    
+
     async def async_oauth_create_entry(self, data: dict) -> dict:
         """Create entry after OAuth success."""
         # Fetch athlete info
@@ -68,6 +70,7 @@ class OAuth2FlowHandler(
 ```
 
 ### OAuth2 Session Usage
+
 ```python
 self.oauth_session = config_entry_oauth2_flow.OAuth2Session(
     hass,
@@ -81,10 +84,11 @@ self.oauth_session = config_entry_oauth2_flow.OAuth2Session(
 ## Data Update Coordinator
 
 ### Coordinator Pattern
+
 ```python
 class StravaDataUpdateCoordinator(DataUpdateCoordinator):
     """Managing fetching data from the Strava API."""
-    
+
     def __init__(self, hass, *, entry):
         super().__init__(
             hass,
@@ -92,7 +96,7 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             name=DOMAIN,
             update_interval=timedelta(minutes=15),
         )
-    
+
     async def _async_update_data(self):
         """Fetch data from the API."""
         # Implement data fetching logic
@@ -103,14 +107,15 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
 ## Entity Implementation
 
 ### Sensor Entity Pattern
+
 ```python
 class StravaStatsSensor(CoordinatorEntity, SensorEntity):
     """A sensor for Strava data."""
-    
+
     def __init__(self, coordinator, **kwargs):
         super().__init__(coordinator)
         self._attr_unique_id = f"strava_{athlete_id}_{index}"
-    
+
     @property
     def device_info(self):
         """Return device information."""
@@ -121,7 +126,7 @@ class StravaStatsSensor(CoordinatorEntity, SensorEntity):
             "model": "Activity",
             "configuration_url": f"{STRAVA_ACTIVITY_BASE_URL}{activity_id}",
         }
-    
+
     @property
     def entity_registry_enabled_default(self) -> bool:
         """Return if entity should be enabled by default."""
@@ -129,12 +134,13 @@ class StravaStatsSensor(CoordinatorEntity, SensorEntity):
 ```
 
 ### Camera Entity Pattern
+
 ```python
 class StravaCamera(CoordinatorEntity, Camera):
     """A camera for Strava photos."""
-    
+
     _attr_should_poll = False
-    
+
     async def async_camera_image(self, width: int | None = None, height: int | None = None) -> bytes | None:
         """Return image response."""
         # Fetch and return image data
@@ -144,22 +150,23 @@ class StravaCamera(CoordinatorEntity, Camera):
 ## Webhook Implementation
 
 ### Webhook View Pattern
+
 ```python
 class StravaWebhookView(HomeAssistantView):
     """API endpoint for Strava webhooks."""
-    
+
     url = "/api/strava/webhook"
     name = "api:strava:webhook"
     requires_auth = False
     cors_allowed = True
-    
+
     async def get(self, request: Request) -> Response:
         """Handle webhook challenge."""
         challenge = request.query.get("hub.challenge")
         if challenge:
             return json_response({"hub.challenge": challenge})
         return Response(status=HTTPStatus.OK)
-    
+
     async def post(self, request: Request) -> Response:
         """Handle webhook data updates."""
         # Process webhook data
@@ -170,10 +177,11 @@ class StravaWebhookView(HomeAssistantView):
 ## Options Flow
 
 ### Options Flow Pattern
+
 ```python
 class OptionsFlowHandler(config_entries.OptionsFlow):
     """Options flow for runtime configuration changes."""
-    
+
     async def async_step_init(self, user_input=None):
         """Initial options step."""
         if user_input is not None:
@@ -186,6 +194,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 ## Constants Management
 
 ### Constants File Pattern
+
 ```python
 # Domain and basic config
 DOMAIN = "ha_strava"
@@ -211,6 +220,7 @@ CONF_SENSORS = {
 ## Event Handling
 
 ### Event-Based Updates
+
 ```python
 # Fire events after data updates
 self.hass.bus.async_fire(EVENT_ACTIVITIES_UPDATE, {"activities": activities})
@@ -225,6 +235,7 @@ self.async_on_remove(
 ## Error Handling
 
 ### API Error Handling
+
 ```python
 try:
     response = await self.oauth_session.async_request(method="GET", url=url)
@@ -237,6 +248,7 @@ except aiohttp.ClientError as err:
 ## Multi-User Support
 
 ### User-Specific Data
+
 ```python
 # Use unique_id from config entry for user identification
 athlete_id = config_entry.unique_id
