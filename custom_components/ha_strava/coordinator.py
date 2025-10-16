@@ -328,14 +328,13 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
         activity_type_mapping = {
             "Ride": "ride",
             "Run": "run",
-            "Swim": "swim"
+            "Swim": "swim",
             "MountainBikeRide": "ride",  # Maps to ride totals
             "GravelRide": "ride",  # Maps to ride totals
             "EBikeRide": "ride",  # Maps to ride totals
             "TrailRun": "run",  # Maps to run totals
             "VirtualRide": "ride",  # Maps to ride totals
             "VirtualRun": "run",  # Maps to run totals
-            "VirtualRow": "swim",  # Maps to swim totals
         }
 
         # Activity types and their periods for sensor creation
