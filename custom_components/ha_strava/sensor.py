@@ -644,9 +644,9 @@ class StravaActivityAttributeSensor(CoordinatorEntity, SensorEntity):
         )
 
     def _get_value_or_unavailable(self, value):
-        """Return the value or 'unavailable' if None, blank, or -1."""
+        """Return the value or None if None, blank, or -1."""
         if value is None or value == "" or value == -1:
-            return "unavailable"
+            return None
         return value
 
     def _is_metric(self):

@@ -329,49 +329,42 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             "Ride": "ride",
             "Run": "run",
             "Swim": "swim",
-            "Walk": "walk",
-            "Hike": "hike",
             "MountainBikeRide": "ride",  # Maps to ride totals
             "GravelRide": "ride",  # Maps to ride totals
             "EBikeRide": "ride",  # Maps to ride totals
             "TrailRun": "run",  # Maps to run totals
             "VirtualRide": "ride",  # Maps to ride totals
             "VirtualRun": "run",  # Maps to run totals
-            "VirtualRow": "swim",  # Maps to swim totals
         }
 
-        for activity_type in selected_activity_types:
-            if activity_type not in SUPPORTED_ACTIVITY_TYPES:
-                continue
+        # Activity types and their periods for sensor creation
+        # Always include run, ride, swim for basic functionality
+        base_activity_types = ["run", "ride", "swim"]
+        periods = ["recent", "all", "ytd"]
 
+        for activity_type in base_activity_types:
             # Map activity type to Strava API field
-            api_field = activity_type_mapping.get(activity_type, activity_type.lower())
+            api_field = activity_type_mapping.get(activity_type.title(), activity_type)
 
-            # Create summary stats for this activity type
-            result[activity_type] = {
-                CONF_SUMMARY_RECENT: self._create_summary_period(
-                    athlete_id, summary_stats, f"recent_{api_field}_totals"
-                ),
-                CONF_SUMMARY_YTD: self._create_summary_period(
-                    athlete_id, summary_stats, f"ytd_{api_field}_totals"
-                ),
-                CONF_SUMMARY_ALL: self._create_summary_period(
-                    athlete_id, summary_stats, f"all_{api_field}_totals"
-                ),
-            }
-
-            # Add special metrics for cycling activities
-            if activity_type in ["Ride", "MountainBikeRide", "GravelRide", "EBikeRide"]:
-                result[activity_type][CONF_SUMMARY_ALL].update(
-                    {
-                        CONF_SENSOR_BIGGEST_RIDE_DISTANCE: float(
-                            summary_stats.get("biggest_ride_distance", 0) or 0
-                        ),
-                        CONF_SENSOR_BIGGEST_ELEVATION_GAIN: float(
-                            summary_stats.get("biggest_climb_elevation_gain", 0) or 0
-                        ),
-                    }
+            for period in periods:
+                # Create the API key that matches what the sensors expect
+                api_key = f"{period}_{activity_type}_totals"
+                
+                # Create summary period data
+                period_data = self._create_summary_period(
+                    athlete_id, summary_stats, f"{period}_{api_field}_totals"
                 )
+                
+                # Store the data using the expected API key
+                result[api_key] = period_data
+
+        # Add special metrics
+        result["biggest_ride_distance"] = {
+            "biggest_ride_distance": float(summary_stats.get("biggest_ride_distance", 0) or 0)
+        }
+        result["biggest_climb_elevation_gain"] = {
+            "biggest_climb_elevation_gain": float(summary_stats.get("biggest_climb_elevation_gain", 0) or 0)
+        }
 
         return result
 

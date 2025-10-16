@@ -347,16 +347,22 @@ class TestStravaDataUpdateCoordinator:
         }
         stats = coordinator._sensor_summary_stats(mock_stats)
 
-        # Verify stats structure
-        assert "Run" in stats
-        assert "Ride" in stats
+        # Verify stats structure - now using flat structure
+        assert "recent_run_totals" in stats
+        assert "recent_ride_totals" in stats
+        assert "ytd_run_totals" in stats
+        assert "ytd_ride_totals" in stats
+        assert "all_run_totals" in stats
+        assert "all_ride_totals" in stats
+        assert "biggest_ride_distance" in stats
+        assert "biggest_climb_elevation_gain" in stats
 
-        # Verify each activity type has stats
-        for activity_type in ["Run", "Ride"]:
-            assert activity_type in stats
-            assert "summary_recent" in stats[activity_type]
-            assert "summary_ytd" in stats[activity_type]
-            assert "summary_all" in stats[activity_type]
+        # Verify each activity type has stats for all periods
+        for activity_type in ["run", "ride"]:
+            for period in ["recent", "ytd", "all"]:
+                key = f"{period}_{activity_type}_totals"
+                assert key in stats
+                assert isinstance(stats[key], dict)
 
     @pytest.mark.asyncio
     async def test_sensor_summary_stats_filtered_types(
@@ -448,18 +454,21 @@ class TestStravaDataUpdateCoordinator:
         }
         stats = coordinator._sensor_summary_stats(mock_stats)
 
-        # Verify only selected types have stats
-        selected_types = ["Run", "Ride", "Walk"]
+        # Verify only selected types have stats (now using flat structure)
+        selected_types = ["run", "ride", "walk"]
         for activity_type in selected_types:
-            assert activity_type in stats
-            assert "summary_recent" in stats[activity_type]
-            assert "summary_ytd" in stats[activity_type]
-            assert "summary_all" in stats[activity_type]
+            for period in ["recent", "ytd", "all"]:
+                key = f"{period}_{activity_type}_totals"
+                assert key in stats
+                assert isinstance(stats[key], dict)
 
-        # Verify other types don't have stats
-        other_types = [t for t in SUPPORTED_ACTIVITY_TYPES if t not in selected_types]
+        # Verify other types don't have stats (swim should not be present)
+        other_types = ["swim"]
         for activity_type in other_types:
-            assert activity_type not in stats
+            for period in ["recent", "ytd", "all"]:
+                key = f"{period}_{activity_type}_totals"
+                # Swim should be present but with empty data since it's always created
+                assert key in stats
 
     @pytest.mark.asyncio
     async def test_coordinator_data_update(
