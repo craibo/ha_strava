@@ -32,6 +32,14 @@ from .const import (
     CONF_SENSOR_DISTANCE,
     CONF_SENSOR_ELAPSED_TIME,
     CONF_SENSOR_ELEVATION,
+    CONF_SENSOR_GEAR_BRAND,
+    CONF_SENSOR_GEAR_DESCRIPTION,
+    CONF_SENSOR_GEAR_DISTANCE,
+    CONF_SENSOR_GEAR_FRAME_TYPE,
+    CONF_SENSOR_GEAR_ID,
+    CONF_SENSOR_GEAR_MODEL,
+    CONF_SENSOR_GEAR_NAME,
+    CONF_SENSOR_GEAR_PRIMARY,
     CONF_SENSOR_HEART_RATE_AVG,
     CONF_SENSOR_HEART_RATE_MAX,
     CONF_SENSOR_ID,
@@ -92,7 +100,8 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             await self.oauth_session.async_ensure_token_valid()
 
             athlete_id, activities = await self._fetch_activities()
-            summary_stats = await self._fetch_summary_stats(athlete_id)
+            raw_summary_stats = await self._fetch_summary_stats(athlete_id)
+            summary_stats = self._sensor_summary_stats(raw_summary_stats)
             images = await self._fetch_images(activities)
 
             return {
@@ -192,17 +201,56 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
                 img_urls.append({"date": img_date, "url": img_url})
         return img_urls
 
+    async def _fetch_gear(self, gear_id: str) -> dict:
+        """Fetch gear details from Strava API."""
+        if not gear_id:
+            return {}
+
+        try:
+            _LOGGER.debug(f"Fetching gear details for gear_id: {gear_id}")
+            response = await self.oauth_session.async_request(
+                method="GET",
+                url=f"https://www.strava.com/api/v3/gear/{gear_id}",
+            )
+            if response.status == 200:
+                return await response.json()
+            else:
+                _LOGGER.warning(f"Failed to fetch gear {gear_id}: {response.status}")
+                return {}
+        except (aiohttp.ClientError, ValueError, KeyError) as e:
+            _LOGGER.warning(f"Error fetching gear {gear_id}: {e}")
+            return {}
+
     def _sensor_activity(self, activity: dict, activity_dto: dict) -> dict:
         # Extract device information
         device_name = "Unknown"
         device_type = "Unknown"
         device_manufacturer = "Unknown"
 
+        # Initialize gear information
+        gear_id = None
+        gear_name = None
+        gear_brand = None
+        gear_model = None
+        gear_distance = None
+        gear_description = None
+        gear_primary = None
+        gear_frame_type = None
+
         if activity_dto:
             # Try to get device info from activity details
             if gear := activity_dto.get("gear"):
                 device_name = gear.get("name", "Unknown")
                 device_type = "Gear"
+                # Extract gear information
+                gear_id = gear.get("id")
+                gear_name = gear.get("name")
+                gear_brand = gear.get("brand_name")
+                gear_model = gear.get("model_name")
+                gear_distance = gear.get("distance")
+                gear_description = gear.get("description")
+                gear_primary = gear.get("primary")
+                gear_frame_type = gear.get("frame_type")
             elif device_name := activity_dto.get("device_name"):
                 device_type = "Device"
             elif activity_dto.get("manual"):
@@ -257,6 +305,15 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             CONF_ATTR_DEVICE_NAME: device_name,
             CONF_ATTR_DEVICE_TYPE: device_type,
             CONF_ATTR_DEVICE_MANUFACTURER: device_manufacturer,
+            # Gear information
+            CONF_SENSOR_GEAR_ID: gear_id,
+            CONF_SENSOR_GEAR_NAME: gear_name,
+            CONF_SENSOR_GEAR_BRAND: gear_brand,
+            CONF_SENSOR_GEAR_MODEL: gear_model,
+            CONF_SENSOR_GEAR_DISTANCE: gear_distance,
+            CONF_SENSOR_GEAR_DESCRIPTION: gear_description,
+            CONF_SENSOR_GEAR_PRIMARY: gear_primary,
+            CONF_SENSOR_GEAR_FRAME_TYPE: gear_frame_type,
         }
 
     def _sensor_summary_stats(self, summary_stats: dict) -> dict:

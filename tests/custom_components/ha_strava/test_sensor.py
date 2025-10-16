@@ -15,6 +15,7 @@ from custom_components.ha_strava.const import (
     DOMAIN,
 )
 from custom_components.ha_strava.sensor import (
+    StravaActivityGearSensor,
     StravaActivityTypeSensor,
     StravaSummaryStatsSensor,
     async_setup_entry,
@@ -32,6 +33,8 @@ class TestStravaActivityTypeSensor:
             "activities": [],
             "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
         }
+        coordinator.entry = MagicMock()
+        coordinator.entry.title = "Strava: Test User"
 
         sensor = StravaActivityTypeSensor(
             coordinator=coordinator,
@@ -353,17 +356,17 @@ class TestSensorPlatform:
             call_args = async_add_entities_mock.call_args[0][0]
 
             # Should create main activity sensors + individual attribute sensors + summary stats sensors
-            # 4 activity types × (1 main + 1 title + 3 device + 1 date + 13 metric) + 35 summary stats
-            # = 111 sensors total
+            # 4 activity types × (1 main + 3 device + 1 date + 13 metric + 8 gear) + 35 summary stats
+            # = 127 sensors total
             expected_sensor_count = (
-                len(mock_config_entry.options[CONF_ACTIVITY_TYPES_TO_TRACK]) * 19 + 35
+                len(mock_config_entry.options[CONF_ACTIVITY_TYPES_TO_TRACK]) * 26 + 35
             )
             assert len(call_args) == expected_sensor_count
 
             # Verify that different sensor types are created
             sensor_types = [type(sensor).__name__ for sensor in call_args]
             assert "StravaActivityTypeSensor" in sensor_types
-            assert "StravaActivityTitleSensor" in sensor_types
+            assert "StravaActivityGearSensor" in sensor_types
             assert "StravaActivityDeviceSensor" in sensor_types
             assert "StravaActivityDateSensor" in sensor_types
             assert "StravaActivityMetricSensor" in sensor_types
@@ -547,6 +550,127 @@ class TestSensorPlatform:
         # This should raise a TypeError because None is not iterable
         with pytest.raises(TypeError, match="'NoneType' object is not iterable"):
             await async_setup_entry(hass, config_entry, AsyncMock())
+
+
+class TestStravaActivityGearSensor:
+    """Test StravaActivityGearSensor class."""
+
+    def test_sensor_creation(self):
+        """Test gear sensor creation."""
+        coordinator = MagicMock()
+        coordinator.data = {
+            "activities": [],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+        coordinator.entry = MagicMock()
+        coordinator.entry.title = "Strava: Test User"
+
+        sensor = StravaActivityGearSensor(
+            coordinator=coordinator,
+            activity_type="Ride",
+            gear_attribute="gear_name",
+            athlete_id="12345",
+        )
+
+        assert sensor._activity_type == "Ride"
+        assert sensor._gear_attribute == "gear_name"
+        assert sensor.name.startswith("Strava Test User Ride Gear Name")
+
+    def test_sensor_state_with_gear_data(self):
+        """Test gear sensor state when gear data is available."""
+        coordinator = MagicMock()
+        coordinator.data = {
+            "activities": [
+                {
+                    "id": 1,
+                    "type": "Ride",
+                    "sport_type": "Ride",
+                    "gear_name": "My Bike",
+                    "gear_brand": "Trek",
+                    "gear_model": "Domane",
+                }
+            ],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+        coordinator.entry = MagicMock()
+
+        sensor = StravaActivityGearSensor(
+            coordinator=coordinator,
+            activity_type="Ride",
+            gear_attribute="gear_name",
+            athlete_id="12345",
+        )
+
+        state = sensor.native_value
+        assert state == "My Bike"
+
+    def test_sensor_state_without_gear_data(self):
+        """Test gear sensor state when no gear data is available."""
+        coordinator = MagicMock()
+        coordinator.data = {
+            "activities": [
+                {
+                    "id": 1,
+                    "type": "Ride",
+                    "sport_type": "Ride",
+                    # No gear data
+                }
+            ],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+        coordinator.entry = MagicMock()
+
+        sensor = StravaActivityGearSensor(
+            coordinator=coordinator,
+            activity_type="Ride",
+            gear_attribute="gear_name",
+            athlete_id="12345",
+        )
+
+        state = sensor.native_value
+        assert state == "Unknown"
+
+    def test_sensor_unit_of_measurement(self):
+        """Test gear sensor unit of measurement."""
+        coordinator = MagicMock()
+        coordinator.data = {
+            "activities": [],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+        coordinator.entry = MagicMock()
+        coordinator.entry.options = {}
+
+        # Test gear distance sensor
+        sensor = StravaActivityGearSensor(
+            coordinator=coordinator,
+            activity_type="Ride",
+            gear_attribute="gear_distance",
+            athlete_id="12345",
+        )
+
+        # Should return meters for gear distance
+        unit = sensor.native_unit_of_measurement
+        assert unit == "m"
+
+    def test_sensor_icon(self):
+        """Test gear sensor icon."""
+        coordinator = MagicMock()
+        coordinator.data = {
+            "activities": [],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+        coordinator.entry = MagicMock()
+
+        sensor = StravaActivityGearSensor(
+            coordinator=coordinator,
+            activity_type="Ride",
+            gear_attribute="gear_name",
+            athlete_id="12345",
+        )
+
+        # Should use the icon from CONF_ATTRIBUTE_SENSORS
+        icon = sensor.icon
+        assert icon == "mdi:bike"
 
     @pytest.mark.asyncio
     async def test_async_setup_entry_missing_activity_types(self, hass: HomeAssistant):

@@ -153,6 +153,16 @@ CONF_SENSOR_DATE = "date"
 CONF_SENSOR_LATITUDE = "latitude"
 CONF_SENSOR_LONGITUDE = "longitude"
 
+# Gear Sensor Constants
+CONF_SENSOR_GEAR_ID = "gear_id"
+CONF_SENSOR_GEAR_NAME = "gear_name"
+CONF_SENSOR_GEAR_BRAND = "gear_brand"
+CONF_SENSOR_GEAR_MODEL = "gear_model"
+CONF_SENSOR_GEAR_DISTANCE = "gear_distance"
+CONF_SENSOR_GEAR_DESCRIPTION = "gear_description"
+CONF_SENSOR_GEAR_PRIMARY = "gear_primary"
+CONF_SENSOR_GEAR_FRAME_TYPE = "gear_frame_type"
+
 CONF_SENSORS = {
     CONF_SENSOR_DATE: {"icon": "mdi:run"},
     CONF_SENSOR_MOVING_TIME: {"icon": "mdi:timer"},
@@ -280,6 +290,54 @@ CONF_ATTRIBUTE_SENSORS = {
         "unit": None,
         "state_class": "measurement",
     },
+    CONF_SENSOR_GEAR_ID: {
+        "icon": "mdi:bike",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+    CONF_SENSOR_GEAR_NAME: {
+        "icon": "mdi:bike",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+    CONF_SENSOR_GEAR_BRAND: {
+        "icon": "mdi:factory",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+    CONF_SENSOR_GEAR_MODEL: {
+        "icon": "mdi:bike",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+    CONF_SENSOR_GEAR_DISTANCE: {
+        "icon": "mdi:map-marker-distance",
+        "device_class": "distance",
+        "unit": "m",
+        "state_class": "total",
+    },
+    CONF_SENSOR_GEAR_DESCRIPTION: {
+        "icon": "mdi:text",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+    CONF_SENSOR_GEAR_PRIMARY: {
+        "icon": "mdi:star",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+    CONF_SENSOR_GEAR_FRAME_TYPE: {
+        "icon": "mdi:bike",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
 }
 FACTOR_METER_TO_MILE = 0.000621371
 FACTOR_METER_TO_FEET = 3.28084
@@ -305,7 +363,6 @@ CONF_ACTIVITY_TYPE_SENSOR_METRICS = [
 
 # Individual Attribute Sensors to Create
 CONF_ATTRIBUTE_SENSOR_TYPES = [
-    CONF_SENSOR_TITLE,
     CONF_SENSOR_DEVICE_NAME,
     CONF_SENSOR_DEVICE_TYPE,
     CONF_SENSOR_DEVICE_MANUFACTURER,
@@ -323,6 +380,14 @@ CONF_ATTRIBUTE_SENSOR_TYPES = [
     CONF_SENSOR_POWER,
     CONF_SENSOR_TROPHIES,
     CONF_SENSOR_KUDOS,
+    CONF_SENSOR_GEAR_ID,
+    CONF_SENSOR_GEAR_NAME,
+    CONF_SENSOR_GEAR_BRAND,
+    CONF_SENSOR_GEAR_MODEL,
+    CONF_SENSOR_GEAR_DISTANCE,
+    CONF_SENSOR_GEAR_DESCRIPTION,
+    CONF_SENSOR_GEAR_PRIMARY,
+    CONF_SENSOR_GEAR_FRAME_TYPE,
 ]
 
 # Activity Type Icon Mapping
