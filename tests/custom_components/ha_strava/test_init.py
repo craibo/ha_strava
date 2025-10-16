@@ -266,6 +266,45 @@ class TestWebhookSubscription:
             await renew_webhook_subscription(hass, mock_config_entry)
 
     @pytest.mark.asyncio
+    async def test_renew_webhook_subscription_cleanup_old_404(
+        self, hass, mock_config_entry, aioresponses_mock
+    ):
+        """Test webhook subscription cleanup when old subscription returns 404."""
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+        # Mock get_url
+        with patch(
+            "custom_components.ha_strava.get_url", return_value="https://example.com"
+        ):
+            # Mock existing subscriptions with different callback URL
+            aioresponses_mock.get(
+                "https://www.strava.com/api/v3/push_subscriptions",
+                payload=[
+                    {
+                        "id": 1,
+                        "callback_url": "https://old.example.com/api/strava/webhook",
+                    }
+                ],
+                status=200,
+            )
+
+            # Mock deletion of old subscription returning 404 (already deleted)
+            aioresponses_mock.delete(
+                "https://www.strava.com/api/v3/push_subscriptions/1", status=404
+            )
+
+            # Mock new subscription creation
+            aioresponses_mock.post(
+                "https://www.strava.com/api/v3/push_subscriptions",
+                payload={"id": 123},
+                status=200,
+            )
+
+            # Test webhook subscription - should not raise exception
+            await renew_webhook_subscription(hass, mock_config_entry)
+
+    @pytest.mark.asyncio
     async def test_renew_webhook_subscription_error(
         self, hass, mock_config_entry, aioresponses_mock
     ):

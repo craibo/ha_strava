@@ -12,9 +12,6 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .const import (
     CONF_ACTIVITY_TYPES_TO_TRACK,
     CONF_ATTR_COMMUTE,
-    CONF_ATTR_DEVICE_MANUFACTURER,
-    CONF_ATTR_DEVICE_NAME,
-    CONF_ATTR_DEVICE_TYPE,
     CONF_ATTR_END_LATLONG,
     CONF_ATTR_POLYLINE,
     CONF_ATTR_PRIVATE,
@@ -29,6 +26,9 @@ from .const import (
     CONF_SENSOR_CALORIES,
     CONF_SENSOR_CITY,
     CONF_SENSOR_DATE,
+    CONF_SENSOR_DEVICE_MANUFACTURER,
+    CONF_SENSOR_DEVICE_NAME,
+    CONF_SENSOR_DEVICE_TYPE,
     CONF_SENSOR_DISTANCE,
     CONF_SENSOR_ELAPSED_TIME,
     CONF_SENSOR_ELEVATION,
@@ -238,11 +238,8 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
         gear_frame_type = None
 
         if activity_dto:
-            # Try to get device info from activity details
+            # Extract gear information if present
             if gear := activity_dto.get("gear"):
-                device_name = gear.get("name", "Unknown")
-                device_type = "Gear"
-                # Extract gear information
                 gear_id = gear.get("id")
                 gear_name = gear.get("name")
                 gear_brand = gear.get("brand_name")
@@ -251,7 +248,9 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
                 gear_description = gear.get("description")
                 gear_primary = gear.get("primary")
                 gear_frame_type = gear.get("frame_type")
-            elif device_name := activity_dto.get("device_name"):
+
+            # Try to get device info from activity details
+            if device_name := activity_dto.get("device_name"):
                 device_type = "Device"
             elif activity_dto.get("manual"):
                 device_name = "Manual Entry"
@@ -301,9 +300,9 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             CONF_ATTR_PRIVATE: activity.get("private", False),
             CONF_ATTR_POLYLINE: activity.get("map", {}).get("summary_polyline", ""),
             # Device source tracking
-            CONF_ATTR_DEVICE_NAME: device_name,
-            CONF_ATTR_DEVICE_TYPE: device_type,
-            CONF_ATTR_DEVICE_MANUFACTURER: device_manufacturer,
+            CONF_SENSOR_DEVICE_NAME: device_name,
+            CONF_SENSOR_DEVICE_TYPE: device_type,
+            CONF_SENSOR_DEVICE_MANUFACTURER: device_manufacturer,
             # Gear information
             CONF_SENSOR_GEAR_ID: gear_id,
             CONF_SENSOR_GEAR_NAME: gear_name,
