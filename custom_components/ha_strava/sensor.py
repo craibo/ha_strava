@@ -643,9 +643,11 @@ class StravaActivityAttributeSensor(CoordinatorEntity, SensorEntity):
             self._attribute_type,
         )
 
-    def _get_value_or_unknown(self, value):
-        """Return the value or 'Unknown' if None."""
-        return value if value is not None else "Unknown"
+    def _get_value_or_unavailable(self, value):
+        """Return the value or 'unavailable' if None, blank, or -1."""
+        if value is None or value == "" or value == -1:
+            return "unavailable"
+        return value
 
     def _is_metric(self):
         """Determine if the user has configured metric units."""
@@ -676,7 +678,7 @@ class StravaActivityGearSensor(StravaActivityAttributeSensor):
             return None
 
         activity = self._latest_activity
-        return self._get_value_or_unknown(activity.get(CONF_SENSOR_GEAR_NAME))
+        return self._get_value_or_unavailable(activity.get(CONF_SENSOR_GEAR_NAME))
 
     @property
     def extra_state_attributes(self):
@@ -751,7 +753,7 @@ class StravaActivityDeviceSensor(StravaActivityAttributeSensor):
             return None
 
         activity = self._latest_activity
-        return self._get_value_or_unknown(activity.get(self._device_attribute))
+        return self._get_value_or_unavailable(activity.get(self._device_attribute))
 
 
 class StravaActivityDateSensor(StravaActivityAttributeSensor):
@@ -803,7 +805,7 @@ class StravaActivityMetricSensor(StravaActivityAttributeSensor):
         elif self._metric_type == CONF_SENSOR_SPEED:
             return self._calculate_speed(activity)
         else:
-            return self._get_value_or_unknown(activity.get(self._metric_type))
+            return self._get_value_or_unavailable(activity.get(self._metric_type))
 
     @property
     def native_unit_of_measurement(self):

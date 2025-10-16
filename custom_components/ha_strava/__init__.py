@@ -114,14 +114,28 @@ async def renew_webhook_subscription(
         for sub in subscriptions:
             if sub["callback_url"] != callback_url:
                 _LOGGER.debug(f"Deleting outdated webhook subscription: {sub['id']}")
-                async with websession.delete(
-                    f"{WEBHOOK_SUBSCRIPTION_URL}/{sub['id']}",
-                    data={
-                        "client_id": entry.data[CONF_CLIENT_ID],
-                        "client_secret": entry.data[CONF_CLIENT_SECRET],
-                    },
-                ) as delete_response:
-                    delete_response.raise_for_status()
+                try:
+                    async with websession.delete(
+                        f"{WEBHOOK_SUBSCRIPTION_URL}/{sub['id']}",
+                        data={
+                            "client_id": entry.data[CONF_CLIENT_ID],
+                            "client_secret": entry.data[CONF_CLIENT_SECRET],
+                        },
+                    ) as delete_response:
+                        delete_response.raise_for_status()
+                except aiohttp.ClientResponseError as err:
+                    if err.status == 404:
+                        _LOGGER.debug(
+                            f"Webhook subscription {sub['id']} already deleted or doesn't exist"
+                        )
+                    else:
+                        _LOGGER.warning(
+                            f"Failed to delete webhook subscription {sub['id']}: {err}"
+                        )
+                except aiohttp.ClientError as err:
+                    _LOGGER.warning(
+                        f"Failed to delete webhook subscription {sub['id']}: {err}"
+                    )
 
         if any(sub["callback_url"] == callback_url for sub in subscriptions):
             _LOGGER.debug("Webhook subscription is already up to date.")
