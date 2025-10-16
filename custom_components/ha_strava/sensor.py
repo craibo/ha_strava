@@ -491,6 +491,7 @@ class StravaActivityTypeSensor(CoordinatorEntity, SensorEntity):
         activity = self._latest_activity
         activity_id = str(activity.get(CONF_SENSOR_ID))
 
+        # Only include core activity attributes, not duplicated sensor data
         attrs = {
             CONF_ATTR_ACTIVITY_ID: activity_id,
             CONF_ATTR_SPORT_TYPE: activity.get(CONF_ATTR_SPORT_TYPE),
@@ -499,35 +500,9 @@ class StravaActivityTypeSensor(CoordinatorEntity, SensorEntity):
             CONF_ATTR_PRIVATE: activity.get(CONF_ATTR_PRIVATE),
             CONF_ATTR_ACTIVITY_URL: f"{STRAVA_ACTIVITY_BASE_URL}{activity_id}",
             CONF_ATTR_POLYLINE: activity.get(CONF_ATTR_POLYLINE),
-            # Add activity data attributes
-            CONF_SENSOR_DISTANCE: activity.get(CONF_SENSOR_DISTANCE),
-            CONF_SENSOR_MOVING_TIME: activity.get(CONF_SENSOR_MOVING_TIME),
-            CONF_SENSOR_ELAPSED_TIME: activity.get(CONF_SENSOR_ELAPSED_TIME),
-            CONF_SENSOR_ELEVATION: activity.get(CONF_SENSOR_ELEVATION),
-            CONF_SENSOR_CALORIES: activity.get(CONF_SENSOR_CALORIES),
-            CONF_SENSOR_SPEED: activity.get(CONF_SENSOR_SPEED),
-            CONF_SENSOR_PACE: activity.get(CONF_SENSOR_PACE),
-            CONF_SENSOR_HEART_RATE_AVG: activity.get(CONF_SENSOR_HEART_RATE_AVG),
-            CONF_SENSOR_HEART_RATE_MAX: activity.get(CONF_SENSOR_HEART_RATE_MAX),
-            CONF_SENSOR_POWER: activity.get(CONF_SENSOR_POWER),
-            CONF_SENSOR_CADENCE_AVG: activity.get(CONF_SENSOR_CADENCE_AVG),
-            CONF_SENSOR_DEVICE_NAME: activity.get(CONF_SENSOR_DEVICE_NAME),
-            CONF_SENSOR_DEVICE_TYPE: activity.get(CONF_SENSOR_DEVICE_TYPE),
-            CONF_SENSOR_DEVICE_MANUFACTURER: activity.get(
-                CONF_SENSOR_DEVICE_MANUFACTURER
-            ),
-            CONF_SENSOR_DATE: activity.get(CONF_SENSOR_DATE),
-            # Add gear information
-            CONF_SENSOR_GEAR_ID: activity.get(CONF_SENSOR_GEAR_ID),
-            CONF_SENSOR_GEAR_NAME: activity.get(CONF_SENSOR_GEAR_NAME),
-            CONF_SENSOR_GEAR_BRAND: activity.get(CONF_SENSOR_GEAR_BRAND),
-            CONF_SENSOR_GEAR_MODEL: activity.get(CONF_SENSOR_GEAR_MODEL),
-            CONF_SENSOR_GEAR_DISTANCE: activity.get(CONF_SENSOR_GEAR_DISTANCE),
-            CONF_SENSOR_GEAR_DESCRIPTION: activity.get(CONF_SENSOR_GEAR_DESCRIPTION),
-            CONF_SENSOR_GEAR_PRIMARY: activity.get(CONF_SENSOR_GEAR_PRIMARY),
-            CONF_SENSOR_GEAR_FRAME_TYPE: activity.get(CONF_SENSOR_GEAR_FRAME_TYPE),
         }
 
+        # Add starting coordinates if available
         if start_latlng := activity.get(CONF_ATTR_START_LATLONG):
             attrs[CONF_SENSOR_LATITUDE] = float(start_latlng[0])
             attrs[CONF_SENSOR_LONGITUDE] = float(start_latlng[1])
@@ -668,6 +643,10 @@ class StravaActivityAttributeSensor(CoordinatorEntity, SensorEntity):
             self._attribute_type,
         )
 
+    def _get_value_or_unknown(self, value):
+        """Return the value or 'Unknown' if None."""
+        return value if value is not None else "Unknown"
+
     def _is_metric(self):
         """Determine if the user has configured metric units."""
         override = self.coordinator.entry.options.get(CONF_DISTANCE_UNIT_OVERRIDE)
@@ -697,7 +676,7 @@ class StravaActivityGearSensor(StravaActivityAttributeSensor):
             return None
 
         activity = self._latest_activity
-        return activity.get(CONF_SENSOR_GEAR_NAME, "No Gear")
+        return self._get_value_or_unknown(activity.get(CONF_SENSOR_GEAR_NAME))
 
     @property
     def extra_state_attributes(self):
@@ -772,7 +751,7 @@ class StravaActivityDeviceSensor(StravaActivityAttributeSensor):
             return None
 
         activity = self._latest_activity
-        return activity.get(self._device_attribute, "Unknown")
+        return self._get_value_or_unknown(activity.get(self._device_attribute))
 
 
 class StravaActivityDateSensor(StravaActivityAttributeSensor):
@@ -824,7 +803,7 @@ class StravaActivityMetricSensor(StravaActivityAttributeSensor):
         elif self._metric_type == CONF_SENSOR_SPEED:
             return self._calculate_speed(activity)
         else:
-            return activity.get(self._metric_type)
+            return self._get_value_or_unknown(activity.get(self._metric_type))
 
     @property
     def native_unit_of_measurement(self):
