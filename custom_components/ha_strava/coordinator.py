@@ -272,29 +272,28 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             CONF_SENSOR_TITLE: activity.get("name", "Strava Activity"),
             CONF_SENSOR_CITY: location,
             CONF_SENSOR_ACTIVITY_TYPE: activity.get("type", "Ride"),
-            CONF_SENSOR_DISTANCE: float(activity.get("distance", -1)),
+            CONF_SENSOR_DISTANCE: activity.get("distance"),
             CONF_SENSOR_DATE: dt.strptime(
                 activity.get("start_date_local", "2000-01-01T00:00:00Z"),
                 "%Y-%m-%dT%H:%M:%SZ",
             ),
-            CONF_SENSOR_ELAPSED_TIME: int(activity.get("elapsed_time", -1)),
-            CONF_SENSOR_MOVING_TIME: int(activity.get("moving_time", -1)),
-            CONF_SENSOR_KUDOS: int(activity.get("kudos_count", -1)),
-            CONF_SENSOR_CALORIES: int(
-                activity.get(
-                    CONF_SENSOR_CALORIES,
-                    activity.get("kilojoules", (-1 / FACTOR_KILOJOULES_TO_KILOCALORIES))
-                    * FACTOR_KILOJOULES_TO_KILOCALORIES,
-                )
+            CONF_SENSOR_ELAPSED_TIME: activity.get("elapsed_time"),
+            CONF_SENSOR_MOVING_TIME: activity.get("moving_time"),
+            CONF_SENSOR_KUDOS: activity.get("kudos_count"),
+            CONF_SENSOR_CALORIES: activity.get(
+                CONF_SENSOR_CALORIES,
+                (
+                    activity.get("kilojoules") * FACTOR_KILOJOULES_TO_KILOCALORIES
+                    if activity.get("kilojoules")
+                    else None
+                ),
             ),
-            CONF_SENSOR_ELEVATION: int(activity.get("total_elevation_gain", -1)),
-            CONF_SENSOR_POWER: int(activity.get("average_watts", -1)),
-            CONF_SENSOR_TROPHIES: int(activity.get("achievement_count", -1)),
-            CONF_SENSOR_HEART_RATE_AVG: float(activity.get("average_heartrate", -1)),
-            CONF_SENSOR_HEART_RATE_MAX: float(activity.get("max_heartrate", -1)),
-            CONF_SENSOR_CADENCE_AVG: float(
-                activity.get("average_cadence", (-1 / 2)) * 2
-            ),
+            CONF_SENSOR_ELEVATION: activity.get("total_elevation_gain"),
+            CONF_SENSOR_POWER: activity.get("average_watts"),
+            CONF_SENSOR_TROPHIES: activity.get("achievement_count"),
+            CONF_SENSOR_HEART_RATE_AVG: activity.get("average_heartrate"),
+            CONF_SENSOR_HEART_RATE_MAX: activity.get("max_heartrate"),
+            CONF_SENSOR_CADENCE_AVG: activity.get("average_cadence"),
             CONF_ATTR_START_LATLONG: activity.get("start_latlng"),
             CONF_ATTR_END_LATLONG: activity.get("end_latlng"),
             CONF_ATTR_SPORT_TYPE: activity.get("sport_type"),

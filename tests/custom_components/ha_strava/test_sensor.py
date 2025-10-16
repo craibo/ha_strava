@@ -568,12 +568,10 @@ class TestStravaActivityGearSensor:
         sensor = StravaActivityGearSensor(
             coordinator=coordinator,
             activity_type="Ride",
-            gear_attribute="gear_name",
             athlete_id="12345",
         )
 
         assert sensor._activity_type == "Ride"
-        assert sensor._gear_attribute == "gear_name"
         assert sensor.name.startswith("Strava Test User Ride Gear Name")
 
     def test_sensor_state_with_gear_data(self):
@@ -588,6 +586,11 @@ class TestStravaActivityGearSensor:
                     "gear_name": "My Bike",
                     "gear_brand": "Trek",
                     "gear_model": "Domane",
+                    "gear_id": "b123",
+                    "gear_distance": 1000,
+                    "gear_description": "My road bike",
+                    "gear_primary": True,
+                    "gear_frame_type": 1,
                 }
             ],
             "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
@@ -597,7 +600,6 @@ class TestStravaActivityGearSensor:
         sensor = StravaActivityGearSensor(
             coordinator=coordinator,
             activity_type="Ride",
-            gear_attribute="gear_name",
             athlete_id="12345",
         )
 
@@ -623,34 +625,79 @@ class TestStravaActivityGearSensor:
         sensor = StravaActivityGearSensor(
             coordinator=coordinator,
             activity_type="Ride",
-            gear_attribute="gear_name",
             athlete_id="12345",
         )
 
         state = sensor.native_value
-        assert state == "Unknown"
+        assert state == "No Gear"
 
-    def test_sensor_unit_of_measurement(self):
-        """Test gear sensor unit of measurement."""
+    def test_sensor_attributes_with_gear_data(self):
+        """Test gear sensor attributes when gear data is available."""
         coordinator = MagicMock()
         coordinator.data = {
-            "activities": [],
+            "activities": [
+                {
+                    "id": 1,
+                    "type": "Ride",
+                    "sport_type": "Ride",
+                    "gear_name": "My Bike",
+                    "gear_brand": "Trek",
+                    "gear_model": "Domane",
+                    "gear_id": "b123",
+                    "gear_distance": 1000,  # 1km in meters
+                    "gear_description": "My road bike",
+                    "gear_primary": True,
+                    "gear_frame_type": 1,
+                }
+            ],
             "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
         }
         coordinator.entry = MagicMock()
-        coordinator.entry.options = {}
 
-        # Test gear distance sensor
         sensor = StravaActivityGearSensor(
             coordinator=coordinator,
             activity_type="Ride",
-            gear_attribute="gear_distance",
             athlete_id="12345",
         )
 
-        # Should return meters for gear distance
-        unit = sensor.native_unit_of_measurement
-        assert unit == "m"
+        # Mock the _is_metric method to return True
+        sensor._is_metric = MagicMock(return_value=True)
+
+        attributes = sensor.extra_state_attributes
+        assert isinstance(attributes, dict)
+        assert attributes["gear_id"] == "b123"
+        assert attributes["gear_brand"] == "Trek"
+        assert attributes["gear_model"] == "Domane"
+        assert attributes["gear_distance"] == 1.0  # Converted to km
+        assert attributes["gear_distance_unit"] == "km"
+        assert attributes["gear_description"] == "My road bike"
+        assert attributes["gear_primary"] is True
+        assert attributes["gear_frame_type"] == 1
+
+    def test_sensor_attributes_without_gear_data(self):
+        """Test gear sensor attributes when no gear data is available."""
+        coordinator = MagicMock()
+        coordinator.data = {
+            "activities": [
+                {
+                    "id": 1,
+                    "type": "Ride",
+                    "sport_type": "Ride",
+                }
+            ],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+        coordinator.entry = MagicMock()
+
+        sensor = StravaActivityGearSensor(
+            coordinator=coordinator,
+            activity_type="Ride",
+            athlete_id="12345",
+        )
+
+        attributes = sensor.extra_state_attributes
+        assert isinstance(attributes, dict)
+        assert len(attributes) == 0  # No gear data, so no attributes
 
     def test_sensor_icon(self):
         """Test gear sensor icon."""
@@ -664,7 +711,6 @@ class TestStravaActivityGearSensor:
         sensor = StravaActivityGearSensor(
             coordinator=coordinator,
             activity_type="Ride",
-            gear_attribute="gear_name",
             athlete_id="12345",
         )
 
