@@ -31,7 +31,7 @@ CONF_DISTANCE_UNIT_OVERRIDE_IMPERIAL = "imperial"
 
 # Activity Type Selection
 CONF_ACTIVITY_TYPES_TO_TRACK = "activity_types_to_track"
-DEFAULT_ACTIVITY_TYPES = ["Run", "Ride", "Walk", "Swim", "Hike"]
+DEFAULT_ACTIVITY_TYPES = ["Run", "Ride", "Swim"]
 
 STRAVA_ACTIVITY_BASE_URL = "https://www.strava.com/activities/"
 STRAVA_ACTHLETE_BASE_URL = "https://www.strava.com/dashboard"
