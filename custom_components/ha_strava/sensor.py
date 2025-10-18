@@ -856,7 +856,35 @@ class StravaActivityMetricSensor(StravaActivityAttributeSensor):
         elif self._metric_type == CONF_SENSOR_SPEED:
             return self._calculate_speed(activity)
         else:
-            return self._get_value_or_unavailable(activity.get(self._metric_type))
+            value = self._get_value_or_unavailable(activity.get(self._metric_type))
+
+            # Apply unit conversions for distance and elevation
+            if self._metric_type == CONF_SENSOR_DISTANCE:
+                # Convert from meters to km/miles
+                distance = value / 1000 if value else 0
+                is_metric = self._is_metric()
+                if is_metric:
+                    return round(distance, 2)
+                return round(
+                    DistanceConverter.convert(
+                        distance, UnitOfLength.KILOMETERS, UnitOfLength.MILES
+                    ),
+                    2,
+                )
+            elif self._metric_type == CONF_SENSOR_ELEVATION:
+                # Convert from meters to meters/feet
+                elevation = value if value else 0
+                is_metric = self._is_metric()
+                if is_metric:
+                    return round(elevation, 2)
+                return round(
+                    DistanceConverter.convert(
+                        elevation, UnitOfLength.METERS, UnitOfLength.FEET
+                    ),
+                    2,
+                )
+            else:
+                return value
 
     @property
     def native_unit_of_measurement(self):
