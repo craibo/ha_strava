@@ -3,6 +3,7 @@
 # generic imports
 import logging
 
+import aiohttp
 import voluptuous as vol
 
 # HASS imports
@@ -10,6 +11,7 @@ from homeassistant import config_entries
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from homeassistant.core import callback
 from homeassistant.helpers import config_entry_oauth2_flow
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.entity_registry import (
     RegistryEntryDisabler,
     async_entries_for_config_entry,
@@ -19,22 +21,20 @@ from homeassistant.helpers.network import NoURLAvailableError, get_url
 
 # custom module imports
 from .const import (
+    CONF_ACTIVITY_TYPES_TO_TRACK,
     CONF_CALLBACK_URL,
     CONF_DISTANCE_UNIT_OVERRIDE,
     CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT,
     CONF_DISTANCE_UNIT_OVERRIDE_IMPERIAL,
     CONF_DISTANCE_UNIT_OVERRIDE_METRIC,
-    CONF_GEOCODE_XYZ_API_KEY,
     CONF_IMG_UPDATE_INTERVAL_SECONDS,
     CONF_IMG_UPDATE_INTERVAL_SECONDS_DEFAULT,
-    CONF_NB_ACTIVITIES,
     CONF_PHOTOS,
-    CONFIG_ENTRY_TITLE,
-    DEFAULT_NB_ACTIVITIES,
+    DEFAULT_ACTIVITY_TYPES,
     DOMAIN,
-    MAX_NB_ACTIVITIES,
     OAUTH2_AUTHORIZE,
     OAUTH2_TOKEN,
+    SUPPORTED_ACTIVITY_TYPES,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -52,42 +52,33 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     """
 
     def __init__(self):
-        self._nb_activities = None
+        """Initialize the options flow."""
         self._config_entry_title = None
         self._import_strava_images = None
         self._img_update_interval_seconds = None
         self._config_distance_unit_override = None
-        self._config_geocode_xyz_api_key = None
+        self._selected_activity_types = None
 
     async def show_form_init(self):
         """
-        Show form to customize the number of Strava activities to track in HASS
+        Show form to customize Strava activity types to track in HASS
         """
-        ha_strava_config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
-
-        if len(ha_strava_config_entries) != 1:
-            return self.async_abort(reason="no_config")
-
         return self.async_show_form(
             step_id="init",
             data_schema=vol.Schema(
                 {
                     vol.Required(
-                        CONF_NB_ACTIVITIES,
-                        default=ha_strava_config_entries[0].options.get(
-                            CONF_NB_ACTIVITIES, DEFAULT_NB_ACTIVITIES
+                        CONF_ACTIVITY_TYPES_TO_TRACK,
+                        default=self.config_entry.options.get(
+                            CONF_ACTIVITY_TYPES_TO_TRACK, DEFAULT_ACTIVITY_TYPES
                         ),
                     ): vol.All(
-                        vol.Coerce(int),
-                        vol.Range(
-                            min=1,
-                            max=MAX_NB_ACTIVITIES,
-                            msg=f"max = {MAX_NB_ACTIVITIES}",
-                        ),
+                        cv.multi_select(SUPPORTED_ACTIVITY_TYPES),
+                        vol.Length(min=1, msg="Select at least one activity type"),
                     ),
                     vol.Required(
                         CONF_IMG_UPDATE_INTERVAL_SECONDS,
-                        default=ha_strava_config_entries[0].options.get(
+                        default=self.config_entry.options.get(
                             CONF_IMG_UPDATE_INTERVAL_SECONDS,
                             CONF_IMG_UPDATE_INTERVAL_SECONDS_DEFAULT,
                         ),
@@ -101,74 +92,85 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     ),
                     vol.Required(
                         CONF_PHOTOS,
-                        default=ha_strava_config_entries[0].options.get(
+                        default=self.config_entry.options.get(
                             CONF_PHOTOS,
-                            ha_strava_config_entries[0].data.get(CONF_PHOTOS),
+                            self.config_entry.data.get(CONF_PHOTOS),
                         ),
                     ): bool,
                     vol.Required(
                         CONF_DISTANCE_UNIT_OVERRIDE,
-                        default=ha_strava_config_entries[0].options.get(
+                        default=self.config_entry.options.get(
                             CONF_DISTANCE_UNIT_OVERRIDE,
                             CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT,
                         ),
                     ): vol.In(DISTANCE_UNIT_OVERRIDE_OPTIONS),
-                    vol.Optional(
-                        CONF_GEOCODE_XYZ_API_KEY,
-                        default=ha_strava_config_entries[0].options.get(
-                            CONF_GEOCODE_XYZ_API_KEY,
-                            "",
-                        ),
-                    ): str,
                 }
             ),
         )
 
     async def async_step_init(self, user_input=None):
         """
-        Initial OptionsFlow step - asks for the number of Strava activities to
-        track in HASS
+        Initial OptionsFlow step - asks for activity types to track in HASS
         """
-        ha_strava_config_entries = self.hass.config_entries.async_entries(domain=DOMAIN)
-
-        if len(ha_strava_config_entries) != 1:
-            return self.async_abort(reason="no_config")
-
         if user_input is not None:
             _entity_registry = async_get(hass=self.hass)
             entities = async_entries_for_config_entry(
                 registry=_entity_registry,
-                config_entry_id=ha_strava_config_entries[0].entry_id,
+                config_entry_id=self.config_entry.entry_id,
             )
 
+            # Enable/disable entities based on selected activity types
+            selected_activity_types = user_input.get(CONF_ACTIVITY_TYPES_TO_TRACK, [])
+
             for entity in entities:
-
                 try:
-                    entity_id_1 = entity.entity_id.split("_")[1]
-                    if "stats" not in entity_id_1 and int(entity_id_1) >= int(
-                        user_input[CONF_NB_ACTIVITIES]
-                    ):
-                        _LOGGER.debug(f"disabling entity {entity}")
-                        _entity_registry.async_update_entity(
-                            entity.entity_id,
-                            disabled_by=RegistryEntryDisabler.INTEGRATION,
-                        )
-                    else:
-                        _entity_registry.async_update_entity(
-                            entity.entity_id, disabled_by=None
-                        )
-                except ValueError:
-                    if user_input[CONF_PHOTOS]:
-                        _entity_registry.async_update_entity(
-                            entity_id=entity.entity_id, disabled_by=None
-                        )
-                    else:
-                        _entity_registry.async_update_entity(
-                            entity_id=entity.entity_id,
-                            disabled_by=RegistryEntryDisabler.INTEGRATION,
-                        )
+                    # Enable/disable activity type sensors based on selection
+                    if "strava_activity_" in entity.entity_id:
+                        # Extract activity type from entity ID
+                        activity_type = entity.entity_id.split("_")[-1].title()
+                        if activity_type in selected_activity_types:
+                            _entity_registry.async_update_entity(
+                                entity.entity_id, disabled_by=None
+                            )
+                        else:
+                            _entity_registry.async_update_entity(
+                                entity.entity_id,
+                                disabled_by=RegistryEntryDisabler.INTEGRATION,
+                            )
+                    # Enable/disable summary stats based on activity type selection
+                    elif "strava_stats_" in entity.entity_id:
+                        # Extract activity type from entity ID
+                        parts = entity.entity_id.split("_")
+                        if len(parts) >= 4:
+                            activity_type = parts[3].title()
+                            if activity_type in selected_activity_types:
+                                _entity_registry.async_update_entity(
+                                    entity.entity_id, disabled_by=None
+                                )
+                            else:
+                                _entity_registry.async_update_entity(
+                                    entity.entity_id,
+                                    disabled_by=RegistryEntryDisabler.INTEGRATION,
+                                )
+                    # Handle camera entities
+                    elif "strava_cam" in entity.entity_id:
+                        if user_input.get(CONF_PHOTOS):
+                            _entity_registry.async_update_entity(
+                                entity_id=entity.entity_id, disabled_by=None
+                            )
+                        else:
+                            _entity_registry.async_update_entity(
+                                entity_id=entity.entity_id,
+                                disabled_by=RegistryEntryDisabler.INTEGRATION,
+                            )
+                except (ValueError, IndexError):
+                    # Skip entities that don't match expected format
+                    _LOGGER.debug(
+                        f"Skipping entity with unexpected format: {entity.entity_id}"
+                    )
+                    continue
 
-            self._nb_activities = user_input.get(CONF_NB_ACTIVITIES)
+            self._selected_activity_types = selected_activity_types
             self._import_strava_images = user_input.get(CONF_PHOTOS)
             self._img_update_interval_seconds = int(
                 user_input.get(CONF_IMG_UPDATE_INTERVAL_SECONDS)
@@ -176,23 +178,21 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             self._config_distance_unit_override = user_input.get(
                 CONF_DISTANCE_UNIT_OVERRIDE
             )
-            self._config_geocode_xyz_api_key = user_input.get(CONF_GEOCODE_XYZ_API_KEY)
-            self._config_entry_title = ha_strava_config_entries[0].title
+            self._config_entry_title = self.config_entry.title
 
             ha_strava_options = {  # pylint: disable=unnecessary-comprehension
-                k: v for k, v in ha_strava_config_entries[0].options.items()
+                k: v for k, v in self.config_entry.options.items()
             }
 
-            ha_strava_options[CONF_NB_ACTIVITIES] = self._nb_activities
+            ha_strava_options[CONF_ACTIVITY_TYPES_TO_TRACK] = (
+                self._selected_activity_types
+            )
             ha_strava_options[CONF_IMG_UPDATE_INTERVAL_SECONDS] = (
                 self._img_update_interval_seconds
             )
             ha_strava_options[CONF_PHOTOS] = self._import_strava_images
             ha_strava_options[CONF_DISTANCE_UNIT_OVERRIDE] = (
                 self._config_distance_unit_override
-            )
-            ha_strava_options[CONF_GEOCODE_XYZ_API_KEY] = (
-                self._config_geocode_xyz_api_key
             )
 
             _LOGGER.debug(f"Strava Config Options: {ha_strava_options}")
@@ -232,7 +232,7 @@ class OAuth2FlowHandler(
         _LOGGER.debug("renew webhook subscription")
         return
 
-    async def async_step_get_oauth_info(self, user_input=None):
+    async def async_step_user(self, user_input=None):
         """Ask user to provide Strava API Credentials"""
         data_schema = {
             vol.Required(CONF_CLIENT_ID): str,
@@ -241,9 +241,6 @@ class OAuth2FlowHandler(
         }
 
         assert self.hass is not None
-
-        if self.hass.config_entries.async_entries(self.DOMAIN):
-            return self.async_abort(reason="already_configured")
 
         try:
             get_url(self.hass, allow_internal=False, allow_ip=False)
@@ -266,11 +263,27 @@ class OAuth2FlowHandler(
             )
             return await self.async_step_pick_implementation()
 
-        return self.async_show_form(
-            step_id="get_oauth_info", data_schema=vol.Schema(data_schema)
-        )
+        return self.async_show_form(step_id="user", data_schema=vol.Schema(data_schema))
 
     async def async_oauth_create_entry(self, data: dict) -> dict:
+        """Create an entry for the flow."""
+        # Fetch athlete info
+        headers = {
+            "Authorization": f"Bearer {data['token']['access_token']}",
+        }
+        async with aiohttp.ClientSession() as session, session.get(
+            "https://www.strava.com/api/v3/athlete", headers=headers
+        ) as response:
+            if response.status != 200:
+                return self.async_abort(reason="cannot_connect")
+            athlete_info = await response.json()
+
+        athlete_id = athlete_info["id"]
+        await self.async_set_unique_id(str(athlete_id))
+        self._abort_if_unique_id_configured()
+
+        title = f"Strava: {athlete_info.get('firstname', '')} {athlete_info.get('lastname', '')}".strip()
+
         data[CONF_CALLBACK_URL] = (
             f"{get_url(self.hass, allow_internal=False, allow_ip=False)}/api/strava/webhook"  # noqa: E501
         )
@@ -278,9 +291,7 @@ class OAuth2FlowHandler(
         data[CONF_CLIENT_SECRET] = self.flow_impl.client_secret
         data[CONF_PHOTOS] = self._import_photos_from_strava
 
-        return self.async_create_entry(title=CONFIG_ENTRY_TITLE, data=data)
-
-    async_step_user = async_step_get_oauth_info
+        return self.async_create_entry(title=title, data=data)
 
     @staticmethod
     @callback

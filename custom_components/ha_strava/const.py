@@ -1,5 +1,7 @@
 """Constants for the Strava Home Assistant integration."""
 
+import re
+
 DOMAIN = "ha_strava"
 CONFIG_ENTRY_TITLE = "Strava"
 
@@ -15,20 +17,21 @@ CONFIG_IMG_SIZE = 512
 CONFIG_URL_DUMP_FILENAME = "strava_img_urls.pickle"
 CONF_IMG_UPDATE_INTERVAL_SECONDS = "img_update_interval_seconds"
 CONF_IMG_UPDATE_INTERVAL_SECONDS_DEFAULT = 15
-CONF_MAX_NB_IMAGES = 100
+CONF_MAX_NB_IMAGES = 30
+MAX_NB_ACTIVITIES = 30
 
 # Webhook & API Specs
 CONF_WEBHOOK_ID = "webhook_id"
 CONF_CALLBACK_URL = "callback_url"
 WEBHOOK_SUBSCRIPTION_URL = "https://www.strava.com/api/v3/push_subscriptions"
-CONF_NB_ACTIVITIES = "nb_activities"
-DEFAULT_NB_ACTIVITIES = 2
-MAX_NB_ACTIVITIES = 10
 CONF_DISTANCE_UNIT_OVERRIDE = "conf_distance_unit"
 CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT = "default"
 CONF_DISTANCE_UNIT_OVERRIDE_METRIC = "metric"
 CONF_DISTANCE_UNIT_OVERRIDE_IMPERIAL = "imperial"
-CONF_GEOCODE_XYZ_API_KEY = "geocode_xyz_api_key"
+
+# Activity Type Selection
+CONF_ACTIVITY_TYPES_TO_TRACK = "activity_types_to_track"
+DEFAULT_ACTIVITY_TYPES = ["Run", "Ride", "Swim"]
 
 STRAVA_ACTIVITY_BASE_URL = "https://www.strava.com/activities/"
 STRAVA_ACTHLETE_BASE_URL = "https://www.strava.com/dashboard"
@@ -66,25 +69,100 @@ CONF_SENSOR_HEART_RATE_MAX = "max_heartrate"
 CONF_SENSOR_BIGGEST_RIDE_DISTANCE = "biggest_ride_distance"
 CONF_SENSOR_BIGGEST_ELEVATION_GAIN = "biggest_climb_elevation_gain"
 
-CONF_ACTIVITY_TYPE_RUN = "run"
-CONF_ACTIVITY_TYPE_RIDE = "ride"
-CONF_ACTIVITY_TYPE_MTB_RIDE = "mountainbikeride"
-CONF_ACTIVITY_TYPE_SWIM = "swim"
-CONF_ACTIVITY_TYPE_HIKE = "hike"
-CONF_ACTIVITY_TYPE_WALK = "walk"
-CONF_ACTIVITY_TYPE_GOLF = "golf"
-CONF_ACTIVITY_TYPE_OTHER = "other"
-CONF_ACTIVITY_TYPE_KAYAKING = "kayaking"
-CONF_ACTIVITY_TYPE_CANOEING = "canoeing"
-CONF_ACTIVITY_TYPE_GYM = "weighttraining"
-CONF_ACTIVITY_TYPE_WORKOUT = "workout"
-CONF_ACTIVITY_TYPE_SNOWBOARD = "snowboard"
+# All 50 Supported Activity Types
+SUPPORTED_ACTIVITY_TYPES = [
+    "AlpineSki",
+    "BackcountrySki",
+    "Badminton",
+    "Canoeing",
+    "Crossfit",
+    "EBikeRide",
+    "Elliptical",
+    "EMountainBikeRide",
+    "Golf",
+    "GravelRide",
+    "Handcycle",
+    "HighIntensityIntervalTraining",
+    "Hike",
+    "IceSkate",
+    "InlineSkate",
+    "Kayaking",
+    "Kitesurf",
+    "MountainBikeRide",
+    "NordicSki",
+    "Pickleball",
+    "Pilates",
+    "Racquetball",
+    "Ride",
+    "RockClimbing",
+    "RollerSki",
+    "Rowing",
+    "Run",
+    "Sail",
+    "Skateboard",
+    "Snowboard",
+    "Snowshoe",
+    "Soccer",
+    "Squash",
+    "StairStepper",
+    "StandUpPaddling",
+    "Surfing",
+    "Swim",
+    "TableTennis",
+    "Tennis",
+    "TrailRun",
+    "Velomobile",
+    "VirtualRide",
+    "VirtualRow",
+    "VirtualRun",
+    "Walk",
+    "WeightTraining",
+    "Wheelchair",
+    "Windsurf",
+    "Workout",
+    "Yoga",
+]
+
+# Legacy activity type constants for backward compatibility
+CONF_ACTIVITY_TYPE_RUN = "Run"
+CONF_ACTIVITY_TYPE_RIDE = "Ride"
+CONF_ACTIVITY_TYPE_MTB_RIDE = "MountainBikeRide"
+CONF_ACTIVITY_TYPE_SWIM = "Swim"
+CONF_ACTIVITY_TYPE_HIKE = "Hike"
+CONF_ACTIVITY_TYPE_WALK = "Walk"
+CONF_ACTIVITY_TYPE_GOLF = "Golf"
+CONF_ACTIVITY_TYPE_OTHER = "Other"
+CONF_ACTIVITY_TYPE_KAYAKING = "Kayaking"
+CONF_ACTIVITY_TYPE_CANOEING = "Canoeing"
+CONF_ACTIVITY_TYPE_GYM = "WeightTraining"
+CONF_ACTIVITY_TYPE_WORKOUT = "Workout"
+CONF_ACTIVITY_TYPE_SNOWBOARD = "Snowboard"
 
 CONF_ACTIVITES_RIDE = [CONF_ACTIVITY_TYPE_RIDE, CONF_ACTIVITY_TYPE_MTB_RIDE]
 
 CONF_SUMMARY_RECENT = "summary_recent"
 CONF_SUMMARY_YTD = "summary_ytd"
 CONF_SUMMARY_ALL = "summary_all"
+
+# Individual Attribute Sensors
+CONF_SENSOR_TITLE = "title"
+CONF_SENSOR_DEVICE_NAME = "device_name"
+CONF_SENSOR_DEVICE_TYPE = "device_type"
+CONF_SENSOR_DEVICE_MANUFACTURER = "device_manufacturer"
+CONF_SENSOR_DEVICE_INFO = "device_info"
+CONF_SENSOR_DATE = "date"
+CONF_SENSOR_LATITUDE = "latitude"
+CONF_SENSOR_LONGITUDE = "longitude"
+
+# Gear Sensor Constants
+CONF_SENSOR_GEAR_ID = "gear_id"
+CONF_SENSOR_GEAR_NAME = "gear_name"
+CONF_SENSOR_GEAR_BRAND = "gear_brand"
+CONF_SENSOR_GEAR_MODEL = "gear_model"
+CONF_SENSOR_GEAR_DISTANCE = "gear_distance"
+CONF_SENSOR_GEAR_DESCRIPTION = "gear_description"
+CONF_SENSOR_GEAR_PRIMARY = "gear_primary"
+CONF_SENSOR_GEAR_FRAME_TYPE = "gear_frame_type"
 
 CONF_SENSORS = {
     CONF_SENSOR_DATE: {"icon": "mdi:run"},
@@ -102,40 +180,265 @@ CONF_SENSORS = {
     CONF_SENSOR_HEART_RATE_AVG: {"icon": "mdi:heart-pulse"},
     CONF_SENSOR_HEART_RATE_MAX: {"icon": "mdi:heart-pulse"},
 }
+
+# Individual Attribute Sensor Configurations
+CONF_ATTRIBUTE_SENSORS = {
+    CONF_SENSOR_TITLE: {
+        "icon": "mdi:text",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+    CONF_SENSOR_DEVICE_NAME: {
+        "icon": "mdi:devices",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+    CONF_SENSOR_DEVICE_TYPE: {
+        "icon": "mdi:devices",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+    CONF_SENSOR_DEVICE_MANUFACTURER: {
+        "icon": "mdi:factory",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+    CONF_SENSOR_DEVICE_INFO: {
+        "icon": "mdi:devices",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+    CONF_SENSOR_DATE: {
+        "icon": "mdi:calendar",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+    CONF_SENSOR_DISTANCE: {
+        "icon": "mdi:map-marker-distance",
+        "device_class": "distance",
+        "unit": "m",
+        "state_class": "measurement",
+    },
+    CONF_SENSOR_MOVING_TIME: {
+        "icon": "mdi:timer",
+        "device_class": "duration",
+        "unit": "s",
+        "state_class": "measurement",
+    },
+    CONF_SENSOR_ELAPSED_TIME: {
+        "icon": "mdi:clock",
+        "device_class": "duration",
+        "unit": "s",
+        "state_class": "measurement",
+    },
+    CONF_SENSOR_ELEVATION: {
+        "icon": "mdi:elevation-rise",
+        "device_class": "distance",
+        "unit": "m",
+        "state_class": "measurement",
+    },
+    CONF_SENSOR_CALORIES: {
+        "icon": "mdi:fire",
+        "device_class": "energy",
+        "unit": "kcal",
+        "state_class": "total",
+    },
+    CONF_SENSOR_PACE: {
+        "icon": "mdi:clock-fast",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+    CONF_SENSOR_SPEED: {
+        "icon": "mdi:speedometer",
+        "device_class": "speed",
+        "unit": "m/s",
+        "state_class": "measurement",
+    },
+    CONF_SENSOR_HEART_RATE_AVG: {
+        "icon": "mdi:heart-pulse",
+        "device_class": None,
+        "unit": "bpm",
+        "state_class": "total",
+    },
+    CONF_SENSOR_HEART_RATE_MAX: {
+        "icon": "mdi:heart-pulse",
+        "device_class": None,
+        "unit": "bpm",
+        "state_class": "total",
+    },
+    CONF_SENSOR_CADENCE_AVG: {
+        "icon": "mdi:shoe-print",
+        "device_class": None,
+        "unit": "spm",
+        "state_class": "measurement",
+    },
+    CONF_SENSOR_POWER: {
+        "icon": "mdi:dumbbell",
+        "device_class": "power",
+        "unit": "W",
+        "state_class": "measurement",
+    },
+    CONF_SENSOR_TROPHIES: {
+        "icon": "mdi:trophy",
+        "device_class": None,
+        "unit": None,
+        "state_class": "measurement",
+    },
+    CONF_SENSOR_KUDOS: {
+        "icon": "mdi:thumb-up-outline",
+        "device_class": None,
+        "unit": None,
+        "state_class": "measurement",
+    },
+    CONF_SENSOR_GEAR_ID: {
+        "icon": "mdi:bike",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+    CONF_SENSOR_GEAR_NAME: {
+        "icon": "mdi:bike",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+    CONF_SENSOR_GEAR_BRAND: {
+        "icon": "mdi:factory",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+    CONF_SENSOR_GEAR_MODEL: {
+        "icon": "mdi:bike",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+    CONF_SENSOR_GEAR_DISTANCE: {
+        "icon": "mdi:map-marker-distance",
+        "device_class": "distance",
+        "unit": "m",
+        "state_class": "total",
+    },
+    CONF_SENSOR_GEAR_DESCRIPTION: {
+        "icon": "mdi:text",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+    CONF_SENSOR_GEAR_PRIMARY: {
+        "icon": "mdi:star",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+    CONF_SENSOR_GEAR_FRAME_TYPE: {
+        "icon": "mdi:bike",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+}
 FACTOR_METER_TO_MILE = 0.000621371
 FACTOR_METER_TO_FEET = 3.28084
 FACTOR_KILOJOULES_TO_KILOCALORIES = 0.239006
 FACTOR_KILOMETER_TO_MILE = 0.621371
 
-CONF_SENSOR_1 = "sensor_1"
-CONF_SENSOR_2 = "sensor_2"
-CONF_SENSOR_3 = "sensor_3"
-CONF_SENSOR_4 = "sensor_4"
-CONF_SENSOR_5 = "sensor_5"
-CONF_SENSOR_6 = "sensor_6"
-CONF_SENSOR_7 = "sensor_7"
-CONF_SENSOR_8 = "sensor_8"
-CONF_SENSOR_9 = "sensor_9"
-CONF_SENSOR_10 = "sensor_10"
-CONF_SENSOR_11 = "sensor_11"
-CONF_SENSOR_12 = "sensor_12"
-CONF_SENSOR_13 = "sensor_13"
+# Activity Type Sensor Configuration
+CONF_ACTIVITY_TYPE_SENSOR_METRICS = [
+    CONF_SENSOR_ACTIVITY_COUNT,
+    CONF_SENSOR_DISTANCE,
+    CONF_SENSOR_MOVING_TIME,
+    CONF_SENSOR_ELEVATION,
+    CONF_SENSOR_CALORIES,
+    CONF_SENSOR_PACE,
+    CONF_SENSOR_SPEED,
+    CONF_SENSOR_HEART_RATE_AVG,
+    CONF_SENSOR_HEART_RATE_MAX,
+    CONF_SENSOR_CADENCE_AVG,
+    CONF_SENSOR_POWER,
+    CONF_SENSOR_TROPHIES,
+    CONF_SENSOR_KUDOS,
+]
 
-CONF_SENSOR_DEFAULT = {
-    "icon": "mdi:run",
-    CONF_SENSOR_1: CONF_SENSOR_MOVING_TIME,
-    CONF_SENSOR_2: CONF_SENSOR_PACE,
-    CONF_SENSOR_3: CONF_SENSOR_DISTANCE,
-    CONF_SENSOR_4: CONF_SENSOR_SPEED,
-    CONF_SENSOR_5: CONF_SENSOR_ELEVATION,
-    CONF_SENSOR_6: CONF_SENSOR_POWER,
-    CONF_SENSOR_7: CONF_SENSOR_CALORIES,
-    CONF_SENSOR_8: CONF_SENSOR_HEART_RATE_AVG,
-    CONF_SENSOR_9: CONF_SENSOR_HEART_RATE_MAX,
-    CONF_SENSOR_10: CONF_SENSOR_ELAPSED_TIME,
-    CONF_SENSOR_11: CONF_SENSOR_TROPHIES,
-    CONF_SENSOR_12: CONF_SENSOR_KUDOS,
-    CONF_SENSOR_13: CONF_SENSOR_CADENCE_AVG,
+# Individual Attribute Sensors to Create
+CONF_ATTRIBUTE_SENSOR_TYPES = [
+    CONF_SENSOR_DEVICE_INFO,
+    CONF_SENSOR_DATE,
+    CONF_SENSOR_DISTANCE,
+    CONF_SENSOR_MOVING_TIME,
+    CONF_SENSOR_ELAPSED_TIME,
+    CONF_SENSOR_ELEVATION,
+    CONF_SENSOR_CALORIES,
+    CONF_SENSOR_PACE,
+    CONF_SENSOR_SPEED,
+    CONF_SENSOR_HEART_RATE_AVG,
+    CONF_SENSOR_HEART_RATE_MAX,
+    CONF_SENSOR_CADENCE_AVG,
+    CONF_SENSOR_POWER,
+    CONF_SENSOR_TROPHIES,
+    CONF_SENSOR_KUDOS,
+]
+
+# Activity Type Icon Mapping
+ACTIVITY_TYPE_ICONS = {
+    "AlpineSki": "mdi:ski",
+    "BackcountrySki": "mdi:ski",
+    "Badminton": "mdi:badminton",
+    "Canoeing": "mdi:kayaking",
+    "Crossfit": "mdi:weight-lifter",
+    "EBikeRide": "mdi:bike",
+    "Elliptical": "mdi:elliptical",
+    "EMountainBikeRide": "mdi:bike",
+    "Golf": "mdi:golf",
+    "GravelRide": "mdi:bike",
+    "Handcycle": "mdi:bike",
+    "HighIntensityIntervalTraining": "mdi:weight-lifter",
+    "Hike": "mdi:hiking",
+    "IceSkate": "mdi:ice-skate",
+    "InlineSkate": "mdi:skate",
+    "Kayaking": "mdi:kayaking",
+    "Kitesurf": "mdi:kitesurfing",
+    "MountainBikeRide": "mdi:bike",
+    "NordicSki": "mdi:ski",
+    "Pickleball": "mdi:tennis",
+    "Pilates": "mdi:yoga",
+    "Racquetball": "mdi:tennis",
+    "Ride": "mdi:bike",
+    "RockClimbing": "mdi:climbing",
+    "RollerSki": "mdi:ski",
+    "Rowing": "mdi:rowing",
+    "Run": "mdi:run",
+    "Sail": "mdi:sail-boat",
+    "Skateboard": "mdi:skateboard",
+    "Snowboard": "mdi:snowboard",
+    "Snowshoe": "mdi:snowshoe",
+    "Soccer": "mdi:soccer",
+    "Squash": "mdi:tennis",
+    "StairStepper": "mdi:stairs",
+    "StandUpPaddling": "mdi:kayaking",
+    "Surfing": "mdi:surfing",
+    "Swim": "mdi:swim",
+    "TableTennis": "mdi:tennis",
+    "Tennis": "mdi:tennis",
+    "TrailRun": "mdi:run",
+    "Velomobile": "mdi:bike",
+    "VirtualRide": "mdi:bike",
+    "VirtualRow": "mdi:rowing",
+    "VirtualRun": "mdi:run",
+    "Walk": "mdi:walk",
+    "WeightTraining": "mdi:weight-lifter",
+    "Wheelchair": "mdi:wheelchair",
+    "Windsurf": "mdi:kitesurfing",
+    "Workout": "mdi:weight-lifter",
+    "Yoga": "mdi:yoga",
 }
 
 DEVICE_CLASS_DURATION = "duration"
@@ -154,11 +457,61 @@ CONF_ATTR_COMMUTE = "commute"
 CONF_ATTR_PRIVATE = "private"
 CONF_ATTR_POLYLINE = "polyline"
 
+# Device Source Tracking
+CONF_ATTR_DEVICE_NAME = "device_name"
+CONF_ATTR_DEVICE_TYPE = "device_type"
+CONF_ATTR_DEVICE_MANUFACTURER = "device_manufacturer"
+
 UNIT_BEATS_PER_MINUTE = "bpm"
 UNIT_PACE_MINUTES_PER_KILOMETER = "min/km"
 UNIT_PACE_MINUTES_PER_MILE = "min/mi"
 UNIT_KILO_CALORIES = "kcal"
 UNIT_STEPS_PER_MINUTE = "spm"
 
-GEOCODE_XYZ_THROTTLED = "Throttled! See geocode.xyz/pricing"
-UNKNOWN_AREA = None
+
+# Naming Helper Functions
+def get_athlete_name_from_title(title: str) -> str:
+    """Extract clean athlete name from config entry title."""
+    if not title or not title.startswith("Strava:"):
+        return "Unknown"
+
+    # Remove "Strava:" prefix and strip whitespace
+    name = title.replace("Strava:", "").strip()
+    return name if name else "Unknown"
+
+
+def generate_device_id(athlete_id: str, device_type: str) -> str:
+    """Generate standardized device ID."""
+    return f"strava_{athlete_id}_{device_type}"
+
+
+def generate_device_name(athlete_name: str, device_type: str) -> str:
+    """Generate standardized device name."""
+    return f"Strava {athlete_name} {device_type.title()}"
+
+
+def generate_sensor_id(athlete_id: str, activity_type: str, sensor_type: str) -> str:
+    """Generate standardized sensor ID."""
+    return f"strava_{athlete_id}_{activity_type}_{sensor_type}"
+
+
+def generate_sensor_name(
+    athlete_name: str, activity_type: str, sensor_type: str
+) -> str:
+    """Generate standardized sensor name."""
+    # Format sensor type for display (replace underscores with spaces and title case)
+    formatted_sensor = sensor_type.replace("_", " ").title()
+    return f"Strava {athlete_name} {activity_type.title()} {formatted_sensor}"
+
+
+def normalize_activity_type(activity_type: str) -> str:
+    """Normalize activity type for consistent naming."""
+    return activity_type.lower().replace(" ", "_")
+
+
+def format_activity_type_display(activity_type: str) -> str:
+    """Format activity type for display in names."""
+    # Handle camelCase by inserting spaces before uppercase letters (except the first one)
+    # Insert space before uppercase letters that follow lowercase letters
+    formatted = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", activity_type)
+    return formatted

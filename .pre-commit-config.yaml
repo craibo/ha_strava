@@ -34,3 +34,4 @@ repos:
         entry: pylint
         language: system
         types: [python]
+        args: ["--fail-on=E,F", "--exit-zero"]

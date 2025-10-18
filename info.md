@@ -2,6 +2,30 @@
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/craibo/ha_strava?color=41BDF5&style=for-the-badge)](https://github.com/craibo/ha_strava/releases/latest)
 [![Integration Usage](https://img.shields.io/badge/dynamic/json?color=41BDF5&style=for-the-badge&logo=home-assistant&label=usage&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.ha_strava.total)](https://analytics.home-assistant.io/)
 
+---
+
+## ⚠️ Breaking Changes in v4.0.0
+
+**This is a major version update with significant architectural changes:**
+
+1. **Complete Sensor Restructure**: All existing sensors will be removed and replaced with a new architecture
+2. **Activity Type Selection**: You must now select which activity types to track (defaults to Run, Ride, Walk, Swim)
+3. **Entity ID Changes**: All sensor entity IDs will change
+4. **No Migration Path**: You must manually reconfigure the integration after updating
+5. **Device Source Tracking**: New feature that automatically detects the device used for each activity
+6. **Removed Dependencies**: No longer requires geocode.xyz API key
+
+**Before updating to v4.0.0:**
+
+- Note down your current sensor entity IDs if you have automations or dashboards using them
+- Plan to reconfigure the integration after the update
+- Consider backing up your Home Assistant configuration
+
+A maintenance mode 3.2 release branch will be maintained for a period of time for those that do not want to upgrade to
+4.0.0.
+
+---
+
 # Strava integration for Home Assistant (Unofficial)
 
 <img src="https://raw.githubusercontent.com/craibo/ha_strava/main/img/api_logo_pwrdBy_strava_stack_light.png">
@@ -14,40 +38,35 @@ When configuring the Strava API, the **Authorization Callback Domain** must be s
 
 ## Features
 
-- Gives you access to **up to 10 of your most recent activities** in Strava.
-- Pulls Recent (last 4 weeks), Year-to-Date (YTD) and All-Time **summary statistics for Run, Ride, and Swim activities**
+- Gives you access to **your most recent activities** in Strava.
+- Pulls Recent (last 4 weeks), Year-to-Date (YTD) and All-Time **summary statistics**
 - Creates a **camera entity** in Home Assistant to **feature recent Strava pictures** as a photo-carousel
 - Supports both the **metric and the imperial** unit system
 - Activity data in Home Assistant **auto-updates** whenever you add, modify, or delete activities on Strava
-- Exposes **13 sensor entities** for each Strava activity
+- **Activity Type Selection**: Choose which of the 50 supported activity types to track
+- **Device Source Tracking**: Automatically detects and displays the device used for each activity
 - **Easy set-up**: only enter your Strava Client-ID and Client-Secret and you're ready to go
 
 <img src="https://raw.githubusercontent.com/craibo/ha_strava/main/img/strava_activity_device.png" width="50%"><img src="https://raw.githubusercontent.com/craibo/ha_strava/main/img/strava_summary_device.png" width="50%">
 
-For every Strava activity, the Strava Home Assistant Integration creates a **device entity** in Home Assistant (max 10 activities). Each of these virtual device entities exposes **thirteen sensor entities**:
+The Strava Home Assistant Integration creates **sensor entities** for each activity type you choose to track. For each selected activity type, you get:
 
-- Date & Title
-  - Sport type
-  - Location
-  - Start geo co-ordinates
-  - Link to Stata activity
-  - Commute
-  - Private
-- Elapsed Time
-- Moving Time
-- Pace
-- Speed
-- Distance
-- Heart Rate (Average)
-- Heart Rate (Max)
-- Calories
-- Cadence (Average)
-- Elevation Gain
-- Power
-- Kudos
-- Trophies
+**Activity Sensors:**
 
-Since every Strava activity gets its own virtual device, you can use the underlying sensor data in your **Dashboards and Automations**, just as you'd use any other sensor data in Home Assistant.
+- **Latest Activity**: Shows the name of your most recent activity of that type
+- **Activity Details**: Includes distance, time, elevation, heart rate, power, and more
+- **Device Information**: Automatically detects and displays the device used (Garmin, Apple Watch, etc.)
+
+**Summary Statistics Sensors:**
+
+- **Recent** (last 4 weeks): Distance, activity count, and other metrics
+- **Year-to-Date**: Cumulative statistics for the current year
+- **All-Time**: Lifetime statistics for each activity type
+
+**Supported Activity Types:**
+The integration supports all 50 Strava activity types including Run, Ride, Walk, Swim, Hike, AlpineSki, BackcountrySki, Badminton, Canoeing, Crossfit, EBikeRide, Elliptical, Golf, GravelRide, Handcycle, HighIntensityIntervalTraining, IceSkate, InlineSkate, Kayaking, Kitesurf, MountainBikeRide, NordicSki, Pickleball, Pilates, Racquetball, RockClimbing, RollerSki, Rowing, Sail, Skateboard, Snowboard, Snowshoe, Soccer, Squash, StairStepper, StandUpPaddling, Surfing, TableTennis, Tennis, TrailRun, Velomobile, VirtualRide, VirtualRow, VirtualRun, WeightTraining, Wheelchair, Windsurf, Workout, and Yoga.
+
+You can use all sensor data in your **Dashboards and Automations**, just as you'd use any other sensor data in Home Assistant.
 
 ## Installation
 
@@ -81,15 +100,27 @@ Now is the time to fire up the Strava Home Assistant Integration for the first t
 
 From within Home Assistant, head over to `Configuration` > `Integrations` and hit the "+" symbol at the bottom. Search for "Strava Home Assistant" and click on the icon to add the Integration to Home Assistant. You'll automatically be prompted to enter your Strava API credentials. It'll take a few seconds to complete the set-up process after you've granted all the required permissions.
 
+## ⚠️ Breaking Changes in v4.0.0
+
+**This is a major version update with significant architectural changes:**
+
+- **New Architecture**: Complete rewrite from individual activity devices to activity type-based sensors
+- **Activity Type Selection**: Choose which of the 50 supported activity types to track
+- **Device Source Detection**: Automatically detects and displays the device used for each activity
+- **Improved Performance**: More efficient data fetching and processing
+- **Enhanced Statistics**: Better summary statistics for each activity type
+
+**Migration Required**: Existing installations will need to be reconfigured. The old individual activity devices are no longer supported.
+
 ## Configuration/Customization
 
-Upon completion of the installation process, the Strava Home Assistant integration **automatically creates device- and sensor entities** for you to access data from your most recent Strava activities. Per default, only sensor entities for the **two most recent Strava activities** are visible in Home Assistant. Please read the section below to learn how to change the number of visible sensor entities for Strava Home Assistant.
+Upon completion of the installation process, the Strava Home Assistant integration **automatically creates sensor entities** for the activity types you select. By default, only **Run** and **Ride** activity types are enabled.
 
-### 1. Increase/Decrease the number of Strava activities available in Home Assistant
+### 1. Select Activity Types to Track
 
-You can always **adjust the number of Strava activities you wish to track** from within Home Assistant (min 1; max 10).
+You can **choose which activity types to track** from within Home Assistant. The integration supports all 50 Strava activity types.
 
-Just locate the Strava Home Assistant Integration under `Configuration` > `Integrations`, click on `CONFIGURE`, and use the slider to adjust the number of activities. After you've saved your settings, it might take a few minutes for Home Assistant to create the corresponding sensor entities and fetch the underlying data. The activities available in Home Assistant always correspond to the most recent ones under your Strava profile.
+Just locate the Strava Home Assistant Integration under `Configuration` > `Integrations`, click on `CONFIGURE`, and select the activity types you want to track. After you've saved your settings, it might take a few minutes for Home Assistant to create the corresponding sensor entities and fetch the underlying data.
 
 ### 2. Specifying the Distance unit system to use
 
@@ -101,18 +132,14 @@ Three configurations for the **_distance unit system_** are available.
 
 This setting is selectable on configuration of the Strava integration and from the Strava Home Assistant Integration under `Configuration` > `Integrations`, click on `CONFIGURE`.
 
-### 3. Geocode.xyz API Key
+### 3. Photo Import Settings
 
-An initial attempt to get the location from the detailed strava activity is made, however if this is not present the geocode.xyz service is used. If your activity titles are constantly showing the area as **Unknown Area**, this is likely a result of the geocode.xyz api throttling. You are able to register for a free geocode.xyz account which will provide you with an API key. This key will reduce the throttling applied your geocoding queries.
-
-1. Go to https://geocode.xyz/new_account to register your account.
-2. Copy the provided API key
-3. Paste the API Key in the configuration of the Strava Home Assistant Integration found here: `Configuration` > `Integrations`, click on `CONFIGURE`.
+You can configure whether to import photos from your Strava activities and set the rotation interval for the camera entity.
 
 **_NOTES_**
 
 1. Changing the unit system setting will require a restart of Home Assistant to be fully applied.
-2. Due to the way that some sensors track statistical data, changing this after the initial integration setup may result in some staticstical data not showing correctly.
+2. The new architecture provides more reliable and efficient data processing compared to previous versions.
 
 ## Contributors
 
