@@ -28,6 +28,7 @@ from .const import (
     CONF_SENSOR_CALORIES,
     CONF_SENSOR_CITY,
     CONF_SENSOR_DATE,
+    CONF_SENSOR_DEVICE_INFO,
     CONF_SENSOR_DEVICE_MANUFACTURER,
     CONF_SENSOR_DEVICE_NAME,
     CONF_SENSOR_DEVICE_TYPE,
@@ -98,31 +99,17 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
             # Create individual attribute sensors
             for attribute_type in CONF_ATTRIBUTE_SENSOR_TYPES:
-                if attribute_type in [
-                    CONF_SENSOR_DEVICE_NAME,
-                    CONF_SENSOR_DEVICE_TYPE,
-                    CONF_SENSOR_DEVICE_MANUFACTURER,
-                ]:
+                if attribute_type == CONF_SENSOR_DEVICE_INFO:
                     entries.append(
-                        StravaActivityDeviceSensor(
+                        StravaActivityDeviceInfoSensor(
                             coordinator,
                             activity_type=activity_type,
-                            device_attribute=attribute_type,
                             athlete_id=athlete_id,
                         )
                     )
                 elif attribute_type == CONF_SENSOR_DATE:
                     entries.append(
                         StravaActivityDateSensor(
-                            coordinator,
-                            activity_type=activity_type,
-                            athlete_id=athlete_id,
-                        )
-                    )
-                elif attribute_type == CONF_SENSOR_GEAR_NAME:
-                    # Create only one gear sensor per activity type
-                    entries.append(
-                        StravaActivityGearSensor(
                             coordinator,
                             activity_type=activity_type,
                             athlete_id=athlete_id,
@@ -138,6 +125,15 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                             athlete_id=athlete_id,
                         )
                     )
+
+            # Create gear sensor for each activity type
+            entries.append(
+                StravaActivityGearSensor(
+                    coordinator,
+                    activity_type=activity_type,
+                    athlete_id=athlete_id,
+                )
+            )
 
     # Create summary statistics sensors (one global device)
     # Break down totals into individual metric sensors
@@ -766,6 +762,49 @@ class StravaActivityDeviceSensor(StravaActivityAttributeSensor):
 
         activity = self._latest_activity
         return self._get_value_or_unavailable(activity.get(self._device_attribute))
+
+
+class StravaActivityDeviceInfoSensor(StravaActivityAttributeSensor):
+    """Sensor for device information - shows device name as value with type and manufacturer as attributes."""
+
+    def __init__(
+        self,
+        coordinator: StravaDataUpdateCoordinator,
+        activity_type: str,
+        athlete_id: str,
+    ):
+        """Initialize the sensor."""
+        super().__init__(
+            coordinator, activity_type, CONF_SENSOR_DEVICE_INFO, athlete_id
+        )
+
+    @property
+    def native_value(self):
+        """Return device name as the sensor value."""
+        if not self.available:
+            return None
+
+        activity = self._latest_activity
+        return self._get_value_or_unavailable(activity.get(CONF_SENSOR_DEVICE_NAME))
+
+    @property
+    def extra_state_attributes(self):
+        """Return device type and manufacturer as attributes."""
+        if not self.available:
+            return {}
+
+        activity = self._latest_activity
+        attributes = {}
+
+        device_type = activity.get(CONF_SENSOR_DEVICE_TYPE)
+        if device_type:
+            attributes["device_type"] = device_type
+
+        device_manufacturer = activity.get(CONF_SENSOR_DEVICE_MANUFACTURER)
+        if device_manufacturer:
+            attributes["device_manufacturer"] = device_manufacturer
+
+        return attributes
 
 
 class StravaActivityDateSensor(StravaActivityAttributeSensor):

@@ -356,18 +356,16 @@ class TestSensorPlatform:
             call_args = async_add_entities_mock.call_args[0][0]
 
             # Should create main activity sensors + individual attribute sensors + summary stats sensors
-            # 4 activity types × (1 main + 3 device + 1 date + 13 metric + 8 gear) + 35 summary stats
-            # = 127 sensors total
-            expected_sensor_count = (
-                len(mock_config_entry.options[CONF_ACTIVITY_TYPES_TO_TRACK]) * 26 + 35
-            )
+            # 4 activity types × (1 main + 15 attribute + 1 gear) + 35 summary stats
+            # = 103 sensors total
+            expected_sensor_count = 103
             assert len(call_args) == expected_sensor_count
 
             # Verify that different sensor types are created
             sensor_types = [type(sensor).__name__ for sensor in call_args]
             assert "StravaActivityTypeSensor" in sensor_types
             assert "StravaActivityGearSensor" in sensor_types
-            assert "StravaActivityDeviceSensor" in sensor_types
+            assert "StravaActivityDeviceInfoSensor" in sensor_types
             assert "StravaActivityDateSensor" in sensor_types
             assert "StravaActivityMetricSensor" in sensor_types
             assert "StravaSummaryStatsSensor" in sensor_types
@@ -629,7 +627,7 @@ class TestStravaActivityGearSensor:
         )
 
         state = sensor.native_value
-        assert state == "No Gear"
+        assert state is None
 
     def test_sensor_attributes_with_gear_data(self):
         """Test gear sensor attributes when gear data is available."""

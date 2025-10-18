@@ -8,21 +8,18 @@ from homeassistant.const import UnitOfLength, UnitOfTime
 from custom_components.ha_strava.const import (
     CONF_SENSOR_CALORIES,
     CONF_SENSOR_DATE,
-    CONF_SENSOR_DEVICE_NAME,
     CONF_SENSOR_DISTANCE,
     CONF_SENSOR_HEART_RATE_AVG,
     CONF_SENSOR_MOVING_TIME,
     CONF_SENSOR_PACE,
     CONF_SENSOR_POWER,
     CONF_SENSOR_SPEED,
-    CONF_SENSOR_TITLE,
 )
 from custom_components.ha_strava.sensor import (
     StravaActivityAttributeSensor,
     StravaActivityDateSensor,
-    StravaActivityDeviceSensor,
+    StravaActivityDeviceInfoSensor,
     StravaActivityMetricSensor,
-    StravaActivityTitleSensor,
 )
 
 
@@ -169,8 +166,8 @@ class TestStravaActivityAttributeSensor:
         assert sensor.name == "Strava Test User Run Test Attribute"
 
 
-class TestStravaActivityTitleSensor:
-    """Test StravaActivityTitleSensor class."""
+class TestStravaActivityDeviceInfoSensor:
+    """Test StravaActivityDeviceInfoSensor class."""
 
     def test_sensor_creation(self):
         """Test sensor creation."""
@@ -181,15 +178,14 @@ class TestStravaActivityTitleSensor:
         }
         coordinator.entry = MagicMock()
 
-        sensor = StravaActivityTitleSensor(
+        sensor = StravaActivityDeviceInfoSensor(
             coordinator=coordinator,
             activity_type="Run",
             athlete_id="12345",
         )
 
         assert sensor._activity_type == "Run"
-        assert sensor._attribute_type == CONF_SENSOR_TITLE
-        assert sensor.unique_id == "strava_12345_run_title"
+        assert sensor.unique_id == "strava_12345_run_device_info"
 
     def test_native_value_with_activity(self, mock_strava_activities):
         """Test native value when activity data is available."""
@@ -200,70 +196,9 @@ class TestStravaActivityTitleSensor:
         }
         coordinator.entry = MagicMock()
 
-        sensor = StravaActivityTitleSensor(
+        sensor = StravaActivityDeviceInfoSensor(
             coordinator=coordinator,
             activity_type="Run",
-            athlete_id="12345",
-        )
-
-        value = sensor.native_value
-        assert value == "Morning Run"
-
-    def test_native_value_no_activity(self):
-        """Test native value when no activity data."""
-        coordinator = MagicMock()
-        coordinator.data = {
-            "activities": [],
-            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
-        }
-        coordinator.entry = MagicMock()
-
-        sensor = StravaActivityTitleSensor(
-            coordinator=coordinator,
-            activity_type="Run",
-            athlete_id="12345",
-        )
-
-        value = sensor.native_value
-        assert value is None
-
-
-class TestStravaActivityDeviceSensor:
-    """Test StravaActivityDeviceSensor class."""
-
-    def test_sensor_creation(self):
-        """Test sensor creation."""
-        coordinator = MagicMock()
-        coordinator.data = {
-            "activities": [],
-            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
-        }
-        coordinator.entry = MagicMock()
-
-        sensor = StravaActivityDeviceSensor(
-            coordinator=coordinator,
-            activity_type="Run",
-            device_attribute=CONF_SENSOR_DEVICE_NAME,
-            athlete_id="12345",
-        )
-
-        assert sensor._activity_type == "Run"
-        assert sensor._device_attribute == CONF_SENSOR_DEVICE_NAME
-        assert sensor.unique_id == "strava_12345_run_device_name"
-
-    def test_native_value_with_activity(self, mock_strava_activities):
-        """Test native value when activity data is available."""
-        coordinator = MagicMock()
-        coordinator.data = {
-            "activities": mock_strava_activities,
-            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
-        }
-        coordinator.entry = MagicMock()
-
-        sensor = StravaActivityDeviceSensor(
-            coordinator=coordinator,
-            activity_type="Run",
-            device_attribute=CONF_SENSOR_DEVICE_NAME,
             athlete_id="12345",
         )
 
@@ -279,44 +214,81 @@ class TestStravaActivityDeviceSensor:
         }
         coordinator.entry = MagicMock()
 
-        sensor = StravaActivityDeviceSensor(
+        sensor = StravaActivityDeviceInfoSensor(
             coordinator=coordinator,
             activity_type="Run",
-            device_attribute=CONF_SENSOR_DEVICE_NAME,
             athlete_id="12345",
         )
 
         value = sensor.native_value
         assert value is None
 
-    def test_native_value_missing_attribute(self, mock_strava_activities):
-        """Test native value when attribute is missing from activity."""
-        # Create activity without device_name
-        activity_without_device = {
-            "id": 1,
-            "name": "Test Run",
-            "type": "Run",
-            "sport_type": "Run",
-            "distance": 5000.0,
-            "moving_time": 1800,
-        }
-
+    def test_extra_state_attributes_with_activity(self, mock_strava_activities):
+        """Test extra state attributes when activity data is available."""
         coordinator = MagicMock()
         coordinator.data = {
-            "activities": [activity_without_device],
+            "activities": mock_strava_activities,
             "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
         }
         coordinator.entry = MagicMock()
 
-        sensor = StravaActivityDeviceSensor(
+        sensor = StravaActivityDeviceInfoSensor(
             coordinator=coordinator,
             activity_type="Run",
-            device_attribute=CONF_SENSOR_DEVICE_NAME,
             athlete_id="12345",
         )
 
-        value = sensor.native_value
-        assert value == "Unknown"
+        attributes = sensor.extra_state_attributes
+        assert attributes["device_type"] == "GPS Watch"
+        assert attributes["device_manufacturer"] == "Garmin"
+
+    def test_extra_state_attributes_no_activity(self):
+        """Test extra state attributes when no activity data."""
+        coordinator = MagicMock()
+        coordinator.data = {
+            "activities": [],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+        coordinator.entry = MagicMock()
+
+        sensor = StravaActivityDeviceInfoSensor(
+            coordinator=coordinator,
+            activity_type="Run",
+            athlete_id="12345",
+        )
+
+        attributes = sensor.extra_state_attributes
+        assert attributes == {}
+
+    def test_extra_state_attributes_partial_data(self):
+        """Test extra state attributes when only some device data is available."""
+        coordinator = MagicMock()
+        # Create activity data with partial device information
+        activities_with_partial_device = [
+            {
+                "id": 123456789,
+                "sport_type": "Run",
+                "title": "Morning Run",
+                "device_name": "Garmin Forerunner 945",
+                "device_type": "GPS Watch",
+                "device_manufacturer": None,  # Missing manufacturer
+            }
+        ]
+        coordinator.data = {
+            "activities": activities_with_partial_device,
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+        coordinator.entry = MagicMock()
+
+        sensor = StravaActivityDeviceInfoSensor(
+            coordinator=coordinator,
+            activity_type="Run",
+            athlete_id="12345",
+        )
+
+        attributes = sensor.extra_state_attributes
+        assert attributes["device_type"] == "GPS Watch"
+        assert "device_manufacturer" not in attributes
 
 
 class TestStravaActivityDateSensor:
