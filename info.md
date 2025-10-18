@@ -2,6 +2,30 @@
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/craibo/ha_strava?color=41BDF5&style=for-the-badge)](https://github.com/craibo/ha_strava/releases/latest)
 [![Integration Usage](https://img.shields.io/badge/dynamic/json?color=41BDF5&style=for-the-badge&logo=home-assistant&label=usage&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.ha_strava.total)](https://analytics.home-assistant.io/)
 
+---
+
+## ⚠️ Breaking Changes in v4.0.0
+
+**This is a major version update with significant architectural changes:**
+
+1. **Complete Sensor Restructure**: All existing sensors will be removed and replaced with a new architecture
+2. **Activity Type Selection**: You must now select which activity types to track (defaults to Run, Ride, Walk, Swim)
+3. **Entity ID Changes**: All sensor entity IDs will change
+4. **No Migration Path**: You must manually reconfigure the integration after updating
+5. **Device Source Tracking**: New feature that automatically detects the device used for each activity
+6. **Removed Dependencies**: No longer requires geocode.xyz API key
+
+**Before updating to v4.0.0:**
+
+- Note down your current sensor entity IDs if you have automations or dashboards using them
+- Plan to reconfigure the integration after the update
+- Consider backing up your Home Assistant configuration
+
+A maintenance mode 3.2 release branch will be maintained for a period of time for those that do not want to upgrade to
+4.0.0.
+
+---
+
 # Strava integration for Home Assistant (Unofficial)
 
 <img src="https://raw.githubusercontent.com/craibo/ha_strava/main/img/api_logo_pwrdBy_strava_stack_light.png">
@@ -14,8 +38,8 @@ When configuring the Strava API, the **Authorization Callback Domain** must be s
 
 ## Features
 
-- Gives you access to **up to 200 of your most recent activities** in Strava.
-- Pulls Recent (last 4 weeks), Year-to-Date (YTD) and All-Time **summary statistics for all 50 supported activity types**
+- Gives you access to **your most recent activities** in Strava.
+- Pulls Recent (last 4 weeks), Year-to-Date (YTD) and All-Time **summary statistics**
 - Creates a **camera entity** in Home Assistant to **feature recent Strava pictures** as a photo-carousel
 - Supports both the **metric and the imperial** unit system
 - Activity data in Home Assistant **auto-updates** whenever you add, modify, or delete activities on Strava
