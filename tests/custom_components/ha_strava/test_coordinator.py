@@ -14,7 +14,6 @@ from custom_components.ha_strava.const import (
     CONF_SENSOR_DISTANCE,
     CONF_SENSOR_ID,
     CONF_SENSOR_TITLE,
-    SUPPORTED_ACTIVITY_TYPES,
 )
 from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
 

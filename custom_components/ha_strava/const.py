@@ -149,6 +149,7 @@ CONF_SENSOR_TITLE = "title"
 CONF_SENSOR_DEVICE_NAME = "device_name"
 CONF_SENSOR_DEVICE_TYPE = "device_type"
 CONF_SENSOR_DEVICE_MANUFACTURER = "device_manufacturer"
+CONF_SENSOR_DEVICE_INFO = "device_info"
 CONF_SENSOR_DATE = "date"
 CONF_SENSOR_LATITUDE = "latitude"
 CONF_SENSOR_LONGITUDE = "longitude"
@@ -202,6 +203,12 @@ CONF_ATTRIBUTE_SENSORS = {
     },
     CONF_SENSOR_DEVICE_MANUFACTURER: {
         "icon": "mdi:factory",
+        "device_class": None,
+        "unit": None,
+        "state_class": None,
+    },
+    CONF_SENSOR_DEVICE_INFO: {
+        "icon": "mdi:devices",
         "device_class": None,
         "unit": None,
         "state_class": None,
@@ -363,9 +370,7 @@ CONF_ACTIVITY_TYPE_SENSOR_METRICS = [
 
 # Individual Attribute Sensors to Create
 CONF_ATTRIBUTE_SENSOR_TYPES = [
-    CONF_SENSOR_DEVICE_NAME,
-    CONF_SENSOR_DEVICE_TYPE,
-    CONF_SENSOR_DEVICE_MANUFACTURER,
+    CONF_SENSOR_DEVICE_INFO,
     CONF_SENSOR_DATE,
     CONF_SENSOR_DISTANCE,
     CONF_SENSOR_MOVING_TIME,
@@ -380,7 +385,6 @@ CONF_ATTRIBUTE_SENSOR_TYPES = [
     CONF_SENSOR_POWER,
     CONF_SENSOR_TROPHIES,
     CONF_SENSOR_KUDOS,
-    CONF_SENSOR_GEAR_NAME,
 ]
 
 # Activity Type Icon Mapping
