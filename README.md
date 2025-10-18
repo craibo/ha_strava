@@ -45,7 +45,17 @@ When configuring the Strava API, the **Authorization Callback Domain** must be s
 - Activity data in Home Assistant **auto-updates** whenever you add, modify, or delete activities on Strava
 - **Activity Type Selection**: Choose which of the 50 supported activity types to track
 - **Device Source Tracking**: Automatically detects and displays the device used for each activity
+- **Webhook-First Architecture**: Uses Strava webhooks for real-time updates, respecting API rate limits
 - **Easy set-up**: only enter your Strava Client-ID and Client-Secret and you're ready to go
+
+## How It Works
+
+This integration uses a **webhook-first architecture** to respect Strava's API rate limits:
+
+- **Initial Setup**: Fetches your data once during configuration
+- **Real-Time Updates**: Uses Strava webhooks to receive updates instantly when you add/modify activities
+- **No Continuous Polling**: Never continuously polls the API, preventing rate limit issues
+- **API Rate Limit Compliance**: Stays well within Strava's limits (100 requests/15min, 1000/day)
 
 <img src="https://raw.githubusercontent.com/craibo/ha_strava/main/img/strava_activity_device.png" width="50%"><img src="https://raw.githubusercontent.com/craibo/ha_strava/main/img/strava_summary_device.png" width="50%">
 

@@ -63,7 +63,11 @@ _STATS_URL_TEMPLATE = "https://www.strava.com/api/v3/athletes/%s/stats"
 
 
 class StravaDataUpdateCoordinator(DataUpdateCoordinator):
-    """Managing fetching data from the Strava API for a single user."""
+    """Managing fetching data from the Strava API for a single user.
+
+    This coordinator only polls during initialization. All subsequent updates
+    are triggered by Strava webhooks to respect API rate limits.
+    """
 
     def __init__(self, hass, *, entry):
         """Initialize the coordinator."""
@@ -86,10 +90,16 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             hass,
             _LOGGER,
             name=DOMAIN,
+            update_interval=None,  # Disable automatic polling - use webhooks only
         )
 
     async def _async_update_data(self):
-        """Fetch data from the Strava API."""
+        """Fetch data from the Strava API.
+
+        This method is called:
+        1. During initial setup (async_config_entry_first_refresh)
+        2. When manually triggered by webhook updates
+        """
         try:
             await self.oauth_session.async_ensure_token_valid()
 

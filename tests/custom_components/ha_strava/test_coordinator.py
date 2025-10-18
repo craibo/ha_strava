@@ -36,6 +36,7 @@ class TestStravaDataUpdateCoordinator:
         assert coordinator.hass == hass
         assert coordinator.entry == mock_config_entry
         assert coordinator.data is None  # DataUpdateCoordinator starts with None
+        assert coordinator.update_interval is None  # Should not poll automatically
 
     @pytest.mark.asyncio
     async def test_fetch_activities_success(
