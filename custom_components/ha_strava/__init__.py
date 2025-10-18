@@ -103,7 +103,7 @@ async def renew_webhook_subscription(
         async with websession.get(url=callback_url) as response:
             response.raise_for_status()
             _LOGGER.debug(f"HA webhook available: {response}")
-    except aiohttp.ClientResponseError as err:
+    except aiohttp.ClientError as err:
         _LOGGER.error(
             f"HA Callback URL for Strava Webhook not available: {err}"  # noqa:E501
         )
