@@ -2,6 +2,25 @@
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/craibo/ha_strava?color=41BDF5&style=for-the-badge)](https://github.com/craibo/ha_strava/releases/latest)
 [![Integration Usage](https://img.shields.io/badge/dynamic/json?color=41BDF5&style=for-the-badge&logo=home-assistant&label=usage&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.ha_strava.total)](https://analytics.home-assistant.io/)
 
+---
+
+# 3.2 Releases now in Maintenance Mode
+
+This version is to support any users that decide to remain on the 3.2.+ releases due to the significant refactor the
+integration with the 4.0.0 release. Home Assistant required updates will still be supported for a period of time.
+
+## 4.0 Release
+
+This version contains a significant refactor the integration.
+
+- Supports multiple Strava accounts
+- Refactors the Devices from Activity based to Activity Type based. This allows tracking historical stats per activity
+  correctly.
+- Allows the user to decide which Activity Types to track
+- Adds additional Device and Gear sensors
+
+---
+
 # Strava integration for Home Assistant (Unofficial)
 
 <img src="https://raw.githubusercontent.com/craibo/ha_strava/main/img/api_logo_pwrdBy_strava_stack_light.png">
