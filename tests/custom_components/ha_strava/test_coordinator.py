@@ -60,13 +60,18 @@ class TestStravaDataUpdateCoordinator:
             payload=mock_strava_activities,
             status=200,
         )
-        # Mock activity detail responses
+        # Mock activity detail responses - only for the most recent activity of each type
+        # Since mock_strava_activities is sorted by date desc, first activity of each type gets detailed call
+        activity_types_seen = set()
         for activity in mock_strava_activities:
-            aioresponses_mock.get(
-                f"https://www.strava.com/api/v3/activities/{activity['id']}",
-                payload={},
-                status=200,
-            )
+            activity_type = activity.get("type")
+            if activity_type not in activity_types_seen:
+                activity_types_seen.add(activity_type)
+                aioresponses_mock.get(
+                    f"https://www.strava.com/api/v3/activities/{activity['id']}",
+                    payload={},
+                    status=200,
+                )
 
         # Test fetch activities
         athlete_id, activities = await coordinator._fetch_activities()
@@ -113,13 +118,21 @@ class TestStravaDataUpdateCoordinator:
             payload=mock_strava_activities_all_types,
             status=200,
         )
-        # Mock activity detail responses
+        # Mock activity detail responses - only for the most recent activity of each selected type
+        # Since mock_strava_activities_all_types is sorted by date desc, first activity of each type gets detailed call
+        activity_types_seen = set()
         for activity in mock_strava_activities_all_types:
-            aioresponses_mock.get(
-                f"https://www.strava.com/api/v3/activities/{activity['id']}",
-                payload={},
-                status=200,
-            )
+            activity_type = activity.get("type")
+            if (
+                activity_type in ["Run", "Ride"]
+                and activity_type not in activity_types_seen
+            ):
+                activity_types_seen.add(activity_type)
+                aioresponses_mock.get(
+                    f"https://www.strava.com/api/v3/activities/{activity['id']}",
+                    payload={},
+                    status=200,
+                )
 
         # Test fetch activities
         athlete_id, activities = await coordinator._fetch_activities()
@@ -494,13 +507,17 @@ class TestStravaDataUpdateCoordinator:
             payload=mock_strava_activities,
             status=200,
         )
-        # Mock activity detail responses
+        # Mock activity detail responses - only for the most recent activity of each type
+        activity_types_seen = set()
         for activity in mock_strava_activities:
-            aioresponses_mock.get(
-                f"https://www.strava.com/api/v3/activities/{activity['id']}",
-                payload={},
-                status=200,
-            )
+            activity_type = activity.get("type")
+            if activity_type not in activity_types_seen:
+                activity_types_seen.add(activity_type)
+                aioresponses_mock.get(
+                    f"https://www.strava.com/api/v3/activities/{activity['id']}",
+                    payload={},
+                    status=200,
+                )
         aioresponses_mock.get(
             "https://www.strava.com/api/v3/athletes/12345/stats",
             payload=mock_strava_stats,
@@ -704,13 +721,17 @@ class TestStravaDataUpdateCoordinator:
             status=200,
             payload=malformed_activities,
         )
-        # Mock activity detail responses
+        # Mock activity detail responses - only for the most recent activity of each type
+        activity_types_seen = set()
         for activity in malformed_activities:
-            aioresponses_mock.get(
-                f"https://www.strava.com/api/v3/activities/{activity['id']}",
-                payload={},
-                status=200,
-            )
+            activity_type = activity.get("type")
+            if activity_type not in activity_types_seen:
+                activity_types_seen.add(activity_type)
+                aioresponses_mock.get(
+                    f"https://www.strava.com/api/v3/activities/{activity['id']}",
+                    payload={},
+                    status=200,
+                )
         aioresponses_mock.get(
             "https://www.strava.com/api/v3/athletes/12345/stats", status=200, payload={}
         )
