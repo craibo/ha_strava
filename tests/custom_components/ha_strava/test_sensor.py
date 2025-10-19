@@ -357,10 +357,10 @@ class TestSensorPlatform:
 
             # Should create main activity sensors + individual attribute sensors + summary stats sensors
             # + recent activity sensors
-            # 4 activity types × (1 main + 15 attribute + 1 gear) + 35 summary stats + 1 recent activity device
+            # 4 activity types × (1 main + 15 attribute + 1 gear) + 29 summary stats + 1 recent activity device
             # (1 main + 15 attribute + 1 gear)
-            # = 103 + 17 = 120 sensors total
-            expected_sensor_count = 120
+            # = 68 + 29 + 17 = 114 sensors total
+            expected_sensor_count = 114
             assert len(call_args) == expected_sensor_count
 
             # Verify that different sensor types are created

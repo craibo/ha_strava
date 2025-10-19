@@ -192,8 +192,6 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     # Metrics to create sensors for
     metrics = ["distance", "count", "moving_time"]
-    # Add elevation_gain for run and ride, but not swim
-    elevation_activities = ["run", "ride"]
 
     # Create individual metric sensors for each activity type and period
     for activity_type in activity_types:
@@ -203,24 +201,16 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                 display_name = f"{period.title()} {activity_type.title()} {metric.replace('_', ' ').title()}"
                 summary_stats_sensors.append((api_key, display_name, metric))
 
-            # Add elevation_gain for run and ride only
-            if activity_type in elevation_activities:
-                api_key = f"{period}_{activity_type}_totals"
-                display_name = (
-                    f"{period.title()} {activity_type.title()} Elevation Gain"
-                )
-                summary_stats_sensors.append((api_key, display_name, "elevation_gain"))
-
-    # Add special metrics
-    summary_stats_sensors.extend(
-        [
-            ("biggest_ride_distance", "Biggest Ride Distance", "biggest_ride_distance"),
-            (
-                "biggest_climb_elevation_gain",
-                "Biggest Climb Elevation Gain",
-                "biggest_climb_elevation_gain",
-            ),
-        ]
+    # Extended Ride Sensors
+    summary_stats_sensors.append(
+        ("biggest_ride_distance", "Longest Ride Distance", "biggest_ride_distance")
+    )
+    summary_stats_sensors.append(
+        (
+            "biggest_climb_elevation_gain",
+            "Biggest Ride Climb Elevation Gain",
+            "biggest_climb_elevation_gain",
+        )
     )
 
     for api_key, display_name, metric_key in summary_stats_sensors:
@@ -328,7 +318,7 @@ class StravaSummaryStatsSensor(CoordinatorEntity, SensorEntity):
             if isinstance(data, dict):
                 numeric_value = data.get(self._metric_key, 0)
             else:
-                numeric_value = data if data else 0
+                numeric_value = data if data is not None else 0
 
             # Ensure we have a numeric value
             try:

@@ -143,7 +143,7 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
         for activity in activities_json:
             athlete_id = int(activity["athlete"]["id"])
             activity_id = int(activity["id"])
-            sport_type = activity.get("type", None)
+            sport_type = activity.get("type")
 
             # Filter activities based on selected activity types
             if sport_type not in selected_activity_types:
