@@ -10,6 +10,21 @@ This file defines patterns for integrating with external APIs, specifically the 
 
 ## Strava API Integration
 
+### API Rate Limits
+
+**CRITICAL**: The Strava API has strict rate limits that must be respected:
+
+- **Read Operations**: 100 requests every 15 minutes, 1000 requests per day
+- **Write Operations**: 100 requests every 15 minutes, 1000 requests per day
+
+**Implementation Requirements**:
+
+- Only poll for data during initialization
+- Use webhooks for all subsequent updates
+- Never implement continuous polling
+- Implement exponential backoff for failed requests
+- Monitor API usage to stay within limits
+
 ### API Endpoints and Authentication
 
 ```python
@@ -146,6 +161,49 @@ async def _fetch_images(self, activities: list[dict]):
             img_urls.append({"date": img_date, "url": img_url})
 
     return img_urls
+```
+
+## Webhook-First Architecture
+
+### Core Principle
+
+**The integration MUST use webhooks for all data updates after initialization. Polling should only occur during the initial setup.**
+
+```python
+class StravaDataUpdateCoordinator(DataUpdateCoordinator):
+    """Coordinator that only polls on initialization, then relies on webhooks."""
+
+    def __init__(self, hass, *, entry):
+        # Set update_interval to None to disable automatic polling
+        super().__init__(
+            hass,
+            _LOGGER,
+            name=DOMAIN,
+            update_interval=None,  # CRITICAL: Disable automatic polling
+        )
+
+    async def async_config_entry_first_refresh(self):
+        """Only poll during initial setup."""
+        await self._async_update_data()
+
+    # No automatic polling - all updates come via webhooks
+```
+
+### Webhook-Triggered Updates
+
+```python
+# In webhook handler
+async def post(self, request: Request) -> Response:
+    """Handle webhook data updates."""
+    # ... validation code ...
+
+    # Find coordinator and trigger manual refresh
+    for entry in self.hass.config_entries.async_entries(DOMAIN):
+        if entry.unique_id == str(owner_id):
+            coordinator = self.hass.data[DOMAIN][entry.entry_id]
+            # Manual refresh triggered by webhook
+            self.hass.async_create_task(coordinator.async_request_refresh())
+            break
 ```
 
 ## Webhook Integration

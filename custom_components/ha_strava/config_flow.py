@@ -211,6 +211,8 @@ class OAuth2FlowHandler(
     DOMAIN = DOMAIN
     CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_PUSH
     _import_photos_from_strava = True
+    _distance_unit_override = CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
+    _activity_types_to_track = DEFAULT_ACTIVITY_TYPES
 
     @property
     def logger(self) -> logging.Logger:
@@ -237,7 +239,18 @@ class OAuth2FlowHandler(
         data_schema = {
             vol.Required(CONF_CLIENT_ID): str,
             vol.Required(CONF_CLIENT_SECRET): str,
-            vol.Required(CONF_PHOTOS, default=self._import_photos_from_strava): bool,
+            vol.Required(CONF_PHOTOS, default=False): bool,
+            vol.Required(
+                CONF_DISTANCE_UNIT_OVERRIDE,
+                default=CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT,
+            ): vol.In(DISTANCE_UNIT_OVERRIDE_OPTIONS),
+            vol.Required(
+                CONF_ACTIVITY_TYPES_TO_TRACK,
+                default=DEFAULT_ACTIVITY_TYPES,
+            ): vol.All(
+                cv.multi_select(SUPPORTED_ACTIVITY_TYPES),
+                vol.Length(min=1, msg="Select at least one activity type"),
+            ),
         }
 
         assert self.hass is not None
@@ -249,6 +262,8 @@ class OAuth2FlowHandler(
 
         if user_input is not None:
             self._import_photos_from_strava = user_input[CONF_PHOTOS]
+            self._distance_unit_override = user_input[CONF_DISTANCE_UNIT_OVERRIDE]
+            self._activity_types_to_track = user_input[CONF_ACTIVITY_TYPES_TO_TRACK]
             config_entry_oauth2_flow.async_register_implementation(
                 self.hass,
                 DOMAIN,
@@ -290,6 +305,8 @@ class OAuth2FlowHandler(
         data[CONF_CLIENT_ID] = self.flow_impl.client_id
         data[CONF_CLIENT_SECRET] = self.flow_impl.client_secret
         data[CONF_PHOTOS] = self._import_photos_from_strava
+        data[CONF_DISTANCE_UNIT_OVERRIDE] = self._distance_unit_override
+        data[CONF_ACTIVITY_TYPES_TO_TRACK] = self._activity_types_to_track
 
         return self.async_create_entry(title=title, data=data)
 

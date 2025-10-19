@@ -1,5 +1,6 @@
 """Data update coordinator for the Strava Home Assistant integration."""
 
+import json
 import logging
 from datetime import datetime as dt
 from typing import Tuple
@@ -18,7 +19,6 @@ from .const import (
     CONF_ATTR_SPORT_TYPE,
     CONF_ATTR_START_LATLONG,
     CONF_PHOTOS,
-    CONF_SENSOR_ACTIVITY_COUNT,
     CONF_SENSOR_ACTIVITY_TYPE,
     CONF_SENSOR_CADENCE_AVG,
     CONF_SENSOR_CALORIES,
@@ -63,7 +63,11 @@ _STATS_URL_TEMPLATE = "https://www.strava.com/api/v3/athletes/%s/stats"
 
 
 class StravaDataUpdateCoordinator(DataUpdateCoordinator):
-    """Managing fetching data from the Strava API for a single user."""
+    """Managing fetching data from the Strava API for a single user.
+
+    This coordinator only polls during initialization. All subsequent updates
+    are triggered by Strava webhooks to respect API rate limits.
+    """
 
     def __init__(self, hass, *, entry):
         """Initialize the coordinator."""
@@ -86,10 +90,16 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             hass,
             _LOGGER,
             name=DOMAIN,
+            update_interval=None,  # Disable automatic polling - use webhooks only
         )
 
     async def _async_update_data(self):
-        """Fetch data from the Strava API."""
+        """Fetch data from the Strava API.
+
+        This method is called:
+        1. During initial setup (async_config_entry_first_refresh)
+        2. When manually triggered by webhook updates
+        """
         try:
             await self.oauth_session.async_ensure_token_valid()
 
@@ -104,16 +114,24 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
                 "images": images,
             }
         except aiohttp.ClientError as err:
+            _LOGGER.error(f"Error communicating with API: {err}")
             raise UpdateFailed(f"Error communicating with API: {err}") from err
 
     async def _fetch_activities(self) -> Tuple[str, list[dict]]:
         _LOGGER.debug("Fetching activities")
-        response = await self.oauth_session.async_request(
-            method="GET",
-            url="https://www.strava.com/api/v3/athlete/activities?per_page=200",
-        )
-        response.raise_for_status()
-        activities_json = await response.json()
+        try:
+            response = await self.oauth_session.async_request(
+                method="GET",
+                url="https://www.strava.com/api/v3/athlete/activities?per_page=200",
+            )
+            response.raise_for_status()
+            activities_json = await response.json()
+        except aiohttp.ClientError as err:
+            _LOGGER.error(f"Error fetching activities: {err}")
+            raise UpdateFailed(f"Error fetching activities: {err}") from err
+        except json.JSONDecodeError as json_err:
+            _LOGGER.error(f"Invalid JSON response: {json_err}")
+            raise UpdateFailed(f"Invalid JSON response: {json_err}") from json_err
 
         # Get selected activity types from config
         selected_activity_types = self.entry.options.get(
@@ -125,7 +143,7 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
         for activity in activities_json:
             athlete_id = int(activity["athlete"]["id"])
             activity_id = int(activity["id"])
-            sport_type = activity.get("type", "Ride")
+            sport_type = activity.get("type")
 
             # Filter activities based on selected activity types
             if sport_type not in selected_activity_types:
@@ -264,7 +282,7 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             CONF_SENSOR_ID: activity.get("id"),
             CONF_SENSOR_TITLE: activity.get("name", "Strava Activity"),
             CONF_SENSOR_CITY: location,
-            CONF_SENSOR_ACTIVITY_TYPE: activity.get("type", "Ride"),
+            CONF_SENSOR_ACTIVITY_TYPE: activity.get("type"),
             CONF_SENSOR_DISTANCE: activity.get("distance"),
             CONF_SENSOR_DATE: dt.strptime(
                 activity.get("start_date_local", "2000-01-01T00:00:00Z"),
@@ -309,69 +327,7 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
         }
 
     def _sensor_summary_stats(self, summary_stats: dict) -> dict:
-        """Generate summary statistics for all supported activity types."""
-        athlete_id = str(summary_stats.get(CONF_SENSOR_ID, ""))
-        result = {}
-
-        # Activity type mapping to Strava API field names
-        activity_type_mapping = {
-            "Ride": "ride",
-            "Run": "run",
-            "Swim": "swim",
-            "MountainBikeRide": "ride",  # Maps to ride totals
-            "GravelRide": "ride",  # Maps to ride totals
-            "EBikeRide": "ride",  # Maps to ride totals
-            "TrailRun": "run",  # Maps to run totals
-            "VirtualRide": "ride",  # Maps to ride totals
-            "VirtualRun": "run",  # Maps to run totals
-        }
-
-        # Activity types and their periods for sensor creation
-        # Always include run, ride, swim for basic functionality
-        base_activity_types = ["run", "ride", "swim"]
-        periods = ["recent", "all", "ytd"]
-
-        for activity_type in base_activity_types:
-            # Map activity type to Strava API field
-            api_field = activity_type_mapping.get(activity_type.title(), activity_type)
-
-            for period in periods:
-                # Create the API key that matches what the sensors expect
-                api_key = f"{period}_{activity_type}_totals"
-
-                # Create summary period data
-                period_data = self._create_summary_period(
-                    athlete_id, summary_stats, f"{period}_{api_field}_totals"
-                )
-
-                # Store the data using the expected API key
-                result[api_key] = period_data
-
-        # Add special metrics
-        result["biggest_ride_distance"] = float(
-            summary_stats.get("biggest_ride_distance", 0) or 0
-        )
-        result["biggest_climb_elevation_gain"] = float(
-            summary_stats.get("biggest_climb_elevation_gain", 0) or 0
-        )
-
-        return result
-
-    def _create_summary_period(
-        self, athlete_id: str, summary_stats: dict, period_key: str
-    ) -> dict:
-        """Create summary statistics for a specific time period."""
-        period_data = summary_stats.get(period_key, {})
-
-        result = {
-            CONF_SENSOR_ID: athlete_id,
-            CONF_SENSOR_DISTANCE: float(period_data.get("distance", 0)),
-            CONF_SENSOR_ACTIVITY_COUNT: int(period_data.get("count", 0)),
-            CONF_SENSOR_MOVING_TIME: int(period_data.get("moving_time", 0)),
-        }
-
-        # Add elevation for non-swimming activities
-        if "swim" not in period_key:
-            result[CONF_SENSOR_ELEVATION] = float(period_data.get("elevation_gain", 0))
-
-        return result
+        """Return raw summary statistics from Strava API."""
+        # Return the raw API response directly
+        # The sensor will handle extracting the specific values
+        return summary_stats

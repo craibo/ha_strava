@@ -14,8 +14,10 @@ from custom_components.ha_strava.config_flow import (
 from custom_components.ha_strava.const import (
     CONF_ACTIVITY_TYPES_TO_TRACK,
     CONF_DISTANCE_UNIT_OVERRIDE,
+    CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT,
     CONF_IMG_UPDATE_INTERVAL_SECONDS,
     CONF_PHOTOS,
+    DEFAULT_ACTIVITY_TYPES,
     SUPPORTED_ACTIVITY_TYPES,
 )
 
@@ -55,6 +57,8 @@ class TestStravaConfigFlow:
                     CONF_CLIENT_ID: "test_client_id",
                     CONF_CLIENT_SECRET: "test_client_secret",
                     CONF_PHOTOS: True,
+                    CONF_DISTANCE_UNIT_OVERRIDE: CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT,
+                    CONF_ACTIVITY_TYPES_TO_TRACK: DEFAULT_ACTIVITY_TYPES,
                 }
                 result = await flow.async_step_user(user_input)
 

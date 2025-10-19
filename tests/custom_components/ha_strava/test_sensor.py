@@ -356,9 +356,11 @@ class TestSensorPlatform:
             call_args = async_add_entities_mock.call_args[0][0]
 
             # Should create main activity sensors + individual attribute sensors + summary stats sensors
-            # 4 activity types × (1 main + 15 attribute + 1 gear) + 35 summary stats
-            # = 103 sensors total
-            expected_sensor_count = 103
+            # + recent activity sensors
+            # 4 activity types × (1 main + 15 attribute + 1 gear) + 35 summary stats + 1 recent activity device
+            # (1 main + 15 attribute + 1 gear)
+            # = 68 + 35 + 17 = 120 sensors total
+            expected_sensor_count = 120
             assert len(call_args) == expected_sensor_count
 
             # Verify that different sensor types are created
@@ -369,6 +371,11 @@ class TestSensorPlatform:
             assert "StravaActivityDateSensor" in sensor_types
             assert "StravaActivityMetricSensor" in sensor_types
             assert "StravaSummaryStatsSensor" in sensor_types
+            assert "StravaRecentActivitySensor" in sensor_types
+            assert "StravaRecentActivityGearSensor" in sensor_types
+            assert "StravaRecentActivityDeviceInfoSensor" in sensor_types
+            assert "StravaRecentActivityDateSensor" in sensor_types
+            assert "StravaRecentActivityMetricSensor" in sensor_types
 
     @pytest.mark.asyncio
     async def test_async_setup_entry_with_activity_types(
@@ -663,6 +670,7 @@ class TestStravaActivityGearSensor:
 
         attributes = sensor.extra_state_attributes
         assert isinstance(attributes, dict)
+        assert attributes["activity_id"] == "1"
         assert attributes["gear_id"] == "b123"
         assert attributes["gear_brand"] == "Trek"
         assert attributes["gear_model"] == "Domane"
@@ -695,7 +703,8 @@ class TestStravaActivityGearSensor:
 
         attributes = sensor.extra_state_attributes
         assert isinstance(attributes, dict)
-        assert len(attributes) == 0  # No gear data, so no attributes
+        assert len(attributes) == 1  # Only activity_id, no gear data
+        assert attributes["activity_id"] == "1"
 
     def test_sensor_icon(self):
         """Test gear sensor icon."""
