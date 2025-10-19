@@ -274,7 +274,17 @@ class StravaSummaryStatsSensor(CoordinatorEntity, SensorEntity):
     def _data(self):
         """Get the raw data for this sensor from the API response."""
         if self.coordinator.data and self.coordinator.data.get("summary_stats"):
-            return self.coordinator.data["summary_stats"].get(self._api_key)
+            summary_stats = self.coordinator.data["summary_stats"]
+
+            # Handle special metrics that are at the top level of summary_stats
+            if self._metric_key in [
+                "biggest_ride_distance",
+                "biggest_climb_elevation_gain",
+            ]:
+                return summary_stats.get(self._metric_key)
+
+            # Handle other metrics that are nested under their respective keys
+            return summary_stats.get(self._api_key)
         return None
 
     @property
