@@ -462,13 +462,13 @@ class TestStravaDataUpdateCoordinator:
                 assert key in stats
                 assert isinstance(stats[key], dict)
 
-        # Verify other types don't have stats (swim should not be present)
+        # Verify other types don't have stats (swim should not be present in mock data)
         other_types = ["swim"]
         for activity_type in other_types:
             for period in ["recent", "ytd", "all"]:
                 key = f"{period}_{activity_type}_totals"
-                # Swim should be present but with empty data since it's always created
-                assert key in stats
+                # Swim should not be present since it's not in the mock data
+                assert key not in stats
 
     @pytest.mark.asyncio
     async def test_coordinator_data_update(
