@@ -1,5 +1,6 @@
 """Data update coordinator for the Strava Home Assistant integration."""
 
+import json
 import logging
 from datetime import datetime as dt
 from typing import Tuple
@@ -113,16 +114,24 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
                 "images": images,
             }
         except aiohttp.ClientError as err:
+            _LOGGER.error(f"Error communicating with API: {err}")
             raise UpdateFailed(f"Error communicating with API: {err}") from err
 
     async def _fetch_activities(self) -> Tuple[str, list[dict]]:
         _LOGGER.debug("Fetching activities")
-        response = await self.oauth_session.async_request(
-            method="GET",
-            url="https://www.strava.com/api/v3/athlete/activities?per_page=200",
-        )
-        response.raise_for_status()
-        activities_json = await response.json()
+        try:
+            response = await self.oauth_session.async_request(
+                method="GET",
+                url="https://www.strava.com/api/v3/athlete/activities?per_page=200",
+            )
+            response.raise_for_status()
+            activities_json = await response.json()
+        except aiohttp.ClientError as err:
+            _LOGGER.error(f"Error fetching activities: {err}")
+            raise UpdateFailed(f"Error fetching activities: {err}") from err
+        except json.JSONDecodeError as json_err:
+            _LOGGER.error(f"Invalid JSON response: {json_err}")
+            raise UpdateFailed(f"Invalid JSON response: {json_err}") from json_err
 
         # Get selected activity types from config
         selected_activity_types = self.entry.options.get(
@@ -134,7 +143,7 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
         for activity in activities_json:
             athlete_id = int(activity["athlete"]["id"])
             activity_id = int(activity["id"])
-            sport_type = activity.get("type", "Ride")
+            sport_type = activity.get("type", None)
 
             # Filter activities based on selected activity types
             if sport_type not in selected_activity_types:
@@ -273,7 +282,7 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             CONF_SENSOR_ID: activity.get("id"),
             CONF_SENSOR_TITLE: activity.get("name", "Strava Activity"),
             CONF_SENSOR_CITY: location,
-            CONF_SENSOR_ACTIVITY_TYPE: activity.get("type", "Ride"),
+            CONF_SENSOR_ACTIVITY_TYPE: activity.get("type"),
             CONF_SENSOR_DISTANCE: activity.get("distance"),
             CONF_SENSOR_DATE: dt.strptime(
                 activity.get("start_date_local", "2000-01-01T00:00:00Z"),
