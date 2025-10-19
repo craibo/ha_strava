@@ -138,26 +138,49 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             CONF_ACTIVITY_TYPES_TO_TRACK, DEFAULT_ACTIVITY_TYPES
         )
 
+        # First pass: Group activities by type and find the most recent of each type
+        activities_by_type = {}
         athlete_id = None
-        activities = []
+
         for activity in activities_json:
             athlete_id = int(activity["athlete"]["id"])
-            activity_id = int(activity["id"])
             sport_type = activity.get("type")
 
             # Filter activities based on selected activity types
             if sport_type not in selected_activity_types:
                 continue
 
-            activity_response = await self.oauth_session.async_request(
-                method="GET",
-                url=f"https://www.strava.com/api/v3/activities/{activity_id}",
-            )
-            activity_dto = (
-                await activity_response.json()
-                if activity_response.status == 200
-                else None
-            )
+            # Track the most recent activity per type (activities_json is already sorted by date desc)
+            if sport_type not in activities_by_type:
+                activities_by_type[sport_type] = activity["id"]
+
+        _LOGGER.debug(f"Found most recent activities per type: {activities_by_type}")
+
+        # Second pass: Fetch detailed info only for the most recent activity of each type
+        activities = []
+        for activity in activities_json:
+            sport_type = activity.get("type")
+
+            if sport_type not in selected_activity_types:
+                continue
+
+            activity_id = int(activity["id"])
+            activity_dto = None
+
+            # Only fetch detailed info for the most recent activity of this type
+            if activity_id == activities_by_type.get(sport_type):
+                _LOGGER.debug(
+                    f"Fetching detailed info for most recent {sport_type} activity: {activity_id}"
+                )
+                activity_response = await self.oauth_session.async_request(
+                    method="GET",
+                    url=f"https://www.strava.com/api/v3/activities/{activity_id}",
+                )
+                activity_dto = (
+                    await activity_response.json()
+                    if activity_response.status == 200
+                    else None
+                )
 
             activities.append(
                 self._sensor_activity(
