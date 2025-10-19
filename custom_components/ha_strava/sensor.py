@@ -280,7 +280,7 @@ class StravaSummaryStatsSensor(CoordinatorEntity, SensorEntity):
                 "biggest_ride_distance",
                 "biggest_climb_elevation_gain",
             ]:
-                return summary_stats.get(self._metric_key)
+                return summary_stats
 
             # Handle other metrics that are nested under their respective keys
             return summary_stats.get(self._api_key)
