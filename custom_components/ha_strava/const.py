@@ -490,6 +490,16 @@ def generate_device_name(athlete_name: str, device_type: str) -> str:
     return f"Strava {athlete_name} {device_type.title()}"
 
 
+def generate_recent_activity_device_id(athlete_id: str) -> str:
+    """Generate standardized recent activity device ID."""
+    return f"strava_{athlete_id}_recent"
+
+
+def generate_recent_activity_device_name(athlete_name: str) -> str:
+    """Generate standardized recent activity device name."""
+    return f"Strava {athlete_name} Recent Activity"
+
+
 def generate_sensor_id(athlete_id: str, activity_type: str, sensor_type: str) -> str:
     """Generate standardized sensor ID."""
     return f"strava_{athlete_id}_{activity_type}_{sensor_type}"
@@ -502,6 +512,18 @@ def generate_sensor_name(
     # Format sensor type for display (replace underscores with spaces and title case)
     formatted_sensor = sensor_type.replace("_", " ").title()
     return f"Strava {athlete_name} {activity_type.title()} {formatted_sensor}"
+
+
+def generate_recent_activity_sensor_id(athlete_id: str, sensor_type: str) -> str:
+    """Generate standardized recent activity sensor ID."""
+    return f"strava_{athlete_id}_recent_{sensor_type}"
+
+
+def generate_recent_activity_sensor_name(athlete_name: str, sensor_type: str) -> str:
+    """Generate standardized recent activity sensor name."""
+    # Format sensor type for display (replace underscores with spaces and title case)
+    formatted_sensor = sensor_type.replace("_", " ").title()
+    return f"Strava {athlete_name} Recent Activity {formatted_sensor}"
 
 
 def normalize_activity_type(activity_type: str) -> str:

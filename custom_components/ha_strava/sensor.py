@@ -63,6 +63,10 @@ from .const import (
     format_activity_type_display,
     generate_device_id,
     generate_device_name,
+    generate_recent_activity_device_id,
+    generate_recent_activity_device_name,
+    generate_recent_activity_sensor_id,
+    generate_recent_activity_sensor_name,
     generate_sensor_id,
     generate_sensor_name,
     get_athlete_name_from_title,
@@ -134,6 +138,49 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                     athlete_id=athlete_id,
                 )
             )
+
+    # Create recent activity device and sensors
+    # This device shows the most recent activity across all activity types
+    entries.append(
+        StravaRecentActivitySensor(
+            coordinator,
+            athlete_id=athlete_id,
+        )
+    )
+
+    # Create individual attribute sensors for recent activity
+    for attribute_type in CONF_ATTRIBUTE_SENSOR_TYPES:
+        if attribute_type == CONF_SENSOR_DEVICE_INFO:
+            entries.append(
+                StravaRecentActivityDeviceInfoSensor(
+                    coordinator,
+                    athlete_id=athlete_id,
+                )
+            )
+        elif attribute_type == CONF_SENSOR_DATE:
+            entries.append(
+                StravaRecentActivityDateSensor(
+                    coordinator,
+                    athlete_id=athlete_id,
+                )
+            )
+        else:
+            # All other metrics
+            entries.append(
+                StravaRecentActivityMetricSensor(
+                    coordinator,
+                    metric_type=attribute_type,
+                    athlete_id=athlete_id,
+                )
+            )
+
+    # Create gear sensor for recent activity
+    entries.append(
+        StravaRecentActivityGearSensor(
+            coordinator,
+            athlete_id=athlete_id,
+        )
+    )
 
     # Create summary statistics sensors (one global device)
     # Break down totals into individual metric sensors
@@ -695,7 +742,10 @@ class StravaActivityGearSensor(StravaActivityAttributeSensor):
             return {}
 
         activity = self._latest_activity
-        attributes = {}
+        activity_id = str(activity.get(CONF_SENSOR_ID))
+        attributes = {
+            CONF_ATTR_ACTIVITY_ID: activity_id,
+        }
 
         # Add all gear-related information as attributes
         gear_id = activity.get(CONF_SENSOR_GEAR_ID)
@@ -794,7 +844,10 @@ class StravaActivityDeviceInfoSensor(StravaActivityAttributeSensor):
             return {}
 
         activity = self._latest_activity
-        attributes = {}
+        activity_id = str(activity.get(CONF_SENSOR_ID))
+        attributes = {
+            CONF_ATTR_ACTIVITY_ID: activity_id,
+        }
 
         device_type = activity.get(CONF_SENSOR_DEVICE_TYPE)
         if device_type:
@@ -827,6 +880,18 @@ class StravaActivityDateSensor(StravaActivityAttributeSensor):
 
         activity = self._latest_activity
         return activity.get(CONF_SENSOR_DATE)
+
+    @property
+    def extra_state_attributes(self):
+        """Return the state attributes."""
+        if not self.available:
+            return {}
+
+        activity = self._latest_activity
+        activity_id = str(activity.get(CONF_SENSOR_ID))
+        return {
+            CONF_ATTR_ACTIVITY_ID: activity_id,
+        }
 
 
 class StravaActivityMetricSensor(StravaActivityAttributeSensor):
@@ -965,3 +1030,489 @@ class StravaActivityMetricSensor(StravaActivityAttributeSensor):
             ),
             2,
         )
+
+    @property
+    def extra_state_attributes(self):
+        """Return the state attributes."""
+        if not self.available:
+            return {}
+
+        activity = self._latest_activity
+        activity_id = str(activity.get(CONF_SENSOR_ID))
+        return {
+            CONF_ATTR_ACTIVITY_ID: activity_id,
+        }
+
+
+class StravaRecentActivitySensor(CoordinatorEntity, SensorEntity):
+    """A sensor for the most recent activity across all activity types."""
+
+    _attr_state_class = None
+    _attr_device_class = None
+
+    def __init__(
+        self,
+        coordinator: StravaDataUpdateCoordinator,
+        athlete_id: str,
+    ):
+        """Initialize the sensor."""
+        super().__init__(coordinator)
+        self._athlete_id = athlete_id
+        self._athlete_name = get_athlete_name_from_title(self.coordinator.entry.title)
+        self._attr_unique_id = f"strava_{athlete_id}_recent"
+
+    @property
+    def device_info(self):
+        """Return device information."""
+        return {
+            "identifiers": {
+                (DOMAIN, generate_recent_activity_device_id(self._athlete_id))
+            },
+            "name": generate_recent_activity_device_name(self._athlete_name),
+            "manufacturer": "Powered by Strava",
+            "model": "Recent Activity",
+            "configuration_url": f"{STRAVA_ACTHLETE_BASE_URL}{self._athlete_id}",
+        }
+
+    @property
+    def _latest_activity(self):
+        """Get the most recent activity across all types."""
+        if not self.coordinator.data or not self.coordinator.data.get("activities"):
+            return None
+
+        activities = self.coordinator.data["activities"]
+        if activities:
+            return activities[0]
+        return None
+
+    @property
+    def available(self):
+        """Return if entity is available."""
+        return self._latest_activity is not None
+
+    @property
+    def icon(self):
+        """Return the icon of the sensor."""
+        if not self.available:
+            return "mdi:run"
+
+        activity = self._latest_activity
+        activity_type = activity.get(CONF_ATTR_SPORT_TYPE, "Run")
+        return ACTIVITY_TYPE_ICONS.get(activity_type, "mdi:run")
+
+    @property
+    def native_value(self):
+        """Return the state of the sensor."""
+        if not self.available:
+            return None
+
+        activity = self._latest_activity
+        return activity.get(CONF_SENSOR_TITLE, "Latest Activity")
+
+    @property
+    def name(self):
+        """Return the name of the sensor."""
+        return f"Strava {self._athlete_name} Recent Activity"
+
+    @property
+    def extra_state_attributes(self):
+        """Return the state attributes."""
+        if not self.available:
+            return {}
+
+        activity = self._latest_activity
+        activity_id = str(activity.get(CONF_SENSOR_ID))
+
+        attrs = {
+            CONF_ATTR_ACTIVITY_ID: activity_id,
+            CONF_ATTR_SPORT_TYPE: activity.get(CONF_ATTR_SPORT_TYPE),
+            CONF_ATTR_LOCATION: activity.get(CONF_SENSOR_CITY),
+            CONF_ATTR_COMMUTE: activity.get(CONF_ATTR_COMMUTE),
+            CONF_ATTR_PRIVATE: activity.get(CONF_ATTR_PRIVATE),
+            CONF_ATTR_ACTIVITY_URL: f"{STRAVA_ACTIVITY_BASE_URL}{activity_id}",
+            CONF_ATTR_POLYLINE: activity.get(CONF_ATTR_POLYLINE),
+        }
+
+        if start_latlng := activity.get(CONF_ATTR_START_LATLONG):
+            attrs[CONF_SENSOR_LATITUDE] = float(start_latlng[0])
+            attrs[CONF_SENSOR_LONGITUDE] = float(start_latlng[1])
+
+        return attrs
+
+
+class StravaRecentActivityAttributeSensor(CoordinatorEntity, SensorEntity):
+    """Base class for individual recent activity attribute sensors."""
+
+    def __init__(
+        self,
+        coordinator: StravaDataUpdateCoordinator,
+        attribute_type: str,
+        athlete_id: str,
+    ):
+        """Initialize the sensor."""
+        super().__init__(coordinator)
+        self._attribute_type = attribute_type
+        self._athlete_id = athlete_id
+        self._athlete_name = get_athlete_name_from_title(self.coordinator.entry.title)
+        self._attr_unique_id = generate_recent_activity_sensor_id(
+            athlete_id, attribute_type
+        )
+
+    @property
+    def device_info(self):
+        """Return device information."""
+        return {
+            "identifiers": {
+                (DOMAIN, generate_recent_activity_device_id(self._athlete_id))
+            },
+            "name": generate_recent_activity_device_name(self._athlete_name),
+            "manufacturer": "Powered by Strava",
+            "model": "Recent Activity",
+            "configuration_url": f"{STRAVA_ACTHLETE_BASE_URL}{self._athlete_id}",
+        }
+
+    @property
+    def _latest_activity(self):
+        """Get the most recent activity across all types."""
+        if not self.coordinator.data or not self.coordinator.data.get("activities"):
+            return None
+
+        activities = self.coordinator.data["activities"]
+        if activities:
+            return activities[0]
+        return None
+
+    @property
+    def available(self):
+        """Return if entity is available."""
+        return self._latest_activity is not None
+
+    @property
+    def icon(self):
+        """Return the icon of the sensor."""
+        return CONF_ATTRIBUTE_SENSORS.get(self._attribute_type, {}).get(
+            "icon", "mdi:information"
+        )
+
+    @property
+    def device_class(self):
+        """Return the device class of the sensor."""
+        return CONF_ATTRIBUTE_SENSORS.get(self._attribute_type, {}).get("device_class")
+
+    @property
+    def state_class(self):
+        """Return the state class of the sensor."""
+        return CONF_ATTRIBUTE_SENSORS.get(self._attribute_type, {}).get("state_class")
+
+    @property
+    def name(self):
+        """Return the name of the sensor."""
+        return generate_recent_activity_sensor_name(
+            self._athlete_name,
+            self._attribute_type,
+        )
+
+    def _get_value_or_unavailable(self, value):
+        """Return the value or None if None, blank, or -1."""
+        if value is None or value == "" or value == -1:
+            return None
+        return value
+
+    def _is_metric(self):
+        """Determine if the user has configured metric units."""
+        override = self.coordinator.entry.options.get(CONF_DISTANCE_UNIT_OVERRIDE)
+        if override == CONF_DISTANCE_UNIT_OVERRIDE_METRIC:
+            return True
+        if override == CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT:
+            return self.hass.config.units is METRIC_SYSTEM
+        return False
+
+
+class StravaRecentActivityGearSensor(StravaRecentActivityAttributeSensor):
+    """Sensor for gear information on recent activity."""
+
+    def __init__(
+        self,
+        coordinator: StravaDataUpdateCoordinator,
+        athlete_id: str,
+    ):
+        """Initialize the sensor."""
+        super().__init__(coordinator, CONF_SENSOR_GEAR_NAME, athlete_id)
+
+    @property
+    def native_value(self):
+        """Return the gear name as the sensor value."""
+        if not self.available:
+            return None
+
+        activity = self._latest_activity
+        return self._get_value_or_unavailable(activity.get(CONF_SENSOR_GEAR_NAME))
+
+    @property
+    def extra_state_attributes(self):
+        """Return gear-related attributes."""
+        if not self.available:
+            return {}
+
+        activity = self._latest_activity
+        activity_id = str(activity.get(CONF_SENSOR_ID))
+        attributes = {
+            CONF_ATTR_ACTIVITY_ID: activity_id,
+        }
+
+        gear_id = activity.get(CONF_SENSOR_GEAR_ID)
+        if gear_id:
+            attributes["gear_id"] = gear_id
+
+        gear_brand = activity.get(CONF_SENSOR_GEAR_BRAND)
+        if gear_brand:
+            attributes["gear_brand"] = gear_brand
+
+        gear_model = activity.get(CONF_SENSOR_GEAR_MODEL)
+        if gear_model:
+            attributes["gear_model"] = gear_model
+
+        gear_distance = activity.get(CONF_SENSOR_GEAR_DISTANCE)
+        if gear_distance is not None:
+            is_metric = self._is_metric()
+            if is_metric:
+                attributes["gear_distance"] = round(gear_distance / 1000, 2)
+                attributes["gear_distance_unit"] = "km"
+            else:
+                attributes["gear_distance"] = round(gear_distance * 3.28084, 2)
+                attributes["gear_distance_unit"] = "miles"
+
+        gear_description = activity.get(CONF_SENSOR_GEAR_DESCRIPTION)
+        if gear_description:
+            attributes["gear_description"] = gear_description
+
+        gear_primary = activity.get(CONF_SENSOR_GEAR_PRIMARY)
+        if gear_primary is not None:
+            attributes["gear_primary"] = gear_primary
+
+        gear_frame_type = activity.get(CONF_SENSOR_GEAR_FRAME_TYPE)
+        if gear_frame_type is not None:
+            attributes["gear_frame_type"] = gear_frame_type
+
+        return attributes
+
+
+class StravaRecentActivityDeviceInfoSensor(StravaRecentActivityAttributeSensor):
+    """Sensor for device information on recent activity."""
+
+    def __init__(
+        self,
+        coordinator: StravaDataUpdateCoordinator,
+        athlete_id: str,
+    ):
+        """Initialize the sensor."""
+        super().__init__(coordinator, CONF_SENSOR_DEVICE_INFO, athlete_id)
+
+    @property
+    def native_value(self):
+        """Return device name as the sensor value."""
+        if not self.available:
+            return None
+
+        activity = self._latest_activity
+        return self._get_value_or_unavailable(activity.get(CONF_SENSOR_DEVICE_NAME))
+
+    @property
+    def extra_state_attributes(self):
+        """Return device type and manufacturer as attributes."""
+        if not self.available:
+            return {}
+
+        activity = self._latest_activity
+        activity_id = str(activity.get(CONF_SENSOR_ID))
+        attributes = {
+            CONF_ATTR_ACTIVITY_ID: activity_id,
+        }
+
+        device_type = activity.get(CONF_SENSOR_DEVICE_TYPE)
+        if device_type:
+            attributes["device_type"] = device_type
+
+        device_manufacturer = activity.get(CONF_SENSOR_DEVICE_MANUFACTURER)
+        if device_manufacturer:
+            attributes["device_manufacturer"] = device_manufacturer
+
+        return attributes
+
+
+class StravaRecentActivityDateSensor(StravaRecentActivityAttributeSensor):
+    """Sensor for recent activity date."""
+
+    def __init__(
+        self,
+        coordinator: StravaDataUpdateCoordinator,
+        athlete_id: str,
+    ):
+        """Initialize the sensor."""
+        super().__init__(coordinator, CONF_SENSOR_DATE, athlete_id)
+
+    @property
+    def native_value(self):
+        """Return the state of the sensor."""
+        if not self.available:
+            return None
+
+        activity = self._latest_activity
+        return activity.get(CONF_SENSOR_DATE)
+
+    @property
+    def extra_state_attributes(self):
+        """Return the state attributes."""
+        if not self.available:
+            return {}
+
+        activity = self._latest_activity
+        activity_id = str(activity.get(CONF_SENSOR_ID))
+        return {
+            CONF_ATTR_ACTIVITY_ID: activity_id,
+        }
+
+
+class StravaRecentActivityMetricSensor(StravaRecentActivityAttributeSensor):
+    """Sensor for recent activity metrics."""
+
+    def __init__(
+        self,
+        coordinator: StravaDataUpdateCoordinator,
+        metric_type: str,
+        athlete_id: str,
+    ):
+        """Initialize the sensor."""
+        super().__init__(coordinator, metric_type, athlete_id)
+        self._metric_type = metric_type
+
+    @property
+    def native_value(self):
+        """Return the state of the sensor."""
+        if not self.available:
+            return None
+
+        activity = self._latest_activity
+
+        if self._metric_type == CONF_SENSOR_PACE:
+            return self._calculate_pace(activity)
+        elif self._metric_type == CONF_SENSOR_SPEED:
+            return self._calculate_speed(activity)
+        else:
+            value = self._get_value_or_unavailable(activity.get(self._metric_type))
+
+            if self._metric_type == CONF_SENSOR_DISTANCE:
+                distance = value / 1000 if value else 0
+                is_metric = self._is_metric()
+                if is_metric:
+                    return round(distance, 2)
+                return round(
+                    DistanceConverter.convert(
+                        distance, UnitOfLength.KILOMETERS, UnitOfLength.MILES
+                    ),
+                    2,
+                )
+            elif self._metric_type == CONF_SENSOR_ELEVATION:
+                elevation = value if value else 0
+                is_metric = self._is_metric()
+                if is_metric:
+                    return round(elevation, 2)
+                return round(
+                    DistanceConverter.convert(
+                        elevation, UnitOfLength.METERS, UnitOfLength.FEET
+                    ),
+                    2,
+                )
+            else:
+                return value
+
+    @property
+    def native_unit_of_measurement(self):
+        """Return the unit of measurement."""
+        config = CONF_ATTRIBUTE_SENSORS.get(self._metric_type, {})
+        unit = config.get("unit")
+
+        if not unit:
+            return None
+
+        if self._metric_type in [CONF_SENSOR_DISTANCE, CONF_SENSOR_ELEVATION]:
+            is_metric = self._is_metric()
+            if self._metric_type == CONF_SENSOR_DISTANCE:
+                return UnitOfLength.KILOMETERS if is_metric else UnitOfLength.MILES
+            else:
+                return UnitOfLength.METERS if is_metric else UnitOfLength.FEET
+        elif self._metric_type == CONF_SENSOR_SPEED:
+            is_metric = self._is_metric()
+            return (
+                UnitOfSpeed.KILOMETERS_PER_HOUR
+                if is_metric
+                else UnitOfSpeed.MILES_PER_HOUR
+            )
+        elif self._metric_type in [CONF_SENSOR_MOVING_TIME, CONF_SENSOR_ELAPSED_TIME]:
+            return UnitOfTime.SECONDS
+        elif self._metric_type == CONF_SENSOR_CALORIES:
+            return "kcal"
+        elif self._metric_type in [
+            CONF_SENSOR_HEART_RATE_AVG,
+            CONF_SENSOR_HEART_RATE_MAX,
+        ]:
+            return "bpm"
+        elif self._metric_type == CONF_SENSOR_CADENCE_AVG:
+            return "spm"
+        elif self._metric_type == CONF_SENSOR_POWER:
+            return "W"
+
+        return unit
+
+    def _calculate_pace(self, activity):
+        """Calculate pace for the activity."""
+        distance = activity.get(CONF_SENSOR_DISTANCE, 0)
+        moving_time = activity.get(CONF_SENSOR_MOVING_TIME, 0)
+
+        if distance == 0 or moving_time == 0:
+            return "0:00"
+
+        pace = moving_time / (distance / 1000)
+        is_metric = self._is_metric()
+
+        if not is_metric:
+            pace = DistanceConverter.convert(
+                pace, UnitOfLength.KILOMETERS, UnitOfLength.MILES
+            )
+
+        minutes = int(pace // 60)
+        seconds = int(pace % 60)
+        unit = (
+            UNIT_PACE_MINUTES_PER_KILOMETER if is_metric else UNIT_PACE_MINUTES_PER_MILE
+        )
+        return f"{minutes}:{seconds:02} {unit}"
+
+    def _calculate_speed(self, activity):
+        """Calculate speed for the activity."""
+        distance = activity.get(CONF_SENSOR_DISTANCE, 0)
+        moving_time = activity.get(CONF_SENSOR_MOVING_TIME, 1)
+
+        speed = (distance / 1000) / (moving_time / 3600)
+        is_metric = self._is_metric()
+
+        if is_metric:
+            return round(speed, 2)
+
+        return round(
+            SpeedConverter.convert(
+                speed, UnitOfSpeed.KILOMETERS_PER_HOUR, UnitOfSpeed.MILES_PER_HOUR
+            ),
+            2,
+        )
+
+    @property
+    def extra_state_attributes(self):
+        """Return the state attributes."""
+        if not self.available:
+            return {}
+
+        activity = self._latest_activity
+        activity_id = str(activity.get(CONF_SENSOR_ID))
+        return {
+            CONF_ATTR_ACTIVITY_ID: activity_id,
+        }
