@@ -192,6 +192,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     # Metrics to create sensors for
     metrics = ["distance", "count", "moving_time"]
+    # Add elevation_gain for run and ride, but not swim
+    elevation_activities = ["run", "ride"]
 
     # Create individual metric sensors for each activity type and period
     for activity_type in activity_types:
@@ -200,6 +202,13 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                 api_key = f"{period}_{activity_type}_totals"
                 display_name = f"{period.title()} {activity_type.title()} {metric.replace('_', ' ').title()}"
                 summary_stats_sensors.append((api_key, display_name, metric))
+
+            if activity_type in elevation_activities:
+                api_key = f"{period}_{activity_type}_totals"
+                display_name = (
+                    f"{period.title()} {activity_type.title()} Elevation Gain"
+                )
+                summary_stats_sensors.append((api_key, display_name, "elevation_gain"))
 
     # Extended Ride Sensors
     summary_stats_sensors.append(
@@ -271,7 +280,7 @@ class StravaSummaryStatsSensor(CoordinatorEntity, SensorEntity):
                 "biggest_ride_distance",
                 "biggest_climb_elevation_gain",
             ]:
-                return summary_stats.get(self._metric_key)
+                return summary_stats
 
             # Handle other metrics that are nested under their respective keys
             return summary_stats.get(self._api_key)
