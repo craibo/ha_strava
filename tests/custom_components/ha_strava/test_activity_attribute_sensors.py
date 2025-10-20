@@ -600,3 +600,171 @@ class TestStravaActivityMetricSensor:
         )
 
         assert sensor.state_class == "measurement"
+
+    def test_calories_sensor_data_processing(self):
+        """Test calories sensor data processing with different data scenarios."""
+        # Test with direct calories data
+        coordinator = MagicMock()
+        coordinator.data = {
+            "activities": [
+                {
+                    "id": 1,
+                    "type": "Run",
+                    "sport_type": "Run",
+                    "kcal": 300,  # Direct calories from coordinator processing
+                }
+            ],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+        coordinator.entry = MagicMock()
+
+        sensor = StravaActivityMetricSensor(
+            coordinator=coordinator,
+            activity_type="Run",
+            metric_type=CONF_SENSOR_CALORIES,
+            athlete_id="12345",
+        )
+
+        # Test with valid calories data
+        state = sensor.native_value
+        assert state == 300
+
+        # Test with None calories data (no calories available)
+        coordinator.data = {
+            "activities": [
+                {
+                    "id": 1,
+                    "type": "Run",
+                    "sport_type": "Run",
+                    "kcal": None,  # No calories data
+                }
+            ],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+
+        state = sensor.native_value
+        assert state is None
+
+        # Test with empty string calories data
+        coordinator.data = {
+            "activities": [
+                {
+                    "id": 1,
+                    "type": "Run",
+                    "sport_type": "Run",
+                    "kcal": "",  # Empty string
+                }
+            ],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+
+        state = sensor.native_value
+        assert state is None
+
+        # Test with -1 calories data (invalid)
+        coordinator.data = {
+            "activities": [
+                {
+                    "id": 1,
+                    "type": "Run",
+                    "sport_type": "Run",
+                    "kcal": -1,  # Invalid calories
+                }
+            ],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+
+        state = sensor.native_value
+        assert state is None
+
+    def test_power_sensor_data_processing(self):
+        """Test power sensor data processing with different data scenarios."""
+        # Test with valid power data
+        coordinator = MagicMock()
+        coordinator.data = {
+            "activities": [
+                {
+                    "id": 1,
+                    "type": "Ride",
+                    "sport_type": "Ride",
+                    "power": 200,  # Valid power data
+                }
+            ],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+        coordinator.entry = MagicMock()
+
+        sensor = StravaActivityMetricSensor(
+            coordinator=coordinator,
+            activity_type="Ride",
+            metric_type=CONF_SENSOR_POWER,
+            athlete_id="12345",
+        )
+
+        # Test with valid power data
+        state = sensor.native_value
+        assert state == 200
+
+        # Test with zero power data (valid)
+        coordinator.data = {
+            "activities": [
+                {
+                    "id": 1,
+                    "type": "Ride",
+                    "sport_type": "Ride",
+                    "power": 0,  # Zero power is valid
+                }
+            ],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+
+        state = sensor.native_value
+        assert state == 0
+
+        # Test with None power data (no power meter)
+        coordinator.data = {
+            "activities": [
+                {
+                    "id": 1,
+                    "type": "Run",
+                    "sport_type": "Run",
+                    "power": None,  # No power data
+                }
+            ],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+
+        state = sensor.native_value
+        assert state is None
+
+        # Test with -1 power data (invalid, should be filtered)
+        coordinator.data = {
+            "activities": [
+                {
+                    "id": 1,
+                    "type": "Ride",
+                    "sport_type": "Ride",
+                    "power": -1,  # Invalid power
+                }
+            ],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+
+        state = sensor.native_value
+        assert state is None
+
+        # Test with empty string power data
+        coordinator.data = {
+            "activities": [
+                {
+                    "id": 1,
+                    "type": "Ride",
+                    "sport_type": "Ride",
+                    "power": "",  # Empty string
+                }
+            ],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+
+        state = sensor.native_value
+        assert state is None
