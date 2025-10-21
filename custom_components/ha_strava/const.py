@@ -33,6 +33,11 @@ CONF_DISTANCE_UNIT_OVERRIDE_IMPERIAL = "imperial"
 CONF_ACTIVITY_TYPES_TO_TRACK = "activity_types_to_track"
 DEFAULT_ACTIVITY_TYPES = ["Run", "Ride", "Swim"]
 
+# Recent Activity Configuration
+CONF_NUM_RECENT_ACTIVITIES = "num_recent_activities"
+CONF_NUM_RECENT_ACTIVITIES_DEFAULT = 1
+CONF_NUM_RECENT_ACTIVITIES_MAX = 10
+
 STRAVA_ACTIVITY_BASE_URL = "https://www.strava.com/activities/"
 STRAVA_ACTHLETE_BASE_URL = "https://www.strava.com/dashboard"
 
@@ -490,14 +495,20 @@ def generate_device_name(athlete_name: str, device_type: str) -> str:
     return f"Strava {athlete_name} {device_type.title()}"
 
 
-def generate_recent_activity_device_id(athlete_id: str) -> str:
+def generate_recent_activity_device_id(athlete_id: str, activity_index: int = 0) -> str:
     """Generate standardized recent activity device ID."""
-    return f"strava_{athlete_id}_recent"
+    if activity_index == 0:
+        return f"strava_{athlete_id}_recent"
+    return f"strava_{athlete_id}_recent_{activity_index + 1}"
 
 
-def generate_recent_activity_device_name(athlete_name: str) -> str:
+def generate_recent_activity_device_name(
+    athlete_name: str, activity_index: int = 0
+) -> str:
     """Generate standardized recent activity device name."""
-    return f"Strava {athlete_name} Recent Activity"
+    if activity_index == 0:
+        return f"Strava {athlete_name} Recent Activity"
+    return f"Strava {athlete_name} Recent Activity {activity_index + 1}"
 
 
 def generate_sensor_id(athlete_id: str, activity_type: str, sensor_type: str) -> str:
@@ -514,16 +525,26 @@ def generate_sensor_name(
     return f"Strava {athlete_name} {activity_type.title()} {formatted_sensor}"
 
 
-def generate_recent_activity_sensor_id(athlete_id: str, sensor_type: str) -> str:
+def generate_recent_activity_sensor_id(
+    athlete_id: str, sensor_type: str, activity_index: int = 0
+) -> str:
     """Generate standardized recent activity sensor ID."""
-    return f"strava_{athlete_id}_recent_{sensor_type}"
+    if activity_index == 0:
+        return f"strava_{athlete_id}_recent_{sensor_type}"
+    return f"strava_{athlete_id}_recent_{activity_index + 1}_{sensor_type}"
 
 
-def generate_recent_activity_sensor_name(athlete_name: str, sensor_type: str) -> str:
+def generate_recent_activity_sensor_name(
+    athlete_name: str, sensor_type: str, activity_index: int = 0
+) -> str:
     """Generate standardized recent activity sensor name."""
     # Format sensor type for display (replace underscores with spaces and title case)
     formatted_sensor = sensor_type.replace("_", " ").title()
-    return f"Strava {athlete_name} Recent Activity {formatted_sensor}"
+    if activity_index == 0:
+        return f"Strava {athlete_name} Recent Activity {formatted_sensor}"
+    return (
+        f"Strava {athlete_name} Recent Activity {activity_index + 1} {formatted_sensor}"
+    )
 
 
 def normalize_activity_type(activity_type: str) -> str:
