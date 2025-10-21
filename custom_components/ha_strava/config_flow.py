@@ -29,6 +29,9 @@ from .const import (
     CONF_DISTANCE_UNIT_OVERRIDE_METRIC,
     CONF_IMG_UPDATE_INTERVAL_SECONDS,
     CONF_IMG_UPDATE_INTERVAL_SECONDS_DEFAULT,
+    CONF_NUM_RECENT_ACTIVITIES,
+    CONF_NUM_RECENT_ACTIVITIES_DEFAULT,
+    CONF_NUM_RECENT_ACTIVITIES_MAX,
     CONF_PHOTOS,
     DEFAULT_ACTIVITY_TYPES,
     DOMAIN,
@@ -58,6 +61,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         self._img_update_interval_seconds = None
         self._config_distance_unit_override = None
         self._selected_activity_types = None
+        self._num_recent_activities = None
 
     async def show_form_init(self):
         """
@@ -104,6 +108,20 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                             CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT,
                         ),
                     ): vol.In(DISTANCE_UNIT_OVERRIDE_OPTIONS),
+                    vol.Required(
+                        CONF_NUM_RECENT_ACTIVITIES,
+                        default=self.config_entry.options.get(
+                            CONF_NUM_RECENT_ACTIVITIES,
+                            CONF_NUM_RECENT_ACTIVITIES_DEFAULT,
+                        ),
+                    ): vol.All(
+                        vol.Coerce(int),
+                        vol.Range(
+                            min=1,
+                            max=CONF_NUM_RECENT_ACTIVITIES_MAX,
+                            msg=f"Must be between 1 and {CONF_NUM_RECENT_ACTIVITIES_MAX}",
+                        ),
+                    ),
                 }
             ),
         )
@@ -121,6 +139,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
             # Enable/disable entities based on selected activity types
             selected_activity_types = user_input.get(CONF_ACTIVITY_TYPES_TO_TRACK, [])
+            new_num_recent_activities = user_input.get(CONF_NUM_RECENT_ACTIVITIES, 1)
 
             for entity in entities:
                 try:
@@ -152,6 +171,38 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                                     entity.entity_id,
                                     disabled_by=RegistryEntryDisabler.INTEGRATION,
                                 )
+                    # Handle recent activity entities
+                    elif "strava_recent" in entity.entity_id:
+                        # Extract activity index from entity ID
+                        parts = entity.entity_id.split("_")
+                        if len(parts) >= 3:
+                            # Check if this is a numbered recent activity (e.g., strava_123_recent_2_title)
+                            if (
+                                len(parts) >= 4
+                                and parts[2] == "recent"
+                                and parts[3].isdigit()
+                            ):
+                                activity_index = int(parts[3])
+                                if activity_index <= new_num_recent_activities:
+                                    _entity_registry.async_update_entity(
+                                        entity.entity_id, disabled_by=None
+                                    )
+                                else:
+                                    _entity_registry.async_update_entity(
+                                        entity.entity_id,
+                                        disabled_by=RegistryEntryDisabler.INTEGRATION,
+                                    )
+                            # Handle the first recent activity (no number)
+                            elif len(parts) == 3 and parts[2] == "recent":
+                                if new_num_recent_activities >= 1:
+                                    _entity_registry.async_update_entity(
+                                        entity.entity_id, disabled_by=None
+                                    )
+                                else:
+                                    _entity_registry.async_update_entity(
+                                        entity.entity_id,
+                                        disabled_by=RegistryEntryDisabler.INTEGRATION,
+                                    )
                     # Handle camera entities
                     elif "strava_cam" in entity.entity_id:
                         if user_input.get(CONF_PHOTOS):
@@ -178,6 +229,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             self._config_distance_unit_override = user_input.get(
                 CONF_DISTANCE_UNIT_OVERRIDE
             )
+            self._num_recent_activities = user_input.get(CONF_NUM_RECENT_ACTIVITIES)
             self._config_entry_title = self.config_entry.title
 
             ha_strava_options = {  # pylint: disable=unnecessary-comprehension
@@ -194,6 +246,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             ha_strava_options[CONF_DISTANCE_UNIT_OVERRIDE] = (
                 self._config_distance_unit_override
             )
+            ha_strava_options[CONF_NUM_RECENT_ACTIVITIES] = self._num_recent_activities
 
             _LOGGER.debug(f"Strava Config Options: {ha_strava_options}")
             return self.async_create_entry(
@@ -213,6 +266,7 @@ class OAuth2FlowHandler(
     _import_photos_from_strava = True
     _distance_unit_override = CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
     _activity_types_to_track = DEFAULT_ACTIVITY_TYPES
+    _num_recent_activities = CONF_NUM_RECENT_ACTIVITIES_DEFAULT
 
     @property
     def logger(self) -> logging.Logger:
@@ -251,6 +305,17 @@ class OAuth2FlowHandler(
                 cv.multi_select(SUPPORTED_ACTIVITY_TYPES),
                 vol.Length(min=1, msg="Select at least one activity type"),
             ),
+            vol.Required(
+                CONF_NUM_RECENT_ACTIVITIES,
+                default=CONF_NUM_RECENT_ACTIVITIES_DEFAULT,
+            ): vol.All(
+                vol.Coerce(int),
+                vol.Range(
+                    min=1,
+                    max=CONF_NUM_RECENT_ACTIVITIES_MAX,
+                    msg=f"Must be between 1 and {CONF_NUM_RECENT_ACTIVITIES_MAX}",
+                ),
+            ),
         }
 
         assert self.hass is not None
@@ -264,6 +329,7 @@ class OAuth2FlowHandler(
             self._import_photos_from_strava = user_input[CONF_PHOTOS]
             self._distance_unit_override = user_input[CONF_DISTANCE_UNIT_OVERRIDE]
             self._activity_types_to_track = user_input[CONF_ACTIVITY_TYPES_TO_TRACK]
+            self._num_recent_activities = user_input[CONF_NUM_RECENT_ACTIVITIES]
             config_entry_oauth2_flow.async_register_implementation(
                 self.hass,
                 DOMAIN,
@@ -307,6 +373,7 @@ class OAuth2FlowHandler(
         data[CONF_PHOTOS] = self._import_photos_from_strava
         data[CONF_DISTANCE_UNIT_OVERRIDE] = self._distance_unit_override
         data[CONF_ACTIVITY_TYPES_TO_TRACK] = self._activity_types_to_track
+        data[CONF_NUM_RECENT_ACTIVITIES] = self._num_recent_activities
 
         return self.async_create_entry(title=title, data=data)
 

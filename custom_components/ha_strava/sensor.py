@@ -24,6 +24,8 @@ from .const import (
     CONF_DISTANCE_UNIT_OVERRIDE,
     CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT,
     CONF_DISTANCE_UNIT_OVERRIDE_METRIC,
+    CONF_NUM_RECENT_ACTIVITIES,
+    CONF_NUM_RECENT_ACTIVITIES_DEFAULT,
     CONF_SENSOR_CADENCE_AVG,
     CONF_SENSOR_CALORIES,
     CONF_SENSOR_CITY,
@@ -87,6 +89,11 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         CONF_ACTIVITY_TYPES_TO_TRACK, DEFAULT_ACTIVITY_TYPES
     )
 
+    # Get number of recent activities from config, default to 1
+    num_recent_activities = config_entry.options.get(
+        CONF_NUM_RECENT_ACTIVITIES, CONF_NUM_RECENT_ACTIVITIES_DEFAULT
+    )
+
     entries = []
 
     # Create activity type sensors for each selected activity type
@@ -139,48 +146,55 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
                 )
             )
 
-    # Create recent activity device and sensors
-    # This device shows the most recent activity across all activity types
-    entries.append(
-        StravaRecentActivitySensor(
-            coordinator,
-            athlete_id=athlete_id,
+    # Create recent activity devices and sensors
+    # Create N recent activity devices based on user configuration
+    for activity_index in range(num_recent_activities):
+        # Main recent activity sensor
+        entries.append(
+            StravaRecentActivitySensor(
+                coordinator,
+                athlete_id=athlete_id,
+                activity_index=activity_index,
+            )
         )
-    )
 
-    # Create individual attribute sensors for recent activity
-    for attribute_type in CONF_ATTRIBUTE_SENSOR_TYPES:
-        if attribute_type == CONF_SENSOR_DEVICE_INFO:
-            entries.append(
-                StravaRecentActivityDeviceInfoSensor(
-                    coordinator,
-                    athlete_id=athlete_id,
+        # Create individual attribute sensors for this recent activity
+        for attribute_type in CONF_ATTRIBUTE_SENSOR_TYPES:
+            if attribute_type == CONF_SENSOR_DEVICE_INFO:
+                entries.append(
+                    StravaRecentActivityDeviceInfoSensor(
+                        coordinator,
+                        athlete_id=athlete_id,
+                        activity_index=activity_index,
+                    )
                 )
-            )
-        elif attribute_type == CONF_SENSOR_DATE:
-            entries.append(
-                StravaRecentActivityDateSensor(
-                    coordinator,
-                    athlete_id=athlete_id,
+            elif attribute_type == CONF_SENSOR_DATE:
+                entries.append(
+                    StravaRecentActivityDateSensor(
+                        coordinator,
+                        athlete_id=athlete_id,
+                        activity_index=activity_index,
+                    )
                 )
-            )
-        else:
-            # All other metrics
-            entries.append(
-                StravaRecentActivityMetricSensor(
-                    coordinator,
-                    metric_type=attribute_type,
-                    athlete_id=athlete_id,
+            else:
+                # All other metrics
+                entries.append(
+                    StravaRecentActivityMetricSensor(
+                        coordinator,
+                        metric_type=attribute_type,
+                        athlete_id=athlete_id,
+                        activity_index=activity_index,
+                    )
                 )
-            )
 
-    # Create gear sensor for recent activity
-    entries.append(
-        StravaRecentActivityGearSensor(
-            coordinator,
-            athlete_id=athlete_id,
+        # Create gear sensor for this recent activity
+        entries.append(
+            StravaRecentActivityGearSensor(
+                coordinator,
+                athlete_id=athlete_id,
+                activity_index=activity_index,
+            )
         )
-    )
 
     # Create summary statistics sensors (one global device)
     # Break down totals into individual metric sensors
@@ -1063,21 +1077,32 @@ class StravaRecentActivitySensor(CoordinatorEntity, SensorEntity):
         self,
         coordinator: StravaDataUpdateCoordinator,
         athlete_id: str,
+        activity_index: int = 0,
     ):
         """Initialize the sensor."""
         super().__init__(coordinator)
         self._athlete_id = athlete_id
         self._athlete_name = get_athlete_name_from_title(self.coordinator.entry.title)
-        self._attr_unique_id = f"strava_{athlete_id}_recent"
+        self._activity_index = activity_index
+        self._attr_unique_id = generate_recent_activity_sensor_id(
+            athlete_id, "recent", activity_index
+        )
 
     @property
     def device_info(self):
         """Return device information."""
         return {
             "identifiers": {
-                (DOMAIN, generate_recent_activity_device_id(self._athlete_id))
+                (
+                    DOMAIN,
+                    generate_recent_activity_device_id(
+                        self._athlete_id, self._activity_index
+                    ),
+                )
             },
-            "name": generate_recent_activity_device_name(self._athlete_name),
+            "name": generate_recent_activity_device_name(
+                self._athlete_name, self._activity_index
+            ),
             "manufacturer": "Powered by Strava",
             "model": "Recent Activity",
             "configuration_url": f"{STRAVA_ACTHLETE_BASE_URL}{self._athlete_id}",
@@ -1085,13 +1110,13 @@ class StravaRecentActivitySensor(CoordinatorEntity, SensorEntity):
 
     @property
     def _latest_activity(self):
-        """Get the most recent activity across all types."""
+        """Get the activity at the specified index."""
         if not self.coordinator.data or not self.coordinator.data.get("activities"):
             return None
 
         activities = self.coordinator.data["activities"]
-        if activities:
-            return activities[0]
+        if activities and len(activities) > self._activity_index:
+            return activities[self._activity_index]
         return None
 
     @property
@@ -1121,7 +1146,9 @@ class StravaRecentActivitySensor(CoordinatorEntity, SensorEntity):
     @property
     def name(self):
         """Return the name of the sensor."""
-        return f"Strava {self._athlete_name} Recent Activity"
+        return generate_recent_activity_device_name(
+            self._athlete_name, self._activity_index
+        )
 
     @property
     def extra_state_attributes(self):
@@ -1157,14 +1184,16 @@ class StravaRecentActivityAttributeSensor(CoordinatorEntity, SensorEntity):
         coordinator: StravaDataUpdateCoordinator,
         attribute_type: str,
         athlete_id: str,
+        activity_index: int = 0,
     ):
         """Initialize the sensor."""
         super().__init__(coordinator)
         self._attribute_type = attribute_type
         self._athlete_id = athlete_id
         self._athlete_name = get_athlete_name_from_title(self.coordinator.entry.title)
+        self._activity_index = activity_index
         self._attr_unique_id = generate_recent_activity_sensor_id(
-            athlete_id, attribute_type
+            athlete_id, attribute_type, activity_index
         )
 
     @property
@@ -1172,9 +1201,16 @@ class StravaRecentActivityAttributeSensor(CoordinatorEntity, SensorEntity):
         """Return device information."""
         return {
             "identifiers": {
-                (DOMAIN, generate_recent_activity_device_id(self._athlete_id))
+                (
+                    DOMAIN,
+                    generate_recent_activity_device_id(
+                        self._athlete_id, self._activity_index
+                    ),
+                )
             },
-            "name": generate_recent_activity_device_name(self._athlete_name),
+            "name": generate_recent_activity_device_name(
+                self._athlete_name, self._activity_index
+            ),
             "manufacturer": "Powered by Strava",
             "model": "Recent Activity",
             "configuration_url": f"{STRAVA_ACTHLETE_BASE_URL}{self._athlete_id}",
@@ -1182,13 +1218,13 @@ class StravaRecentActivityAttributeSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def _latest_activity(self):
-        """Get the most recent activity across all types."""
+        """Get the activity at the specified index."""
         if not self.coordinator.data or not self.coordinator.data.get("activities"):
             return None
 
         activities = self.coordinator.data["activities"]
-        if activities:
-            return activities[0]
+        if activities and len(activities) > self._activity_index:
+            return activities[self._activity_index]
         return None
 
     @property
@@ -1219,6 +1255,7 @@ class StravaRecentActivityAttributeSensor(CoordinatorEntity, SensorEntity):
         return generate_recent_activity_sensor_name(
             self._athlete_name,
             self._attribute_type,
+            self._activity_index,
         )
 
     def _get_value_or_unavailable(self, value):
@@ -1244,9 +1281,10 @@ class StravaRecentActivityGearSensor(StravaRecentActivityAttributeSensor):
         self,
         coordinator: StravaDataUpdateCoordinator,
         athlete_id: str,
+        activity_index: int = 0,
     ):
         """Initialize the sensor."""
-        super().__init__(coordinator, CONF_SENSOR_GEAR_NAME, athlete_id)
+        super().__init__(coordinator, CONF_SENSOR_GEAR_NAME, athlete_id, activity_index)
 
     @property
     def native_value(self):
@@ -1313,9 +1351,12 @@ class StravaRecentActivityDeviceInfoSensor(StravaRecentActivityAttributeSensor):
         self,
         coordinator: StravaDataUpdateCoordinator,
         athlete_id: str,
+        activity_index: int = 0,
     ):
         """Initialize the sensor."""
-        super().__init__(coordinator, CONF_SENSOR_DEVICE_INFO, athlete_id)
+        super().__init__(
+            coordinator, CONF_SENSOR_DEVICE_INFO, athlete_id, activity_index
+        )
 
     @property
     def native_value(self):
@@ -1356,9 +1397,10 @@ class StravaRecentActivityDateSensor(StravaRecentActivityAttributeSensor):
         self,
         coordinator: StravaDataUpdateCoordinator,
         athlete_id: str,
+        activity_index: int = 0,
     ):
         """Initialize the sensor."""
-        super().__init__(coordinator, CONF_SENSOR_DATE, athlete_id)
+        super().__init__(coordinator, CONF_SENSOR_DATE, athlete_id, activity_index)
 
     @property
     def native_value(self):
@@ -1390,9 +1432,10 @@ class StravaRecentActivityMetricSensor(StravaRecentActivityAttributeSensor):
         coordinator: StravaDataUpdateCoordinator,
         metric_type: str,
         athlete_id: str,
+        activity_index: int = 0,
     ):
         """Initialize the sensor."""
-        super().__init__(coordinator, metric_type, athlete_id)
+        super().__init__(coordinator, metric_type, athlete_id, activity_index)
         self._metric_type = metric_type
 
     @property

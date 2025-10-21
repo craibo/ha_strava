@@ -315,7 +315,7 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             CONF_SENSOR_MOVING_TIME: activity.get("moving_time"),
             CONF_SENSOR_KUDOS: activity.get("kudos_count"),
             CONF_SENSOR_CALORIES: activity.get(
-                CONF_SENSOR_CALORIES,
+                "calories",
                 (
                     activity.get("kilojoules") * FACTOR_KILOJOULES_TO_KILOCALORIES
                     if activity.get("kilojoules")

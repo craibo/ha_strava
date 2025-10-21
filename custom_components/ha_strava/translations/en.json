@@ -18,7 +18,8 @@
           "client_secret": "Client Secret",
           "conf_photos": "Import Photos from Strava?",
           "conf_distance_unit": "Distance unit system to use",
-          "activity_types_to_track": "Activity Types to Track"
+          "activity_types_to_track": "Activity Types to Track",
+          "num_recent_activities": "Number of Recent Activities"
         }
       }
     }
@@ -32,7 +33,8 @@
           "activity_types_to_track": "Activity Types to Track",
           "img_update_interval_seconds": "Image rotation (seconds)",
           "conf_photos": "Import Photos from Strava?",
-          "conf_distance_unit": "Distance unit system to use"
+          "conf_distance_unit": "Distance unit system to use",
+          "num_recent_activities": "Number of Recent Activities"
         }
       }
     },

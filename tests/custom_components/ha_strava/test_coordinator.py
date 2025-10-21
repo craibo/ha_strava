@@ -744,3 +744,121 @@ class TestStravaDataUpdateCoordinator:
         assert len(result["activities"]) == 2  # Both activities should be included
         assert "summary_stats" in result
         assert "images" in result
+
+    @pytest.mark.asyncio
+    async def test_sensor_activity_calories_and_power_processing(
+        self, hass: HomeAssistant, mock_config_entry
+    ):
+        """Test calories and power data processing in _sensor_activity method."""
+        # Extract hass from async generator fixture
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        # Test activity with direct calories field
+        activity_with_calories = {
+            "id": 1,
+            "name": "Test Run with Calories",
+            "type": "Run",
+            "distance": 5000.0,
+            "moving_time": 1800,
+            "elapsed_time": 1900,
+            "total_elevation_gain": 100.0,
+            "start_date": "2024-01-01T06:00:00Z",
+            "calories": 300,  # Direct calories field
+            "average_watts": 200,  # Power data
+        }
+
+        processed = coordinator._sensor_activity(activity_with_calories, {})
+
+        # Test calories processing - should use direct calories field
+        assert processed["kcal"] == 300
+        # Test power processing - should use average_watts field
+        assert processed["power"] == 200
+
+        # Test activity with only kilojoules (no direct calories)
+        activity_with_kilojoules = {
+            "id": 2,
+            "name": "Test Run with Kilojoules",
+            "type": "Run",
+            "distance": 5000.0,
+            "moving_time": 1800,
+            "elapsed_time": 1900,
+            "total_elevation_gain": 100.0,
+            "start_date": "2024-01-01T06:00:00Z",
+            "kilojoules": 1255,  # Only kilojoules, no direct calories
+            "average_watts": 150,  # Power data
+        }
+
+        processed = coordinator._sensor_activity(activity_with_kilojoules, {})
+
+        # Test calories processing - should convert from kilojoules
+        expected_calories = 1255 * 0.239006  # FACTOR_KILOJOULES_TO_KILOCALORIES
+        assert abs(processed["kcal"] - expected_calories) < 0.01
+        # Test power processing
+        assert processed["power"] == 150
+
+        # Test activity with neither calories nor kilojoules
+        activity_without_calories = {
+            "id": 3,
+            "name": "Test Run without Calories",
+            "type": "Run",
+            "distance": 5000.0,
+            "moving_time": 1800,
+            "elapsed_time": 1900,
+            "total_elevation_gain": 100.0,
+            "start_date": "2024-01-01T06:00:00Z",
+            # No calories or kilojoules
+            # No power data
+        }
+
+        processed = coordinator._sensor_activity(activity_without_calories, {})
+
+        # Test calories processing - should be None
+        assert processed["kcal"] is None
+        # Test power processing - should be None
+        assert processed["power"] is None
+
+        # Test activity with zero power (valid power reading)
+        activity_with_zero_power = {
+            "id": 4,
+            "name": "Test Run with Zero Power",
+            "type": "Run",
+            "distance": 5000.0,
+            "moving_time": 1800,
+            "elapsed_time": 1900,
+            "total_elevation_gain": 100.0,
+            "start_date": "2024-01-01T06:00:00Z",
+            "calories": 250,
+            "average_watts": 0,  # Zero power is valid
+        }
+
+        processed = coordinator._sensor_activity(activity_with_zero_power, {})
+
+        # Test calories processing
+        assert processed["kcal"] == 250
+        # Test power processing - zero should be preserved
+        assert processed["power"] == 0
+
+        # Test activity with invalid power (-1, should be filtered out by sensor)
+        activity_with_invalid_power = {
+            "id": 5,
+            "name": "Test Run with Invalid Power",
+            "type": "Run",
+            "distance": 5000.0,
+            "moving_time": 1800,
+            "elapsed_time": 1900,
+            "total_elevation_gain": 100.0,
+            "start_date": "2024-01-01T06:00:00Z",
+            "calories": 200,
+            "average_watts": -1,  # Invalid power reading
+        }
+
+        processed = coordinator._sensor_activity(activity_with_invalid_power, {})
+
+        # Test calories processing
+        assert processed["kcal"] == 200
+        # Test power processing - -1 should be preserved (will be filtered by sensor)
+        assert processed["power"] == -1
