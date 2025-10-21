@@ -772,7 +772,7 @@ class TestStravaDataUpdateCoordinator:
         }
 
         processed = coordinator._sensor_activity(activity_with_calories, {})
-        
+
         # Test calories processing - should use direct calories field
         assert processed["kcal"] == 300
         # Test power processing - should use average_watts field
@@ -793,7 +793,7 @@ class TestStravaDataUpdateCoordinator:
         }
 
         processed = coordinator._sensor_activity(activity_with_kilojoules, {})
-        
+
         # Test calories processing - should convert from kilojoules
         expected_calories = 1255 * 0.239006  # FACTOR_KILOJOULES_TO_KILOCALORIES
         assert abs(processed["kcal"] - expected_calories) < 0.01
@@ -815,7 +815,7 @@ class TestStravaDataUpdateCoordinator:
         }
 
         processed = coordinator._sensor_activity(activity_without_calories, {})
-        
+
         # Test calories processing - should be None
         assert processed["kcal"] is None
         # Test power processing - should be None
@@ -836,7 +836,7 @@ class TestStravaDataUpdateCoordinator:
         }
 
         processed = coordinator._sensor_activity(activity_with_zero_power, {})
-        
+
         # Test calories processing
         assert processed["kcal"] == 250
         # Test power processing - zero should be preserved
@@ -857,7 +857,7 @@ class TestStravaDataUpdateCoordinator:
         }
 
         processed = coordinator._sensor_activity(activity_with_invalid_power, {})
-        
+
         # Test calories processing
         assert processed["kcal"] == 200
         # Test power processing - -1 should be preserved (will be filtered by sensor)
