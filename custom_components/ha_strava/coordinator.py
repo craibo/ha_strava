@@ -172,15 +172,21 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
                 _LOGGER.debug(
                     f"Fetching detailed info for most recent {sport_type} activity: {activity_id}"
                 )
-                activity_response = await self.oauth_session.async_request(
-                    method="GET",
-                    url=f"https://www.strava.com/api/v3/activities/{activity_id}",
-                )
-                activity_dto = (
-                    await activity_response.json()
-                    if activity_response.status == 200
-                    else None
-                )
+                try:
+                    activity_response = await self.oauth_session.async_request(
+                        method="GET",
+                        url=f"https://www.strava.com/api/v3/activities/{activity_id}",
+                    )
+                    if activity_response.status == 200:
+                        response_json = await activity_response.json()
+                        _LOGGER.debug(f"Activity {activity_id}: {response_json}")
+                        activity_dto = response_json
+                    else:
+                        _LOGGER.warning(f"Failed to fetch activity {activity_id}: {response.status}")
+                        activity_dto = None
+                except (aiohttp.ClientError, ValueError, KeyError) as e:
+                    _LOGGER.error(f"Error fetching activity {activity_id}: {e}")
+                    activity_dto = None
 
             activities.append(
                 self._sensor_activity(
@@ -248,12 +254,14 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
                 url=f"https://www.strava.com/api/v3/gear/{gear_id}",
             )
             if response.status == 200:
-                return await response.json()
+                response_json = await response.json()
+                _LOGGER.debug(f"Gear {gear_id}: {response_json}")
+                return response_json
             else:
                 _LOGGER.warning(f"Failed to fetch gear {gear_id}: {response.status}")
                 return {}
         except (aiohttp.ClientError, ValueError, KeyError) as e:
-            _LOGGER.warning(f"Error fetching gear {gear_id}: {e}")
+            _LOGGER.error(f"Error fetching gear {gear_id}: {e}")
             return {}
 
     def _sensor_activity(self, activity: dict, activity_dto: dict) -> dict:
