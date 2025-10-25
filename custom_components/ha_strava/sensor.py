@@ -63,6 +63,7 @@ from .const import (
     UNIT_PACE_MINUTES_PER_KILOMETER,
     UNIT_PACE_MINUTES_PER_MILE,
     format_activity_type_display,
+    format_seconds_to_human_readable,
     generate_device_id,
     generate_device_name,
     generate_recent_activity_device_id,
@@ -471,6 +472,13 @@ class StravaSummaryStatsSensor(CoordinatorEntity, SensorEntity):
                     key != self._metric_key
                 ):  # Don't include the main metric as an attribute
                     attributes[key] = value
+            
+            # Add formatted time for moving_time metric
+            if self._metric_key == "moving_time":
+                native_value = self.native_value
+                if native_value is not None:
+                    attributes["formatted_time"] = format_seconds_to_human_readable(native_value)
+            
             return attributes
 
         return {}
@@ -1062,9 +1070,17 @@ class StravaActivityMetricSensor(StravaActivityAttributeSensor):
 
         activity = self._latest_activity
         activity_id = str(activity.get(CONF_SENSOR_ID))
-        return {
+        attributes = {
             CONF_ATTR_ACTIVITY_ID: activity_id,
         }
+        
+        # Add formatted time for time-based metrics
+        if self._metric_type in [CONF_SENSOR_MOVING_TIME, CONF_SENSOR_ELAPSED_TIME]:
+            time_value = activity.get(self._metric_type)
+            if time_value is not None:
+                attributes["formatted_time"] = format_seconds_to_human_readable(time_value)
+        
+        return attributes
 
 
 class StravaRecentActivitySensor(CoordinatorEntity, SensorEntity):
@@ -1565,6 +1581,14 @@ class StravaRecentActivityMetricSensor(StravaRecentActivityAttributeSensor):
 
         activity = self._latest_activity
         activity_id = str(activity.get(CONF_SENSOR_ID))
-        return {
+        attributes = {
             CONF_ATTR_ACTIVITY_ID: activity_id,
         }
+        
+        # Add formatted time for time-based metrics
+        if self._metric_type in [CONF_SENSOR_MOVING_TIME, CONF_SENSOR_ELAPSED_TIME]:
+            time_value = activity.get(self._metric_type)
+            if time_value is not None:
+                attributes["formatted_time"] = format_seconds_to_human_readable(time_value)
+        
+        return attributes
