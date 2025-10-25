@@ -60,18 +60,32 @@ class TestStravaDataUpdateCoordinator:
             payload=mock_strava_activities,
             status=200,
         )
-        # Mock activity detail responses - only for the most recent activity of each type
+        # Mock activity detail responses - for most recent activity of each type AND first N recent activities
         # Since mock_strava_activities is sorted by date desc, first activity of each type gets detailed call
+        # Plus the first N recent activities (default is 1, so first activity gets detailed call)
         activity_types_seen = set()
-        for activity in mock_strava_activities:
+        activities_needing_details = set()
+
+        for idx, activity in enumerate(mock_strava_activities):
             activity_type = activity.get("type")
+            activity_id = activity["id"]
+
+            # Track most recent per type
             if activity_type not in activity_types_seen:
                 activity_types_seen.add(activity_type)
-                aioresponses_mock.get(
-                    f"https://www.strava.com/api/v3/activities/{activity['id']}",
-                    payload={},
-                    status=200,
-                )
+                activities_needing_details.add(activity_id)
+
+            # Track first N recent activities (default is 1)
+            if idx < 1:  # CONF_NUM_RECENT_ACTIVITIES_DEFAULT = 1
+                activities_needing_details.add(activity_id)
+
+        # Mock detailed activity calls for activities that need them
+        for activity_id in activities_needing_details:
+            aioresponses_mock.get(
+                f"https://www.strava.com/api/v3/activities/{activity_id}",
+                payload={},
+                status=200,
+            )
 
         # Test fetch activities
         athlete_id, activities = await coordinator._fetch_activities()
@@ -118,21 +132,35 @@ class TestStravaDataUpdateCoordinator:
             payload=mock_strava_activities_all_types,
             status=200,
         )
-        # Mock activity detail responses - only for the most recent activity of each selected type
+        # Mock activity detail responses - for most recent activity of each selected type AND first N recent activities
         # Since mock_strava_activities_all_types is sorted by date desc, first activity of each type gets detailed call
+        # Plus the first N recent activities (default is 1, so first activity gets detailed call)
         activity_types_seen = set()
-        for activity in mock_strava_activities_all_types:
+        activities_needing_details = set()
+
+        for idx, activity in enumerate(mock_strava_activities_all_types):
             activity_type = activity.get("type")
+            activity_id = activity["id"]
+
+            # Track most recent per selected type
             if (
                 activity_type in ["Run", "Ride"]
                 and activity_type not in activity_types_seen
             ):
                 activity_types_seen.add(activity_type)
-                aioresponses_mock.get(
-                    f"https://www.strava.com/api/v3/activities/{activity['id']}",
-                    payload={},
-                    status=200,
-                )
+                activities_needing_details.add(activity_id)
+
+            # Track first N recent activities (default is 1)
+            if idx < 1:  # CONF_NUM_RECENT_ACTIVITIES_DEFAULT = 1
+                activities_needing_details.add(activity_id)
+
+        # Mock detailed activity calls for activities that need them
+        for activity_id in activities_needing_details:
+            aioresponses_mock.get(
+                f"https://www.strava.com/api/v3/activities/{activity_id}",
+                payload={},
+                status=200,
+            )
 
         # Test fetch activities
         athlete_id, activities = await coordinator._fetch_activities()
@@ -507,17 +535,30 @@ class TestStravaDataUpdateCoordinator:
             payload=mock_strava_activities,
             status=200,
         )
-        # Mock activity detail responses - only for the most recent activity of each type
+        # Mock activity detail responses - for most recent activity of each type AND first N recent activities
         activity_types_seen = set()
-        for activity in mock_strava_activities:
+        activities_needing_details = set()
+
+        for idx, activity in enumerate(mock_strava_activities):
             activity_type = activity.get("type")
+            activity_id = activity["id"]
+
+            # Track most recent per type
             if activity_type not in activity_types_seen:
                 activity_types_seen.add(activity_type)
-                aioresponses_mock.get(
-                    f"https://www.strava.com/api/v3/activities/{activity['id']}",
-                    payload={},
-                    status=200,
-                )
+                activities_needing_details.add(activity_id)
+
+            # Track first N recent activities (default is 1)
+            if idx < 1:  # CONF_NUM_RECENT_ACTIVITIES_DEFAULT = 1
+                activities_needing_details.add(activity_id)
+
+        # Mock detailed activity calls for activities that need them
+        for activity_id in activities_needing_details:
+            aioresponses_mock.get(
+                f"https://www.strava.com/api/v3/activities/{activity_id}",
+                payload={},
+                status=200,
+            )
         aioresponses_mock.get(
             "https://www.strava.com/api/v3/athletes/12345/stats",
             payload=mock_strava_stats,
@@ -721,17 +762,30 @@ class TestStravaDataUpdateCoordinator:
             status=200,
             payload=malformed_activities,
         )
-        # Mock activity detail responses - only for the most recent activity of each type
+        # Mock activity detail responses - for most recent activity of each type AND first N recent activities
         activity_types_seen = set()
-        for activity in malformed_activities:
+        activities_needing_details = set()
+
+        for idx, activity in enumerate(malformed_activities):
             activity_type = activity.get("type")
+            activity_id = activity["id"]
+
+            # Track most recent per type
             if activity_type not in activity_types_seen:
                 activity_types_seen.add(activity_type)
-                aioresponses_mock.get(
-                    f"https://www.strava.com/api/v3/activities/{activity['id']}",
-                    payload={},
-                    status=200,
-                )
+                activities_needing_details.add(activity_id)
+
+            # Track first N recent activities (default is 1)
+            if idx < 1:  # CONF_NUM_RECENT_ACTIVITIES_DEFAULT = 1
+                activities_needing_details.add(activity_id)
+
+        # Mock detailed activity calls for activities that need them
+        for activity_id in activities_needing_details:
+            aioresponses_mock.get(
+                f"https://www.strava.com/api/v3/activities/{activity_id}",
+                payload={},
+                status=200,
+            )
         aioresponses_mock.get(
             "https://www.strava.com/api/v3/athletes/12345/stats", status=200, payload={}
         )
