@@ -18,6 +18,8 @@ from .const import (
     CONF_ATTR_PRIVATE,
     CONF_ATTR_SPORT_TYPE,
     CONF_ATTR_START_LATLONG,
+    CONF_NUM_RECENT_ACTIVITIES,
+    CONF_NUM_RECENT_ACTIVITIES_DEFAULT,
     CONF_PHOTOS,
     CONF_SENSOR_ACTIVITY_TYPE,
     CONF_SENSOR_CADENCE_AVG,
@@ -138,11 +140,17 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             CONF_ACTIVITY_TYPES_TO_TRACK, DEFAULT_ACTIVITY_TYPES
         )
 
-        # First pass: Group activities by type and find the most recent of each type
+        # Get number of recent activities from config
+        num_recent_activities = self.entry.options.get(
+            CONF_NUM_RECENT_ACTIVITIES, CONF_NUM_RECENT_ACTIVITIES_DEFAULT
+        )
+
+        # First pass: Identify activities needing detailed data
+        activities_needing_details = set()
         activities_by_type = {}
         athlete_id = None
 
-        for activity in activities_json:
+        for idx, activity in enumerate(activities_json):
             athlete_id = int(activity["athlete"]["id"])
             sport_type = activity.get("type")
 
@@ -150,13 +158,21 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             if sport_type not in selected_activity_types:
                 continue
 
-            # Track the most recent activity per type (activities_json is already sorted by date desc)
+            activity_id = activity["id"]
+
+            # Track most recent per type
             if sport_type not in activities_by_type:
-                activities_by_type[sport_type] = activity["id"]
+                activities_by_type[sport_type] = activity_id
+                activities_needing_details.add(activity_id)
+
+            # Track first N recent activities
+            if idx < num_recent_activities:
+                activities_needing_details.add(activity_id)
 
         _LOGGER.debug(f"Found most recent activities per type: {activities_by_type}")
+        _LOGGER.debug(f"Activities needing detailed data: {activities_needing_details}")
 
-        # Second pass: Fetch detailed info only for the most recent activity of each type
+        # Second pass: Fetch detailed info for activities that need it
         activities = []
         for activity in activities_json:
             sport_type = activity.get("type")
@@ -167,10 +183,10 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             activity_id = int(activity["id"])
             activity_dto = None
 
-            # Only fetch detailed info for the most recent activity of this type
-            if activity_id == activities_by_type.get(sport_type):
+            # Fetch detailed info for activities that need it
+            if activity_id in activities_needing_details:
                 _LOGGER.debug(
-                    f"Fetching detailed info for most recent {sport_type} activity: {activity_id}"
+                    f"Fetching detailed info for activity {activity_id} (type: {sport_type})"
                 )
                 try:
                     activity_response = await self.oauth_session.async_request(
@@ -182,7 +198,9 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
                         _LOGGER.debug(f"Activity {activity_id}: {response_json}")
                         activity_dto = response_json
                     else:
-                        _LOGGER.warning(f"Failed to fetch activity {activity_id}: {response.status}")
+                        _LOGGER.warning(
+                            f"Failed to fetch activity {activity_id}: {activity_response.status}"
+                        )
                         activity_dto = None
                 except (aiohttp.ClientError, ValueError, KeyError) as e:
                     _LOGGER.error(f"Error fetching activity {activity_id}: {e}")
