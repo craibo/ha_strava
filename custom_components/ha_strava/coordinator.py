@@ -51,7 +51,6 @@ from .const import (
     CONFIG_IMG_SIZE,
     DEFAULT_ACTIVITY_TYPES,
     DOMAIN,
-    FACTOR_KILOJOULES_TO_KILOCALORIES,
     OAUTH2_AUTHORIZE,
     OAUTH2_TOKEN,
 )
@@ -340,14 +339,7 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             CONF_SENSOR_ELAPSED_TIME: activity.get("elapsed_time"),
             CONF_SENSOR_MOVING_TIME: activity.get("moving_time"),
             CONF_SENSOR_KUDOS: activity.get("kudos_count"),
-            CONF_SENSOR_CALORIES: activity.get(
-                "calories",
-                (
-                    activity.get("kilojoules") * FACTOR_KILOJOULES_TO_KILOCALORIES
-                    if activity.get("kilojoules")
-                    else None
-                ),
-            ),
+            CONF_SENSOR_CALORIES: activity.get("calories"),
             CONF_SENSOR_ELEVATION: activity.get("total_elevation_gain"),
             CONF_SENSOR_POWER: activity.get("average_watts"),
             CONF_SENSOR_TROPHIES: activity.get("achievement_count"),

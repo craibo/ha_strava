@@ -88,7 +88,7 @@ class TestFormatSecondsToHumanReadable:
         assert format_seconds_to_human_readable(365) == "6 min 5 sec"
         assert format_seconds_to_human_readable(3785) == "1h 3 min 5 sec"
         assert format_seconds_to_human_readable(106476) == "1d 5h 34 min 36 sec"
-        
+
         # Additional realistic examples
         assert format_seconds_to_human_readable(45) == "45 sec"  # Short activity
         assert format_seconds_to_human_readable(1800) == "30 min"  # 30-minute workout

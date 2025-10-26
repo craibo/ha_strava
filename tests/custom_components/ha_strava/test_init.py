@@ -493,14 +493,14 @@ class TestAsyncReloadEntry:
         async for hass_instance in hass:
             hass = hass_instance
             break
-        
+
         # Mock the async_reload method
         with patch.object(
             hass.config_entries, "async_reload", new_callable=AsyncMock
         ) as mock_reload:
             # Test reload
             await async_reload_entry(hass, mock_config_entry)
-            
+
             # Verify reload was called with correct entry_id
             mock_reload.assert_called_once_with(mock_config_entry.entry_id)
 
@@ -510,9 +510,10 @@ class TestAsyncReloadEntry:
         async for hass_instance in hass:
             hass = hass_instance
             break
-        
+
         # Create a different config entry
         from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
+
         different_entry = MockConfigEntry(
             domain=DOMAIN,
             unique_id="67890",
@@ -521,14 +522,14 @@ class TestAsyncReloadEntry:
                 CONF_CLIENT_SECRET: "different_client_secret",
             },
         )
-        
+
         # Mock the async_reload method
         with patch.object(
             hass.config_entries, "async_reload", new_callable=AsyncMock
         ) as mock_reload:
             # Test reload
             await async_reload_entry(hass, different_entry)
-            
+
             # Verify reload was called with correct entry_id
             mock_reload.assert_called_once_with(different_entry.entry_id)
 
@@ -538,17 +539,18 @@ class TestAsyncReloadEntry:
         async for hass_instance in hass:
             hass = hass_instance
             break
-        
+
         # Mock the async_reload method to raise an exception
         with patch.object(
-            hass.config_entries, "async_reload", 
+            hass.config_entries,
+            "async_reload",
             new_callable=AsyncMock,
-            side_effect=Exception("Reload failed")
+            side_effect=Exception("Reload failed"),
         ) as mock_reload:
             # Test reload - should propagate the exception
             with pytest.raises(Exception, match="Reload failed"):
                 await async_reload_entry(hass, mock_config_entry)
-            
+
             # Verify reload was called
             mock_reload.assert_called_once_with(mock_config_entry.entry_id)
 
@@ -564,13 +566,13 @@ class TestUpdateListenerRegistration:
         async for hass_instance in hass:
             hass = hass_instance
             break
-        
+
         # Mock the entry's add_update_listener method
         mock_entry = MagicMock()
         mock_entry.entry_id = mock_config_entry.entry_id
         mock_entry.add_update_listener = MagicMock()
         mock_entry.async_on_unload = MagicMock()
-        
+
         with patch(
             "custom_components.ha_strava.StravaDataUpdateCoordinator",
             return_value=mock_coordinator,
@@ -587,13 +589,17 @@ class TestUpdateListenerRegistration:
                     ):
                         # Mock the config entry to return our mock
                         with patch.object(
-                            hass.config_entries, "async_entries", return_value=[mock_entry]
+                            hass.config_entries,
+                            "async_entries",
+                            return_value=[mock_entry],
                         ):
                             result = await async_setup_entry(hass, mock_entry)
                             assert result is True
-                            
+
                             # Verify update listener was registered
-                            mock_entry.add_update_listener.assert_called_once_with(async_reload_entry)
+                            mock_entry.add_update_listener.assert_called_once_with(
+                                async_reload_entry
+                            )
                             mock_entry.async_on_unload.assert_called_once()
 
     @pytest.mark.asyncio
@@ -604,13 +610,13 @@ class TestUpdateListenerRegistration:
         async for hass_instance in hass:
             hass = hass_instance
             break
-        
+
         # Mock the entry's add_update_listener method
         mock_entry = MagicMock()
         mock_entry.entry_id = mock_config_entry.entry_id
         mock_entry.add_update_listener = MagicMock()
         mock_entry.async_on_unload = MagicMock()
-        
+
         # Mock the reload method
         with patch.object(
             hass.config_entries, "async_reload", new_callable=AsyncMock
@@ -632,36 +638,36 @@ class TestUpdateListenerRegistration:
                             # Setup the entry
                             result = await async_setup_entry(hass, mock_entry)
                             assert result is True
-                            
+
                             # Get the update listener that was registered
-                            update_listener = mock_entry.add_update_listener.call_args[0][0]
-                            
+                            update_listener = mock_entry.add_update_listener.call_args[
+                                0
+                            ][0]
+
                             # Call the update listener (simulating options save)
                             await update_listener(hass, mock_entry)
-                            
+
                             # Verify reload was called
                             mock_reload.assert_called_once_with(mock_entry.entry_id)
 
     @pytest.mark.asyncio
-    async def test_update_listener_with_multiple_entries(
-        self, hass, mock_coordinator
-    ):
+    async def test_update_listener_with_multiple_entries(self, hass, mock_coordinator):
         """Test update listener works with multiple config entries."""
         async for hass_instance in hass:
             hass = hass_instance
             break
-        
+
         # Create multiple mock entries
         entry1 = MagicMock()
         entry1.entry_id = "entry_1"
         entry1.add_update_listener = MagicMock()
         entry1.async_on_unload = MagicMock()
-        
+
         entry2 = MagicMock()
         entry2.entry_id = "entry_2"
         entry2.add_update_listener = MagicMock()
         entry2.async_on_unload = MagicMock()
-        
+
         # Mock the reload method
         with patch.object(
             hass.config_entries, "async_reload", new_callable=AsyncMock
@@ -683,21 +689,29 @@ class TestUpdateListenerRegistration:
                             # Setup both entries
                             result1 = await async_setup_entry(hass, entry1)
                             result2 = await async_setup_entry(hass, entry2)
-                            
+
                             assert result1 is True
                             assert result2 is True
-                            
+
                             # Verify both entries have update listeners registered
-                            entry1.add_update_listener.assert_called_once_with(async_reload_entry)
-                            entry2.add_update_listener.assert_called_once_with(async_reload_entry)
-                            
+                            entry1.add_update_listener.assert_called_once_with(
+                                async_reload_entry
+                            )
+                            entry2.add_update_listener.assert_called_once_with(
+                                async_reload_entry
+                            )
+
                             # Test reloading entry1
-                            update_listener1 = entry1.add_update_listener.call_args[0][0]
+                            update_listener1 = entry1.add_update_listener.call_args[0][
+                                0
+                            ]
                             await update_listener1(hass, entry1)
                             mock_reload.assert_called_with("entry_1")
-                            
+
                             # Test reloading entry2
-                            update_listener2 = entry2.add_update_listener.call_args[0][0]
+                            update_listener2 = entry2.add_update_listener.call_args[0][
+                                0
+                            ]
                             await update_listener2(hass, entry2)
                             mock_reload.assert_called_with("entry_2")
 
@@ -709,19 +723,21 @@ class TestUpdateListenerRegistration:
         async for hass_instance in hass:
             hass = hass_instance
             break
-        
+
         # Mock the entry
         mock_entry = MagicMock()
         mock_entry.entry_id = mock_config_entry.entry_id
         mock_entry.add_update_listener = MagicMock()
         mock_entry.async_on_unload = MagicMock()
-        
+
         # Mock the unload callback
         unload_callbacks = []
+
         def mock_async_on_unload(callback):
             unload_callbacks.append(callback)
+
         mock_entry.async_on_unload.side_effect = mock_async_on_unload
-        
+
         with patch(
             "custom_components.ha_strava.StravaDataUpdateCoordinator",
             return_value=mock_coordinator,
@@ -739,12 +755,12 @@ class TestUpdateListenerRegistration:
                         # Setup the entry
                         result = await async_setup_entry(hass, mock_entry)
                         assert result is True
-                        
+
                         # Verify unload callback was registered
                         assert len(unload_callbacks) == 1
-                        
+
                         # Simulate unload by calling the unload callback
                         unload_callbacks[0]()
-                        
+
                         # Verify the unload callback was called
                         mock_entry.async_on_unload.assert_called_once()
