@@ -286,6 +286,26 @@ class TestGenerateRecentActivitySensorName:
                 == f"Strava Test User Recent Activity 2 {expected_formatted}"
             )
 
+    def test_kcal_sensor_type_formatting(self):
+        """Test that 'kcal' sensor type is properly formatted as 'Calories'."""
+        athlete_name = "Test User"
+
+        # Test index 0 - should show "Calories" not "Kcal"
+        sensor_name = generate_recent_activity_sensor_name(athlete_name, "kcal", 0)
+        assert sensor_name == "Strava Test User Recent Activity Calories"
+
+        # Test index 1 - should show "Calories" not "Kcal"
+        sensor_name = generate_recent_activity_sensor_name(athlete_name, "kcal", 1)
+        assert sensor_name == "Strava Test User Recent Activity 2 Calories"
+
+        # Test index 2 - should show "Calories" not "Kcal"
+        sensor_name = generate_recent_activity_sensor_name(athlete_name, "kcal", 2)
+        assert sensor_name == "Strava Test User Recent Activity 3 Calories"
+
+        # Test index 9 (max) - should show "Calories" not "Kcal"
+        sensor_name = generate_recent_activity_sensor_name(athlete_name, "kcal", 9)
+        assert sensor_name == "Strava Test User Recent Activity 10 Calories"
+
     def test_different_athlete_names(self):
         """Test sensor name generation with different athlete names."""
         sensor_type = "test_sensor"
