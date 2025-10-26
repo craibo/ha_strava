@@ -543,8 +543,13 @@ def generate_recent_activity_sensor_name(
     athlete_name: str, sensor_type: str, activity_index: int = 0
 ) -> str:
     """Generate standardized recent activity sensor name."""
-    # Format sensor type for display (replace underscores with spaces and title case)
-    formatted_sensor = sensor_type.replace("_", " ").title()
+    # Special case for calories sensor
+    if sensor_type == "kcal":
+        formatted_sensor = "Calories"
+    else:
+        # Format sensor type for display (replace underscores with spaces and title case)
+        formatted_sensor = sensor_type.replace("_", " ").title()
+
     if activity_index == 0:
         return f"Strava {athlete_name} Recent Activity {formatted_sensor}"
     return (
