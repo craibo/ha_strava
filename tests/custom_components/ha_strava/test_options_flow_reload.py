@@ -5,7 +5,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
-from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.ha_strava import async_reload_entry, async_setup_entry
 from custom_components.ha_strava.config_flow import OptionsFlowHandler
@@ -34,9 +33,7 @@ class TestOptionsFlowReload:
         mock_config_entry.add_to_hass(hass)
 
         # Mock the reload method
-        with patch.object(
-            hass.config_entries, "async_reload", new_callable=AsyncMock
-        ):
+        with patch.object(hass.config_entries, "async_reload", new_callable=AsyncMock):
             # Create options flow handler
             flow = OptionsFlowHandler()
             flow.hass = hass
@@ -68,7 +65,10 @@ class TestOptionsFlowReload:
 
                     # Verify result
                     assert result["type"] == FlowResultType.CREATE_ENTRY
-                    assert result["data"][CONF_ACTIVITY_TYPES_TO_TRACK] == ["Run", "Ride"]
+                    assert result["data"][CONF_ACTIVITY_TYPES_TO_TRACK] == [
+                        "Run",
+                        "Ride",
+                    ]
 
     @pytest.mark.asyncio
     async def test_options_flow_with_reload_listener(
@@ -89,9 +89,7 @@ class TestOptionsFlowReload:
         mock_entry.async_on_unload = MagicMock()
 
         # Mock the reload method
-        with patch.object(
-            hass.config_entries, "async_reload", new_callable=AsyncMock
-        ) as mock_reload:
+        with patch.object(hass.config_entries, "async_reload", new_callable=AsyncMock):
             # Setup the entry with reload listener
             with patch(
                 "custom_components.ha_strava.StravaDataUpdateCoordinator",
@@ -212,7 +210,10 @@ class TestOptionsFlowReload:
                                     # Test options step
                                     result = await flow.async_step_init(
                                         {
-                                            CONF_ACTIVITY_TYPES_TO_TRACK: ["Run", "Swim"],
+                                            CONF_ACTIVITY_TYPES_TO_TRACK: [
+                                                "Run",
+                                                "Swim",
+                                            ],
                                             CONF_PHOTOS: True,
                                             CONF_IMG_UPDATE_INTERVAL_SECONDS: 15,
                                             CONF_DISTANCE_UNIT_OVERRIDE: "default",
@@ -222,7 +223,9 @@ class TestOptionsFlowReload:
 
                                     # Verify result
                                     assert result["type"] == FlowResultType.CREATE_ENTRY
-                                    assert result["data"][CONF_ACTIVITY_TYPES_TO_TRACK] == [
+                                    assert result["data"][
+                                        CONF_ACTIVITY_TYPES_TO_TRACK
+                                    ] == [
                                         "Run",
                                         "Swim",
                                     ]

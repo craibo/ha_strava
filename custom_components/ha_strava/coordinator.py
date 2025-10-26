@@ -51,7 +51,6 @@ from .const import (
     CONFIG_IMG_SIZE,
     DEFAULT_ACTIVITY_TYPES,
     DOMAIN,
-    FACTOR_KILOJOULES_TO_KILOCALORIES,
     OAUTH2_AUTHORIZE,
     OAUTH2_TOKEN,
 )
@@ -298,6 +297,8 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
         gear_primary = None
         gear_frame_type = None
 
+        calories_kcal = None
+
         if activity_dto:
             # Extract gear information if present
             if gear := activity_dto.get("gear"):
@@ -320,6 +321,8 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
                 device_name = "Trainer"
                 device_type = "Trainer"
 
+            calories_kcal = activity_dto.get("calories")
+
         # Fallback to basic location info
         location = (
             activity.get("location_city")
@@ -340,14 +343,6 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             CONF_SENSOR_ELAPSED_TIME: activity.get("elapsed_time"),
             CONF_SENSOR_MOVING_TIME: activity.get("moving_time"),
             CONF_SENSOR_KUDOS: activity.get("kudos_count"),
-            CONF_SENSOR_CALORIES: activity.get(
-                "calories",
-                (
-                    activity.get("kilojoules") * FACTOR_KILOJOULES_TO_KILOCALORIES
-                    if activity.get("kilojoules")
-                    else None
-                ),
-            ),
             CONF_SENSOR_ELEVATION: activity.get("total_elevation_gain"),
             CONF_SENSOR_POWER: activity.get("average_watts"),
             CONF_SENSOR_TROPHIES: activity.get("achievement_count"),
@@ -360,6 +355,8 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             CONF_ATTR_COMMUTE: activity.get("commute", False),
             CONF_ATTR_PRIVATE: activity.get("private", False),
             CONF_ATTR_POLYLINE: activity.get("map", {}).get("summary_polyline", ""),
+            # Activity Details
+            CONF_SENSOR_CALORIES: calories_kcal,
             # Device source tracking
             CONF_SENSOR_DEVICE_NAME: device_name,
             CONF_SENSOR_DEVICE_TYPE: device_type,

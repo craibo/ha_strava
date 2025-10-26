@@ -520,8 +520,13 @@ def generate_sensor_name(
     athlete_name: str, activity_type: str, sensor_type: str
 ) -> str:
     """Generate standardized sensor name."""
-    # Format sensor type for display (replace underscores with spaces and title case)
-    formatted_sensor = sensor_type.replace("_", " ").title()
+    # Special case for calories sensor
+    if sensor_type == "kcal":
+        formatted_sensor = "Calories"
+    else:
+        # Format sensor type for display (replace underscores with spaces and title case)
+        formatted_sensor = sensor_type.replace("_", " ").title()
+
     return f"Strava {athlete_name} {activity_type.title()} {formatted_sensor}"
 
 
@@ -538,8 +543,13 @@ def generate_recent_activity_sensor_name(
     athlete_name: str, sensor_type: str, activity_index: int = 0
 ) -> str:
     """Generate standardized recent activity sensor name."""
-    # Format sensor type for display (replace underscores with spaces and title case)
-    formatted_sensor = sensor_type.replace("_", " ").title()
+    # Special case for calories sensor
+    if sensor_type == "kcal":
+        formatted_sensor = "Calories"
+    else:
+        # Format sensor type for display (replace underscores with spaces and title case)
+        formatted_sensor = sensor_type.replace("_", " ").title()
+
     if activity_index == 0:
         return f"Strava {athlete_name} Recent Activity {formatted_sensor}"
     return (
@@ -562,13 +572,13 @@ def format_activity_type_display(activity_type: str) -> str:
 
 def format_seconds_to_human_readable(seconds) -> str:
     """Format seconds into human-readable time format with days, hours, minutes, and seconds.
-    
+
     Args:
         seconds: Time in seconds (int, float, or None)
-        
+
     Returns:
         Formatted string (e.g., "1d 5h 34min 36sec")
-        
+
     Examples:
         365 seconds → "6min 5sec"
         3785 seconds → "1h 3min 5sec"
@@ -576,24 +586,24 @@ def format_seconds_to_human_readable(seconds) -> str:
     """
     if seconds is None or seconds == 0:
         return "0 sec"
-    
+
     try:
         total_seconds = int(float(seconds))
     except (TypeError, ValueError):
         return "0 sec"
-    
+
     if total_seconds < 0:
         return "0 sec"
-    
+
     # Calculate time components
     days = total_seconds // 86400
     hours = (total_seconds % 86400) // 3600
     minutes = (total_seconds % 3600) // 60
     remaining_seconds = total_seconds % 60
-    
+
     # Build formatted string, omitting zero values
     parts = []
-    
+
     if days > 0:
         parts.append(f"{days}d")
     if hours > 0:
@@ -602,5 +612,5 @@ def format_seconds_to_human_readable(seconds) -> str:
         parts.append(f"{minutes}min")
     if remaining_seconds > 0 or not parts:  # Always show seconds if no other components
         parts.append(f"{remaining_seconds}sec")
-    
+
     return " ".join(parts)
