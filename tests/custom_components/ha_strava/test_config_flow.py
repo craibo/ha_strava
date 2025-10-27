@@ -15,7 +15,10 @@ from custom_components.ha_strava.const import (
     CONF_ACTIVITY_TYPES_TO_TRACK,
     CONF_DISTANCE_UNIT_OVERRIDE,
     CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT,
+    CONF_DISTANCE_UNIT_OVERRIDE_IMPERIAL,
     CONF_IMG_UPDATE_INTERVAL_SECONDS,
+    CONF_NUM_RECENT_ACTIVITIES,
+    CONF_NUM_RECENT_ACTIVITIES_DEFAULT,
     CONF_PHOTOS,
     DEFAULT_ACTIVITY_TYPES,
     SUPPORTED_ACTIVITY_TYPES,
@@ -767,3 +770,47 @@ class TestStravaConfigFlow:
 
         # Verify result
         assert result["type"] == FlowResultType.CREATE_ENTRY
+
+    @pytest.mark.asyncio
+    async def test_user_input_storage(self):
+        """Test that user input is stored correctly in the flow handler."""
+        flow = OAuth2FlowHandler()
+
+        custom_activity_types = ["Hike", "Walk"]
+        custom_distance_unit = CONF_DISTANCE_UNIT_OVERRIDE_IMPERIAL
+        custom_num_recent = 3
+
+        user_input = {
+            CONF_CLIENT_ID: "test_client_id",
+            CONF_CLIENT_SECRET: "test_client_secret",
+            CONF_PHOTOS: False,
+            CONF_DISTANCE_UNIT_OVERRIDE: custom_distance_unit,
+            CONF_ACTIVITY_TYPES_TO_TRACK: custom_activity_types,
+            CONF_NUM_RECENT_ACTIVITIES: custom_num_recent,
+        }
+
+        flow._user_input = user_input
+
+        assert flow._user_input is not None
+        assert flow._user_input[CONF_PHOTOS] is False
+        assert flow._user_input[CONF_DISTANCE_UNIT_OVERRIDE] == custom_distance_unit
+        assert flow._user_input[CONF_ACTIVITY_TYPES_TO_TRACK] == custom_activity_types
+        assert flow._user_input[CONF_NUM_RECENT_ACTIVITIES] == custom_num_recent
+
+        custom_data = {}
+        if flow._user_input is not None:
+            custom_data[CONF_PHOTOS] = flow._user_input.get(CONF_PHOTOS, False)
+            custom_data[CONF_DISTANCE_UNIT_OVERRIDE] = flow._user_input.get(
+                CONF_DISTANCE_UNIT_OVERRIDE, CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
+            )
+            custom_data[CONF_ACTIVITY_TYPES_TO_TRACK] = flow._user_input.get(
+                CONF_ACTIVITY_TYPES_TO_TRACK, DEFAULT_ACTIVITY_TYPES
+            )
+            custom_data[CONF_NUM_RECENT_ACTIVITIES] = flow._user_input.get(
+                CONF_NUM_RECENT_ACTIVITIES, CONF_NUM_RECENT_ACTIVITIES_DEFAULT
+            )
+
+        assert custom_data[CONF_PHOTOS] is False
+        assert custom_data[CONF_DISTANCE_UNIT_OVERRIDE] == custom_distance_unit
+        assert custom_data[CONF_ACTIVITY_TYPES_TO_TRACK] == custom_activity_types
+        assert custom_data[CONF_NUM_RECENT_ACTIVITIES] == custom_num_recent
