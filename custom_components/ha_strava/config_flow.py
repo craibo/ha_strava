@@ -263,10 +263,11 @@ class OAuth2FlowHandler(
 
     DOMAIN = DOMAIN
     CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_PUSH
-    _import_photos_from_strava = True
-    _distance_unit_override = CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
-    _activity_types_to_track = DEFAULT_ACTIVITY_TYPES
-    _num_recent_activities = CONF_NUM_RECENT_ACTIVITIES_DEFAULT
+
+    def __init__(self):
+        """Initialize the OAuth2 flow handler."""
+        super().__init__()
+        self._user_input = None
 
     @property
     def logger(self) -> logging.Logger:
@@ -326,10 +327,7 @@ class OAuth2FlowHandler(
             return self.async_abort(reason="no_public_url")
 
         if user_input is not None:
-            self._import_photos_from_strava = user_input[CONF_PHOTOS]
-            self._distance_unit_override = user_input[CONF_DISTANCE_UNIT_OVERRIDE]
-            self._activity_types_to_track = user_input[CONF_ACTIVITY_TYPES_TO_TRACK]
-            self._num_recent_activities = user_input[CONF_NUM_RECENT_ACTIVITIES]
+            self._user_input = user_input
             config_entry_oauth2_flow.async_register_implementation(
                 self.hass,
                 DOMAIN,
@@ -370,10 +368,23 @@ class OAuth2FlowHandler(
         )
         data[CONF_CLIENT_ID] = self.flow_impl.client_id
         data[CONF_CLIENT_SECRET] = self.flow_impl.client_secret
-        data[CONF_PHOTOS] = self._import_photos_from_strava
-        data[CONF_DISTANCE_UNIT_OVERRIDE] = self._distance_unit_override
-        data[CONF_ACTIVITY_TYPES_TO_TRACK] = self._activity_types_to_track
-        data[CONF_NUM_RECENT_ACTIVITIES] = self._num_recent_activities
+
+        if self._user_input is not None:
+            data[CONF_PHOTOS] = self._user_input.get(CONF_PHOTOS, False)
+            data[CONF_DISTANCE_UNIT_OVERRIDE] = self._user_input.get(
+                CONF_DISTANCE_UNIT_OVERRIDE, CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
+            )
+            data[CONF_ACTIVITY_TYPES_TO_TRACK] = self._user_input.get(
+                CONF_ACTIVITY_TYPES_TO_TRACK, DEFAULT_ACTIVITY_TYPES
+            )
+            data[CONF_NUM_RECENT_ACTIVITIES] = self._user_input.get(
+                CONF_NUM_RECENT_ACTIVITIES, CONF_NUM_RECENT_ACTIVITIES_DEFAULT
+            )
+        else:
+            data[CONF_PHOTOS] = False
+            data[CONF_DISTANCE_UNIT_OVERRIDE] = CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
+            data[CONF_ACTIVITY_TYPES_TO_TRACK] = DEFAULT_ACTIVITY_TYPES
+            data[CONF_NUM_RECENT_ACTIVITIES] = CONF_NUM_RECENT_ACTIVITIES_DEFAULT
 
         return self.async_create_entry(title=title, data=data)
 
