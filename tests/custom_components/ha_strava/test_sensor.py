@@ -527,8 +527,25 @@ class TestSensorPlatform:
         coordinator = MagicMock()
         hass.data[DOMAIN] = {config_entry.entry_id: coordinator}
 
-        await async_setup_entry(hass, config_entry, AsyncMock())
-        # Function doesn't return a value, just completes successfully
+        async_add_entities_mock = AsyncMock()
+        await async_setup_entry(hass, config_entry, async_add_entities_mock)
+
+        # Verify entities were added (should only have summary stats and recent activity sensors)
+        async_add_entities_mock.assert_called_once()
+        call_args = async_add_entities_mock.call_args[0][0]
+
+        # Should only create summary stats sensors + recent activity sensors (no activity type sensors)
+        # 35 summary stats + 1 recent activity device (1 main + 15 attribute + 1 gear) = 35 + 17 = 52 sensors
+        expected_sensor_count = 52
+        assert len(call_args) == expected_sensor_count
+
+        # Verify no activity type sensors are created
+        sensor_types = [type(sensor).__name__ for sensor in call_args]
+        assert "StravaActivityTypeSensor" not in sensor_types
+        assert "StravaActivityGearSensor" not in sensor_types
+        assert "StravaActivityDeviceInfoSensor" not in sensor_types
+        assert "StravaSummaryStatsSensor" in sensor_types
+        assert "StravaRecentActivitySensor" in sensor_types
 
     @pytest.mark.asyncio
     async def test_async_setup_entry_none_activity_types(self, hass: HomeAssistant):
@@ -727,12 +744,12 @@ class TestStravaActivityGearSensor:
 
     @pytest.mark.asyncio
     async def test_async_setup_entry_missing_activity_types(self, hass: HomeAssistant):
-        """Test sensor platform setup with missing activity types."""
+        """Test sensor platform setup with missing activity types - should create no activity type sensors."""
         async for hass_instance in hass:
             hass = hass_instance
             break
 
-        # Create config entry without activity types
+        # Create config entry without activity types in both options and data
         config_entry = MockConfigEntry(
             domain=DOMAIN,
             unique_id="12345",
@@ -746,5 +763,65 @@ class TestStravaActivityGearSensor:
         coordinator = MagicMock()
         hass.data[DOMAIN] = {config_entry.entry_id: coordinator}
 
-        await async_setup_entry(hass, config_entry, AsyncMock())
-        # Function doesn't return a value, just completes successfully
+        async_add_entities_mock = AsyncMock()
+        await async_setup_entry(hass, config_entry, async_add_entities_mock)
+
+        # Verify entities were added (should only have summary stats and recent activity sensors)
+        async_add_entities_mock.assert_called_once()
+        call_args = async_add_entities_mock.call_args[0][0]
+
+        # Should only create summary stats sensors + recent activity sensors (no activity type sensors)
+        # 35 summary stats + 1 recent activity device (1 main + 15 attribute + 1 gear) = 35 + 17 = 52 sensors
+        expected_sensor_count = 52
+        assert len(call_args) == expected_sensor_count
+
+        # Verify no activity type sensors are created
+        sensor_types = [type(sensor).__name__ for sensor in call_args]
+        assert "StravaActivityTypeSensor" not in sensor_types
+        assert "StravaActivityGearSensor" not in sensor_types
+        assert "StravaActivityDeviceInfoSensor" not in sensor_types
+        assert "StravaSummaryStatsSensor" in sensor_types
+        assert "StravaRecentActivitySensor" in sensor_types
+
+    @pytest.mark.asyncio
+    async def test_async_setup_entry_activity_types_from_data(
+        self, hass: HomeAssistant
+    ):
+        """Test sensor platform setup with activity types in data (backward compatibility)."""
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+
+        # Create config entry with activity types in data (not options)
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            unique_id="12345",
+            data={
+                CONF_CLIENT_ID: "test_client_id",
+                CONF_CLIENT_SECRET: "test_client_secret",
+                CONF_ACTIVITY_TYPES_TO_TRACK: ["Run", "Swim"],
+            },
+            title="Test Strava User",
+        )
+
+        coordinator = MagicMock()
+        hass.data[DOMAIN] = {config_entry.entry_id: coordinator}
+
+        async_add_entities_mock = AsyncMock()
+        await async_setup_entry(hass, config_entry, async_add_entities_mock)
+
+        # Verify entities were added
+        async_add_entities_mock.assert_called_once()
+        call_args = async_add_entities_mock.call_args[0][0]
+
+        # Should create sensors for Run and Swim (2 activity types × 17 sensors each)
+        # + 35 summary stats + 1 recent activity device (17 sensors)
+        # = 34 + 35 + 17 = 86 sensors
+        expected_sensor_count = 86
+        assert len(call_args) == expected_sensor_count
+
+        # Verify activity type sensors are created for Run and Swim
+        sensor_unique_ids = [sensor.unique_id for sensor in call_args]
+        assert "strava_12345_run" in sensor_unique_ids
+        assert "strava_12345_swim" in sensor_unique_ids
+        assert "strava_12345_ride" not in sensor_unique_ids  # Not selected

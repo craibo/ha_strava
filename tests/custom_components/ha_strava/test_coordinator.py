@@ -65,18 +65,20 @@ class TestStravaDataUpdateCoordinator:
         # Plus the first N recent activities (default is 1, so first activity gets detailed call)
         activity_types_seen = set()
         activities_needing_details = set()
+        filtered_activity_count = 0
 
         for idx, activity in enumerate(mock_strava_activities):
             activity_type = activity.get("type")
             activity_id = activity["id"]
+            filtered_activity_count += 1
 
             # Track most recent per type
             if activity_type not in activity_types_seen:
                 activity_types_seen.add(activity_type)
                 activities_needing_details.add(activity_id)
 
-            # Track first N recent activities (default is 1)
-            if idx < 1:  # CONF_NUM_RECENT_ACTIVITIES_DEFAULT = 1
+            # Track first N recent activities (default is 1) - by filtered count, not index
+            if filtered_activity_count <= 1:  # CONF_NUM_RECENT_ACTIVITIES_DEFAULT = 1
                 activities_needing_details.add(activity_id)
 
         # Mock detailed activity calls for activities that need them
@@ -137,21 +139,25 @@ class TestStravaDataUpdateCoordinator:
         # Plus the first N recent activities (default is 1, so first activity gets detailed call)
         activity_types_seen = set()
         activities_needing_details = set()
+        filtered_activity_count = 0
 
         for idx, activity in enumerate(mock_strava_activities_all_types):
             activity_type = activity.get("type")
             activity_id = activity["id"]
 
+            # Only count activities that match selected types
+            if activity_type not in ["Run", "Ride"]:
+                continue
+
+            filtered_activity_count += 1
+
             # Track most recent per selected type
-            if (
-                activity_type in ["Run", "Ride"]
-                and activity_type not in activity_types_seen
-            ):
+            if activity_type not in activity_types_seen:
                 activity_types_seen.add(activity_type)
                 activities_needing_details.add(activity_id)
 
-            # Track first N recent activities (default is 1)
-            if idx < 1:  # CONF_NUM_RECENT_ACTIVITIES_DEFAULT = 1
+            # Track first N recent activities (default is 1) - by filtered count, not index
+            if filtered_activity_count <= 1:  # CONF_NUM_RECENT_ACTIVITIES_DEFAULT = 1
                 activities_needing_details.add(activity_id)
 
         # Mock detailed activity calls for activities that need them
@@ -538,18 +544,20 @@ class TestStravaDataUpdateCoordinator:
         # Mock activity detail responses - for most recent activity of each type AND first N recent activities
         activity_types_seen = set()
         activities_needing_details = set()
+        filtered_activity_count = 0
 
         for idx, activity in enumerate(mock_strava_activities):
             activity_type = activity.get("type")
             activity_id = activity["id"]
+            filtered_activity_count += 1
 
             # Track most recent per type
             if activity_type not in activity_types_seen:
                 activity_types_seen.add(activity_type)
                 activities_needing_details.add(activity_id)
 
-            # Track first N recent activities (default is 1)
-            if idx < 1:  # CONF_NUM_RECENT_ACTIVITIES_DEFAULT = 1
+            # Track first N recent activities (default is 1) - by filtered count, not index
+            if filtered_activity_count <= 1:  # CONF_NUM_RECENT_ACTIVITIES_DEFAULT = 1
                 activities_needing_details.add(activity_id)
 
         # Mock detailed activity calls for activities that need them
@@ -765,18 +773,20 @@ class TestStravaDataUpdateCoordinator:
         # Mock activity detail responses - for most recent activity of each type AND first N recent activities
         activity_types_seen = set()
         activities_needing_details = set()
+        filtered_activity_count = 0
 
         for idx, activity in enumerate(malformed_activities):
             activity_type = activity.get("type")
             activity_id = activity["id"]
+            filtered_activity_count += 1
 
             # Track most recent per type
             if activity_type not in activity_types_seen:
                 activity_types_seen.add(activity_type)
                 activities_needing_details.add(activity_id)
 
-            # Track first N recent activities (default is 1)
-            if idx < 1:  # CONF_NUM_RECENT_ACTIVITIES_DEFAULT = 1
+            # Track first N recent activities (default is 1) - by filtered count, not index
+            if filtered_activity_count <= 1:  # CONF_NUM_RECENT_ACTIVITIES_DEFAULT = 1
                 activities_needing_details.add(activity_id)
 
         # Mock detailed activity calls for activities that need them
@@ -908,3 +918,185 @@ class TestStravaDataUpdateCoordinator:
         assert processed["kcal"] == 250
         # Test power processing - zero should be preserved
         assert processed["power"] == 0
+
+    @pytest.mark.asyncio
+    async def test_fetch_activities_empty_activity_types(
+        self, hass: HomeAssistant, aioresponses_mock, mock_strava_activities_all_types
+    ):
+        """Test that coordinator handles empty activity types list correctly."""
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+
+        # Create config entry with empty activity types
+        empty_config_entry = MockConfigEntry(
+            domain="ha_strava",
+            unique_id="12345",
+            data={
+                "client_id": "test_client_id",
+                "client_secret": "test_client_secret",
+                "token": {
+                    "access_token": "test_access_token",
+                    "refresh_token": "test_refresh_token",
+                    "expires_at": 4102444800,
+                    "token_type": "Bearer",
+                },
+            },
+            options={CONF_ACTIVITY_TYPES_TO_TRACK: []},
+            title="Test Strava User",
+        )
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=empty_config_entry)
+
+        # Mock API responses
+        aioresponses_mock.get(
+            "https://www.strava.com/api/v3/athlete/activities?per_page=200",
+            payload=mock_strava_activities_all_types,
+            status=200,
+        )
+
+        # Mock summary stats (needed even when no activities are processed)
+        aioresponses_mock.get(
+            "https://www.strava.com/api/v3/athletes/12345/stats",
+            payload={
+                "biggest_ride_distance": 0.0,
+                "biggest_climb_elevation_gain": 0.0,
+                "recent_ride_totals": {"count": 0, "distance": 0.0},
+            },
+            status=200,
+        )
+
+        # Fetch activities
+        athlete_id, activities = await coordinator._fetch_activities()
+
+        # Verify athlete_id is still extracted (needed for summary stats)
+        assert athlete_id == 12345
+
+        # Verify no activities are returned when activity types list is empty
+        assert len(activities) == 0
+
+    @pytest.mark.asyncio
+    async def test_fetch_activities_missing_activity_types(
+        self, hass: HomeAssistant, aioresponses_mock, mock_strava_activities_all_types
+    ):
+        """Test that coordinator handles missing activity types config correctly."""
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+
+        # Create config entry without activity types in both options and data
+        missing_config_entry = MockConfigEntry(
+            domain="ha_strava",
+            unique_id="12345",
+            data={
+                "client_id": "test_client_id",
+                "client_secret": "test_client_secret",
+                "token": {
+                    "access_token": "test_access_token",
+                    "refresh_token": "test_refresh_token",
+                    "expires_at": 4102444800,
+                    "token_type": "Bearer",
+                },
+            },
+            title="Test Strava User",
+        )
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=missing_config_entry)
+
+        # Mock API responses
+        aioresponses_mock.get(
+            "https://www.strava.com/api/v3/athlete/activities?per_page=200",
+            payload=mock_strava_activities_all_types,
+            status=200,
+        )
+
+        # Mock summary stats
+        aioresponses_mock.get(
+            "https://www.strava.com/api/v3/athletes/12345/stats",
+            payload={
+                "biggest_ride_distance": 0.0,
+                "biggest_climb_elevation_gain": 0.0,
+                "recent_ride_totals": {"count": 0, "distance": 0.0},
+            },
+            status=200,
+        )
+
+        # Fetch activities
+        athlete_id, activities = await coordinator._fetch_activities()
+
+        # Verify athlete_id is still extracted (needed for summary stats)
+        assert athlete_id == 12345
+
+        # Verify no activities are returned when activity types config is missing
+        assert len(activities) == 0
+
+    @pytest.mark.asyncio
+    async def test_fetch_activities_activity_types_from_data(
+        self, hass: HomeAssistant, aioresponses_mock, mock_strava_activities_all_types
+    ):
+        """Test that coordinator reads activity types from data when not in options."""
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+
+        # Create config entry with activity types in data (not options)
+        data_config_entry = MockConfigEntry(
+            domain="ha_strava",
+            unique_id="12345",
+            data={
+                "client_id": "test_client_id",
+                "client_secret": "test_client_secret",
+                "token": {
+                    "access_token": "test_access_token",
+                    "refresh_token": "test_refresh_token",
+                    "expires_at": 4102444800,
+                    "token_type": "Bearer",
+                },
+                CONF_ACTIVITY_TYPES_TO_TRACK: ["Swim"],
+            },
+            title="Test Strava User",
+        )
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=data_config_entry)
+
+        # Mock API responses
+        aioresponses_mock.get(
+            "https://www.strava.com/api/v3/athlete/activities?per_page=200",
+            payload=mock_strava_activities_all_types,
+            status=200,
+        )
+
+        # Mock summary stats
+        aioresponses_mock.get(
+            "https://www.strava.com/api/v3/athletes/12345/stats",
+            payload={
+                "biggest_ride_distance": 0.0,
+                "biggest_climb_elevation_gain": 0.0,
+                "recent_ride_totals": {"count": 0, "distance": 0.0},
+            },
+            status=200,
+        )
+
+        # Find Swim activity in mock data for detailed call
+        swim_activity = next(
+            (a for a in mock_strava_activities_all_types if a.get("type") == "Swim"),
+            None,
+        )
+        if swim_activity:
+            activity_id = swim_activity["id"]
+            aioresponses_mock.get(
+                f"https://www.strava.com/api/v3/activities/{activity_id}",
+                payload={**swim_activity, "calories": 300},
+                status=200,
+            )
+
+        # Fetch activities
+        athlete_id, activities = await coordinator._fetch_activities()
+
+        # Verify athlete_id is extracted
+        assert athlete_id == 12345
+
+        # Verify only Swim activities are returned
+        assert len(activities) > 0
+        for activity in activities:
+            assert activity.get(CONF_SENSOR_ACTIVITY_TYPE) == "Swim"

@@ -61,7 +61,6 @@ from .const import (
     CONF_SENSOR_POWER,
     CONF_SENSOR_SPEED,
     CONF_SENSOR_TITLE,
-    DEFAULT_ACTIVITY_TYPES,
     DOMAIN,
     STRAVA_ACTHLETE_BASE_URL,
     STRAVA_ACTIVITY_BASE_URL,
@@ -91,9 +90,16 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     coordinator = hass.data[DOMAIN][config_entry.entry_id]
     athlete_id = config_entry.unique_id
 
-    # Get selected activity types from config, default to common types
-    selected_activity_types = config_entry.options.get(
-        CONF_ACTIVITY_TYPES_TO_TRACK, DEFAULT_ACTIVITY_TYPES
+    # Get selected activity types from config, default to empty list
+    # Check both options (for updated configs) and data (for initial configs)
+    selected_activity_types = (
+        config_entry.options.get(CONF_ACTIVITY_TYPES_TO_TRACK)
+        if CONF_ACTIVITY_TYPES_TO_TRACK in config_entry.options
+        else (
+            config_entry.data.get(CONF_ACTIVITY_TYPES_TO_TRACK)
+            if CONF_ACTIVITY_TYPES_TO_TRACK in config_entry.data
+            else []
+        )
     )
 
     # Get number of recent activities from config, default to 1
