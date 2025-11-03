@@ -65,18 +65,20 @@ class TestStravaDataUpdateCoordinator:
         # Plus the first N recent activities (default is 1, so first activity gets detailed call)
         activity_types_seen = set()
         activities_needing_details = set()
+        filtered_activity_count = 0
 
         for idx, activity in enumerate(mock_strava_activities):
             activity_type = activity.get("type")
             activity_id = activity["id"]
+            filtered_activity_count += 1
 
             # Track most recent per type
             if activity_type not in activity_types_seen:
                 activity_types_seen.add(activity_type)
                 activities_needing_details.add(activity_id)
 
-            # Track first N recent activities (default is 1)
-            if idx < 1:  # CONF_NUM_RECENT_ACTIVITIES_DEFAULT = 1
+            # Track first N recent activities (default is 1) - by filtered count, not index
+            if filtered_activity_count <= 1:  # CONF_NUM_RECENT_ACTIVITIES_DEFAULT = 1
                 activities_needing_details.add(activity_id)
 
         # Mock detailed activity calls for activities that need them
@@ -137,21 +139,25 @@ class TestStravaDataUpdateCoordinator:
         # Plus the first N recent activities (default is 1, so first activity gets detailed call)
         activity_types_seen = set()
         activities_needing_details = set()
+        filtered_activity_count = 0
 
         for idx, activity in enumerate(mock_strava_activities_all_types):
             activity_type = activity.get("type")
             activity_id = activity["id"]
 
+            # Only count activities that match selected types
+            if activity_type not in ["Run", "Ride"]:
+                continue
+
+            filtered_activity_count += 1
+
             # Track most recent per selected type
-            if (
-                activity_type in ["Run", "Ride"]
-                and activity_type not in activity_types_seen
-            ):
+            if activity_type not in activity_types_seen:
                 activity_types_seen.add(activity_type)
                 activities_needing_details.add(activity_id)
 
-            # Track first N recent activities (default is 1)
-            if idx < 1:  # CONF_NUM_RECENT_ACTIVITIES_DEFAULT = 1
+            # Track first N recent activities (default is 1) - by filtered count, not index
+            if filtered_activity_count <= 1:  # CONF_NUM_RECENT_ACTIVITIES_DEFAULT = 1
                 activities_needing_details.add(activity_id)
 
         # Mock detailed activity calls for activities that need them
@@ -538,18 +544,20 @@ class TestStravaDataUpdateCoordinator:
         # Mock activity detail responses - for most recent activity of each type AND first N recent activities
         activity_types_seen = set()
         activities_needing_details = set()
+        filtered_activity_count = 0
 
         for idx, activity in enumerate(mock_strava_activities):
             activity_type = activity.get("type")
             activity_id = activity["id"]
+            filtered_activity_count += 1
 
             # Track most recent per type
             if activity_type not in activity_types_seen:
                 activity_types_seen.add(activity_type)
                 activities_needing_details.add(activity_id)
 
-            # Track first N recent activities (default is 1)
-            if idx < 1:  # CONF_NUM_RECENT_ACTIVITIES_DEFAULT = 1
+            # Track first N recent activities (default is 1) - by filtered count, not index
+            if filtered_activity_count <= 1:  # CONF_NUM_RECENT_ACTIVITIES_DEFAULT = 1
                 activities_needing_details.add(activity_id)
 
         # Mock detailed activity calls for activities that need them
@@ -765,18 +773,20 @@ class TestStravaDataUpdateCoordinator:
         # Mock activity detail responses - for most recent activity of each type AND first N recent activities
         activity_types_seen = set()
         activities_needing_details = set()
+        filtered_activity_count = 0
 
         for idx, activity in enumerate(malformed_activities):
             activity_type = activity.get("type")
             activity_id = activity["id"]
+            filtered_activity_count += 1
 
             # Track most recent per type
             if activity_type not in activity_types_seen:
                 activity_types_seen.add(activity_type)
                 activities_needing_details.add(activity_id)
 
-            # Track first N recent activities (default is 1)
-            if idx < 1:  # CONF_NUM_RECENT_ACTIVITIES_DEFAULT = 1
+            # Track first N recent activities (default is 1) - by filtered count, not index
+            if filtered_activity_count <= 1:  # CONF_NUM_RECENT_ACTIVITIES_DEFAULT = 1
                 activities_needing_details.add(activity_id)
 
         # Mock detailed activity calls for activities that need them
