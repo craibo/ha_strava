@@ -148,8 +148,9 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
         activities_needing_details = set()
         activities_by_type = {}
         athlete_id = None
+        filtered_activity_count = 0
 
-        for idx, activity in enumerate(activities_json):
+        for activity in activities_json:
             athlete_id = int(activity["athlete"]["id"])
             sport_type = activity.get("type")
 
@@ -158,14 +159,15 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
                 continue
 
             activity_id = activity["id"]
+            filtered_activity_count += 1
 
             # Track most recent per type
             if sport_type not in activities_by_type:
                 activities_by_type[sport_type] = activity_id
                 activities_needing_details.add(activity_id)
 
-            # Track first N recent activities
-            if idx < num_recent_activities:
+            # Track first N recent activities (by filtered count, not set size)
+            if filtered_activity_count <= num_recent_activities:
                 activities_needing_details.add(activity_id)
 
         _LOGGER.debug(f"Found most recent activities per type: {activities_by_type}")
