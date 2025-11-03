@@ -41,11 +41,23 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up the Camera that displays images from Strava."""
     coordinator = hass.data[DOMAIN][config_entry.entry_id]
     athlete_id = config_entry.unique_id
-    default_enabled = config_entry.options.get(CONF_PHOTOS, False)
 
-    url_cam = UrlCam(
-        coordinator, default_enabled=default_enabled, athlete_id=athlete_id
+    # Check both options (for updated configs) and data (for initial configs)
+    photos_enabled = (
+        config_entry.options.get(CONF_PHOTOS)
+        if CONF_PHOTOS in config_entry.options
+        else (
+            config_entry.data.get(CONF_PHOTOS)
+            if CONF_PHOTOS in config_entry.data
+            else False
+        )
     )
+
+    # Only create camera if photos are explicitly enabled
+    if not photos_enabled:
+        return
+
+    url_cam = UrlCam(coordinator, default_enabled=True, athlete_id=athlete_id)
     await url_cam.setup_pickle_urls()
     async_add_entities([url_cam])
 

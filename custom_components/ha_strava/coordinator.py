@@ -49,7 +49,6 @@ from .const import (
     CONF_SENSOR_TITLE,
     CONF_SENSOR_TROPHIES,
     CONFIG_IMG_SIZE,
-    DEFAULT_ACTIVITY_TYPES,
     DOMAIN,
     OAUTH2_AUTHORIZE,
     OAUTH2_TOKEN,
@@ -134,9 +133,16 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.error(f"Invalid JSON response: {json_err}")
             raise UpdateFailed(f"Invalid JSON response: {json_err}") from json_err
 
-        # Get selected activity types from config
-        selected_activity_types = self.entry.options.get(
-            CONF_ACTIVITY_TYPES_TO_TRACK, DEFAULT_ACTIVITY_TYPES
+        # Get selected activity types from config, default to empty list
+        # Check both options (for updated configs) and data (for initial configs)
+        selected_activity_types = (
+            self.entry.options.get(CONF_ACTIVITY_TYPES_TO_TRACK)
+            if CONF_ACTIVITY_TYPES_TO_TRACK in self.entry.options
+            else (
+                self.entry.data.get(CONF_ACTIVITY_TYPES_TO_TRACK)
+                if CONF_ACTIVITY_TYPES_TO_TRACK in self.entry.data
+                else []
+            )
         )
 
         # Get number of recent activities from config
@@ -150,12 +156,16 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
         athlete_id = None
         filtered_activity_count = 0
 
+        # Get athlete_id from first activity (needed for summary stats even if no activities match)
+        if activities_json:
+            athlete_id = int(activities_json[0]["athlete"]["id"])
+
         for activity in activities_json:
-            athlete_id = int(activity["athlete"]["id"])
             sport_type = activity.get("type")
 
             # Filter activities based on selected activity types
-            if sport_type not in selected_activity_types:
+            # If no activity types selected, skip all activities
+            if not selected_activity_types or sport_type not in selected_activity_types:
                 continue
 
             activity_id = activity["id"]
@@ -178,7 +188,9 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
         for activity in activities_json:
             sport_type = activity.get("type")
 
-            if sport_type not in selected_activity_types:
+            # Filter activities based on selected activity types
+            # If no activity types selected, skip all activities
+            if not selected_activity_types or sport_type not in selected_activity_types:
                 continue
 
             activity_id = int(activity["id"])
