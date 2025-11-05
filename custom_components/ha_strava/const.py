@@ -579,23 +579,23 @@ def format_seconds_to_human_readable(seconds) -> str:
         seconds: Time in seconds (int, float, or None)
 
     Returns:
-        Formatted string (e.g., "1d 5h 34 min 36 sec")
+        Formatted string (e.g., "1d 5h 34min 36sec")
 
     Examples:
-        365 seconds → "6 min 5 sec"
-        3785 seconds → "1h 3 min 5 sec"
-        106476 seconds → "1d 5h 34 min 36 sec"
+        365 seconds → "6min 5sec"
+        3785 seconds → "1h 3min 5sec"
+        106476 seconds → "1d 5h 34min 36sec"
     """
     if seconds is None or seconds == 0:
-        return "0 sec"
+        return "0sec"
 
     try:
         total_seconds = int(float(seconds))
     except (TypeError, ValueError):
-        return "0 sec"
+        return "0sec"
 
     if total_seconds < 0:
-        return "0 sec"
+        return "0sec"
 
     # Calculate time components
     days = total_seconds // 86400
@@ -611,8 +611,8 @@ def format_seconds_to_human_readable(seconds) -> str:
     if hours > 0:
         parts.append(f"{hours}h")
     if minutes > 0:
-        parts.append(f"{minutes} min")
+        parts.append(f"{minutes}min")
     if remaining_seconds > 0 or not parts:  # Always show seconds if no other components
-        parts.append(f"{remaining_seconds} sec")
+        parts.append(f"{remaining_seconds}sec")
 
     return " ".join(parts)
