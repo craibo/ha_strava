@@ -559,6 +559,8 @@ def generate_recent_activity_sensor_name(
 
 def normalize_activity_type(activity_type: str) -> str:
     """Normalize activity type for consistent naming."""
+    if activity_type is None or not isinstance(activity_type, str):
+        return None
     return activity_type.lower().replace(" ", "_")
 
 
@@ -577,12 +579,12 @@ def format_seconds_to_human_readable(seconds) -> str:
         seconds: Time in seconds (int, float, or None)
 
     Returns:
-        Formatted string (e.g., "1d 5h 34min 36sec")
+        Formatted string (e.g., "1d 5h 34 min 36 sec")
 
     Examples:
-        365 seconds → "6min 5sec"
-        3785 seconds → "1h 3min 5sec"
-        106476 seconds → "1d 5h 34min 36sec"
+        365 seconds → "6 min 5 sec"
+        3785 seconds → "1h 3 min 5 sec"
+        106476 seconds → "1d 5h 34 min 36 sec"
     """
     if seconds is None or seconds == 0:
         return "0 sec"
@@ -609,8 +611,8 @@ def format_seconds_to_human_readable(seconds) -> str:
     if hours > 0:
         parts.append(f"{hours}h")
     if minutes > 0:
-        parts.append(f"{minutes}min")
+        parts.append(f"{minutes} min")
     if remaining_seconds > 0 or not parts:  # Always show seconds if no other components
-        parts.append(f"{remaining_seconds}sec")
+        parts.append(f"{remaining_seconds} sec")
 
     return " ".join(parts)

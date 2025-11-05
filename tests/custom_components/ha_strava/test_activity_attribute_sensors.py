@@ -6,6 +6,8 @@ from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.const import UnitOfLength, UnitOfTime
 
 from custom_components.ha_strava.const import (
+    CONF_DISTANCE_UNIT_OVERRIDE,
+    CONF_DISTANCE_UNIT_OVERRIDE_METRIC,
     CONF_SENSOR_CALORIES,
     CONF_SENSOR_DATE,
     CONF_SENSOR_DISTANCE,
@@ -381,6 +383,9 @@ class TestStravaActivityMetricSensor:
             "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
         }
         coordinator.entry = MagicMock()
+        coordinator.entry.options = {
+            CONF_DISTANCE_UNIT_OVERRIDE: CONF_DISTANCE_UNIT_OVERRIDE_METRIC
+        }
 
         sensor = StravaActivityMetricSensor(
             coordinator=coordinator,
@@ -390,7 +395,7 @@ class TestStravaActivityMetricSensor:
         )
 
         value = sensor.native_value
-        assert value == 5000.0
+        assert value == 5.0  # distance converted from meters to km
 
     def test_native_value_no_activity(self):
         """Test native value when no activity data."""
