@@ -14,6 +14,7 @@ from custom_components.ha_strava.const import (
     CONF_IMG_UPDATE_INTERVAL_SECONDS,
     CONF_NUM_RECENT_ACTIVITIES,
     CONF_PHOTOS,
+    DOMAIN,
 )
 
 
@@ -260,6 +261,27 @@ class TestOptionsFlowReload:
         flow.hass = hass
         flow.config_entry = mock_config_entry
 
+        # Create mock devices
+        mock_device_run = MagicMock()
+        mock_device_run.identifiers = {(DOMAIN, "strava_12345_run")}
+        mock_device_run.id = "device_run"
+
+        mock_device_ride = MagicMock()
+        mock_device_ride.identifiers = {(DOMAIN, "strava_12345_ride")}
+        mock_device_ride.id = "device_ride"
+
+        mock_device_recent = MagicMock()
+        mock_device_recent.identifiers = {(DOMAIN, "strava_12345_recent")}
+        mock_device_recent.id = "device_recent"
+
+        mock_device_photos = MagicMock()
+        mock_device_photos.identifiers = {(DOMAIN, "strava_12345_photos")}
+        mock_device_photos.id = "device_photos"
+
+        # Mock device registry
+        mock_device_registry = MagicMock()
+        mock_device_registry.async_update_device = MagicMock()
+
         # Mock entity registry operations
         with patch(
             "custom_components.ha_strava.config_flow.async_get"
@@ -272,6 +294,17 @@ class TestOptionsFlowReload:
             with patch(
                 "custom_components.ha_strava.config_flow.async_entries_for_config_entry",
                 return_value=[mock_entity1, mock_entity2, mock_entity3],
+            ), patch(
+                "custom_components.ha_strava.config_flow.dr.async_get",
+                return_value=mock_device_registry,
+            ), patch(
+                "custom_components.ha_strava.config_flow.dr.async_entries_for_config_entry",
+                return_value=[
+                    mock_device_run,
+                    mock_device_ride,
+                    mock_device_recent,
+                    mock_device_photos,
+                ],
             ):
                 # Test options step with activity type changes
                 result = await flow.async_step_init(
@@ -287,15 +320,25 @@ class TestOptionsFlowReload:
                 # Verify result
                 assert result["type"] == FlowResultType.CREATE_ENTRY
 
-                # Verify entity registry updates were called
-                # Run entity should be enabled
-                mock_registry.async_update_entity.assert_any_call(
-                    "sensor.strava_activity_run", disabled_by=None
+                # Verify device registry updates were called
+                # Run device should be enabled
+                mock_device_registry.async_update_device.assert_any_call(
+                    "device_run", disabled_by=None
                 )
-                # Ride entity should be disabled
-                mock_registry.async_update_entity.assert_any_call(
-                    "sensor.strava_activity_ride",
-                    disabled_by=MagicMock(),  # RegistryEntryDisabler.INTEGRATION
+                # Ride device should be disabled
+                from homeassistant.helpers import device_registry as dr
+
+                mock_device_registry.async_update_device.assert_any_call(
+                    "device_ride",
+                    disabled_by=dr.DeviceEntryDisabler.INTEGRATION,
+                )
+                # Photos device should be enabled (photos is True)
+                mock_device_registry.async_update_device.assert_any_call(
+                    "device_photos", disabled_by=None
+                )
+                # Recent device should be enabled (num_recent_activities is 1)
+                mock_device_registry.async_update_device.assert_any_call(
+                    "device_recent", disabled_by=None
                 )
 
     @pytest.mark.asyncio
@@ -315,10 +358,20 @@ class TestOptionsFlowReload:
         flow.hass = hass
         flow.config_entry = mock_config_entry
 
+        # Mock device registry
+        mock_device_registry = MagicMock()
+        mock_device_registry.async_update_device = MagicMock()
+
         # Mock entity registry operations to raise an error
         with patch(
             "custom_components.ha_strava.config_flow.async_get",
             side_effect=Exception("Registry error"),
+        ), patch(
+            "custom_components.ha_strava.config_flow.dr.async_get",
+            return_value=mock_device_registry,
+        ), patch(
+            "custom_components.ha_strava.config_flow.dr.async_entries_for_config_entry",
+            return_value=[],
         ):
             # Test options step - should handle error gracefully
             result = await flow.async_step_init(
@@ -351,6 +404,10 @@ class TestOptionsFlowReload:
         flow.hass = hass
         flow.config_entry = mock_config_entry
 
+        # Mock device registry
+        mock_device_registry = MagicMock()
+        mock_device_registry.async_update_device = MagicMock()
+
         # Mock entity registry operations
         with patch(
             "custom_components.ha_strava.config_flow.async_get"
@@ -362,6 +419,12 @@ class TestOptionsFlowReload:
             # Mock async_entries_for_config_entry
             with patch(
                 "custom_components.ha_strava.config_flow.async_entries_for_config_entry",
+                return_value=[],
+            ), patch(
+                "custom_components.ha_strava.config_flow.dr.async_get",
+                return_value=mock_device_registry,
+            ), patch(
+                "custom_components.ha_strava.config_flow.dr.async_entries_for_config_entry",
                 return_value=[],
             ):
                 # Test options step with minimal data

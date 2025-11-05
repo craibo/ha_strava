@@ -559,6 +559,8 @@ def generate_recent_activity_sensor_name(
 
 def normalize_activity_type(activity_type: str) -> str:
     """Normalize activity type for consistent naming."""
+    if activity_type is None or not isinstance(activity_type, str):
+        return None
     return activity_type.lower().replace(" ", "_")
 
 
@@ -585,15 +587,15 @@ def format_seconds_to_human_readable(seconds) -> str:
         106476 seconds → "1d 5h 34min 36sec"
     """
     if seconds is None or seconds == 0:
-        return "0 sec"
+        return "0sec"
 
     try:
         total_seconds = int(float(seconds))
     except (TypeError, ValueError):
-        return "0 sec"
+        return "0sec"
 
     if total_seconds < 0:
-        return "0 sec"
+        return "0sec"
 
     # Calculate time components
     days = total_seconds // 86400
