@@ -575,16 +575,19 @@ def format_activity_type_display(activity_type: str) -> str:
 def format_seconds_to_human_readable(seconds) -> str:
     """Format seconds into human-readable time format with days, hours, minutes, and seconds.
 
+    If a higher unit is present, all lower units are included in the formatted string.
+
     Args:
         seconds: Time in seconds (int, float, or None)
 
     Returns:
-        Formatted string (e.g., "1d 5h 34min 36sec")
+        Formatted string (e.g., "1d 5h 34min 36sec" or "1h 0min 5sec")
 
     Examples:
         365 seconds → "6min 5sec"
         3785 seconds → "1h 3min 5sec"
         106476 seconds → "1d 5h 34min 36sec"
+        3605 seconds → "1h 0min 5sec" (hours present, so minutes and seconds shown)
     """
     if seconds is None or seconds == 0:
         return "0sec"
@@ -603,16 +606,27 @@ def format_seconds_to_human_readable(seconds) -> str:
     minutes = (total_seconds % 3600) // 60
     remaining_seconds = total_seconds % 60
 
-    # Build formatted string, omitting zero values
+    # Build formatted string
+    # If a higher unit is present, all lower units must be present
     parts = []
 
     if days > 0:
+        # If days present, show all units (days, hours, minutes, seconds)
         parts.append(f"{days}d")
-    if hours > 0:
         parts.append(f"{hours}h")
-    if minutes > 0:
         parts.append(f"{minutes}min")
-    if remaining_seconds > 0 or not parts:  # Always show seconds if no other components
+        parts.append(f"{remaining_seconds}sec")
+    elif hours > 0:
+        # If hours present (but no days), show hours, minutes, seconds
+        parts.append(f"{hours}h")
+        parts.append(f"{minutes}min")
+        parts.append(f"{remaining_seconds}sec")
+    elif minutes > 0:
+        # If minutes present (but no hours or days), show minutes and seconds
+        parts.append(f"{minutes}min")
+        parts.append(f"{remaining_seconds}sec")
+    else:
+        # Only seconds present
         parts.append(f"{remaining_seconds}sec")
 
     return " ".join(parts)
