@@ -9,7 +9,7 @@
 **This is a major version update with significant architectural changes:**
 
 1. **Complete Sensor Restructure**: All existing sensors will be removed and replaced with a new architecture
-2. **Activity Type Selection**: You must now select which activity types to track (defaults to Run, Ride, Walk, Swim)
+2. **Activity Type Selection**: You must now select which activity types to track (defaults to Run, Ride, Swim)
 3. **Entity ID Changes**: All sensor entity IDs will change
 4. **No Migration Path**: You must manually reconfigure the integration after updating
 5. **Device Source Tracking**: New feature that automatically detects the device used for each activity
@@ -45,6 +45,7 @@ When configuring the Strava API, the **Authorization Callback Domain** must be s
 - Activity data in Home Assistant **auto-updates** whenever you add, modify, or delete activities on Strava
 - **Activity Type Selection**: Choose which of the 50 supported activity types to track
 - **Device Source Tracking**: Automatically detects and displays the device used for each activity
+- **Multi-User Support**: Add multiple Strava accounts, each with their own unique Strava app credentials
 - **Easy set-up**: only enter your Strava Client-ID and Client-Secret and you're ready to go
 
 <img src="https://raw.githubusercontent.com/craibo/ha_strava/main/img/strava_activity_device.png" width="50%"><img src="https://raw.githubusercontent.com/craibo/ha_strava/main/img/strava_summary_device.png" width="50%">
@@ -78,11 +79,17 @@ _If you use **Nabu Casa** then do this configuration from your **Nabu Casa URL**
 
 ### 2. Obtain your Strava API credentials
 
+**For Single User Setup:**
+
 After you've set up remote access for your Home Assistant instance, click [here](https://www.strava.com/settings/api) **or** head over to your **Strava Profile** and go to `Settings` > `My API Application`.
 
 Follow the steps in the configuration wizard, and eventually obtain your Strava API credentials (ID + secret). We need those credentials during the final installation step.
 
 **!!! IMPORTANT !!!** The **Authorization Callback Domain** must be set to: **my.home-assistant.io**
+
+**For Multiple Users:**
+
+If you want to add multiple Strava accounts to Home Assistant, each user must create their own Strava app with unique credentials. Strava only supports one athlete per Strava app, so you cannot reuse the same app credentials for different accounts. See the "Adding Multiple Strava Accounts" section below for detailed instructions.
 
 ### 3. Add the Strava Home Assistant Integration to your Home Assistant Installation
 
@@ -100,6 +107,28 @@ Now is the time to fire up the Strava Home Assistant Integration for the first t
 
 From within Home Assistant, head over to `Configuration` > `Integrations` and hit the "+" symbol at the bottom. Search for "Strava Home Assistant" and click on the icon to add the Integration to Home Assistant. You'll automatically be prompted to enter your Strava API credentials. It'll take a few seconds to complete the set-up process after you've granted all the required permissions.
 
+### 5. Adding Multiple Strava Accounts
+
+The integration supports multiple Strava users in a single Home Assistant instance. Each user must have their own unique Strava app credentials.
+
+**Important Requirements:**
+
+- Each Strava account requires its own unique Strava app (Client ID and Client Secret)
+- Strava only supports one athlete per Strava app - you cannot use the same app credentials for multiple accounts
+- Each user will have their own separate integration entry in Home Assistant
+- Each user's data is completely isolated
+
+**To add an additional Strava account:**
+
+1. The second user must create their own Strava app at https://www.strava.com/settings/api
+2. Set the Authorization Callback Domain to: **my.home-assistant.io**
+3. In Home Assistant, go to `Configuration` > `Integrations` and click the `+` button
+4. Search for "Strava Home Assistant" and add the integration again
+5. Enter the new user's unique Client ID and Client Secret
+6. Complete the OAuth2 authentication flow for the second user
+
+**Note:** You can add as many Strava accounts as needed, as long as each account has its own unique Strava app credentials.
+
 ## ⚠️ Breaking Changes in v4.0.0
 
 **This is a major version update with significant architectural changes:**
@@ -114,7 +143,7 @@ From within Home Assistant, head over to `Configuration` > `Integrations` and hi
 
 ## Configuration/Customization
 
-Upon completion of the installation process, the Strava Home Assistant integration **automatically creates sensor entities** for the activity types you select. By default, only **Run** and **Ride** activity types are enabled.
+Upon completion of the installation process, the Strava Home Assistant integration **automatically creates sensor entities** for the activity types you select. By default, the integration tracks **Run, Ride, and Swim** activities.
 
 ### 1. Select Activity Types to Track
 
