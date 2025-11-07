@@ -12,6 +12,7 @@ from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from homeassistant.core import callback
 from homeassistant.helpers import config_entry_oauth2_flow
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity_registry import (
     RegistryEntryDisabler,
     async_entries_for_config_entry,
@@ -38,6 +39,7 @@ from .const import (
     OAUTH2_AUTHORIZE,
     OAUTH2_TOKEN,
     SUPPORTED_ACTIVITY_TYPES,
+    normalize_activity_type,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -54,8 +56,11 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     Data Entry flow to allow runtime changes to the Strava Home Assistant Config
     """
 
-    def __init__(self):
+    def __init__(self, config_entry=None):
         """Initialize the options flow."""
+        super().__init__()
+        if config_entry:
+            self.config_entry = config_entry
         self._config_entry_title = None
         self._import_strava_images = None
         self._img_update_interval_seconds = None
@@ -131,59 +136,138 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         Initial OptionsFlow step - asks for activity types to track in HASS
         """
         if user_input is not None:
-            _entity_registry = async_get(hass=self.hass)
-            entities = async_entries_for_config_entry(
-                registry=_entity_registry,
-                config_entry_id=self.config_entry.entry_id,
-            )
-
             # Enable/disable entities based on selected activity types
             selected_activity_types = user_input.get(CONF_ACTIVITY_TYPES_TO_TRACK, [])
             new_num_recent_activities = user_input.get(CONF_NUM_RECENT_ACTIVITIES, 1)
 
-            for entity in entities:
-                try:
-                    # Enable/disable activity type sensors based on selection
-                    if "strava_activity_" in entity.entity_id:
-                        # Extract activity type from entity ID
-                        activity_type = entity.entity_id.split("_")[-1].title()
-                        if activity_type in selected_activity_types:
-                            _entity_registry.async_update_entity(
-                                entity.entity_id, disabled_by=None
+            # Get entity registry and process entities
+            _entity_registry = None
+            entities = []
+            try:
+                _entity_registry = async_get(hass=self.hass)
+                entities = async_entries_for_config_entry(
+                    registry=_entity_registry,
+                    config_entry_id=self.config_entry.entry_id,
+                )
+            except Exception as e:
+                _LOGGER.warning(
+                    f"Error accessing entity registry: {e}. Continuing with device registry updates."
+                )
+
+            # Get device registry and disable/enable devices based on selections
+            _device_registry = None
+            devices = []
+            try:
+                _device_registry = dr.async_get(hass=self.hass)
+                devices = dr.async_entries_for_config_entry(
+                    registry=_device_registry,
+                    config_entry_id=self.config_entry.entry_id,
+                )
+            except Exception as e:
+                _LOGGER.warning(
+                    f"Error accessing device registry: {e}. Continuing with entity updates."
+                )
+
+            athlete_id = self.config_entry.unique_id
+            normalized_selected_types = {
+                normalize_activity_type(t)
+                for t in selected_activity_types
+                if t is not None
+            }
+
+            # Disable/enable devices based on activity type and photo selections
+            if _device_registry is not None:
+                for device in devices:
+                    # Get device identifier (second element of identifiers tuple)
+                    device_identifier = None
+                    for identifier in device.identifiers:
+                        if identifier[0] == DOMAIN:
+                            device_identifier = identifier[1]
+                            break
+
+                    if not device_identifier:
+                        continue
+
+                    # Parse device identifier: strava_{athlete_id}_{device_type}
+                    # or strava_{athlete_id}_recent_{index} for recent activities
+                    parts = device_identifier.split("_")
+                    if len(parts) < 3 or parts[0] != "strava" or parts[1] != athlete_id:
+                        continue
+
+                    device_type = parts[2]
+
+                    # Handle camera device
+                    if device_type == "photos":
+                        if user_input.get(CONF_PHOTOS, False):
+                            _device_registry.async_update_device(
+                                device.id, disabled_by=None
                             )
                         else:
-                            _entity_registry.async_update_entity(
-                                entity.entity_id,
-                                disabled_by=RegistryEntryDisabler.INTEGRATION,
+                            _device_registry.async_update_device(
+                                device.id,
+                                disabled_by=dr.DeviceEntryDisabler.INTEGRATION,
                             )
-                    # Enable/disable summary stats based on activity type selection
-                    elif "strava_stats_" in entity.entity_id:
-                        # Extract activity type from entity ID
-                        parts = entity.entity_id.split("_")
-                        if len(parts) >= 4:
-                            activity_type = parts[3].title()
-                            if activity_type in selected_activity_types:
-                                _entity_registry.async_update_entity(
-                                    entity.entity_id, disabled_by=None
-                                )
-                            else:
-                                _entity_registry.async_update_entity(
-                                    entity.entity_id,
-                                    disabled_by=RegistryEntryDisabler.INTEGRATION,
-                                )
-                    # Handle recent activity entities
-                    elif "strava_recent" in entity.entity_id:
-                        # Extract activity index from entity ID
-                        parts = entity.entity_id.split("_")
-                        if len(parts) >= 3:
-                            # Check if this is a numbered recent activity (e.g., strava_123_recent_2_title)
-                            if (
-                                len(parts) >= 4
-                                and parts[2] == "recent"
-                                and parts[3].isdigit()
-                            ):
-                                activity_index = int(parts[3])
-                                if activity_index <= new_num_recent_activities:
+                        continue
+
+                    # Handle recent activity devices
+                    # Format: strava_{athlete_id}_recent (index 0) or strava_{athlete_id}_recent_{index} (index > 0)
+                    if device_type == "recent":
+                        # Extract activity index from device identifier
+                        if len(parts) == 3:
+                            # Index 0: strava_{athlete_id}_recent
+                            activity_index = 0
+                        elif len(parts) == 4 and parts[3].isdigit():
+                            # Index N: strava_{athlete_id}_recent_{index}
+                            # Note: device ID uses index+1 (e.g., recent_2 for activity_index=1)
+                            activity_index = int(parts[3]) - 1
+                        else:
+                            # Malformed recent device identifier, skip
+                            continue
+
+                        # Disable if activity_index exceeds new_num_recent_activities
+                        # Index 0 means first activity, so check index < num
+                        if activity_index < new_num_recent_activities:
+                            _device_registry.async_update_device(
+                                device.id, disabled_by=None
+                            )
+                        else:
+                            _device_registry.async_update_device(
+                                device.id,
+                                disabled_by=dr.DeviceEntryDisabler.INTEGRATION,
+                            )
+                        continue
+
+                    # Handle activity type devices (skip "stats")
+                    if device_type != "stats":
+                        # Normalize device type and compare
+                        normalized_device_type = normalize_activity_type(device_type)
+                        if (
+                            not selected_activity_types
+                            or normalized_device_type not in normalized_selected_types
+                        ):
+                            _device_registry.async_update_device(
+                                device.id,
+                                disabled_by=dr.DeviceEntryDisabler.INTEGRATION,
+                            )
+                        else:
+                            _device_registry.async_update_device(
+                                device.id, disabled_by=None
+                            )
+
+            # Handle entity-level disabling for summary stats and recent activities
+            # (these are not device-based)
+            if _entity_registry is not None:
+                for entity in entities:
+                    try:
+                        # Enable/disable summary stats based on activity type selection
+                        if "strava_stats_" in entity.entity_id:
+                            # Extract activity type from entity ID
+                            # Remove "sensor." prefix if present
+                            entity_id = entity.entity_id.split(".", 1)[-1]
+                            parts = entity_id.split("_")
+                            if len(parts) >= 4:
+                                activity_type = parts[3].title()
+                                if activity_type in selected_activity_types:
                                     _entity_registry.async_update_entity(
                                         entity.entity_id, disabled_by=None
                                     )
@@ -192,34 +276,66 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                                         entity.entity_id,
                                         disabled_by=RegistryEntryDisabler.INTEGRATION,
                                     )
-                            # Handle the first recent activity (no number)
-                            elif len(parts) == 3 and parts[2] == "recent":
-                                if new_num_recent_activities >= 1:
-                                    _entity_registry.async_update_entity(
-                                        entity.entity_id, disabled_by=None
-                                    )
-                                else:
-                                    _entity_registry.async_update_entity(
-                                        entity.entity_id,
-                                        disabled_by=RegistryEntryDisabler.INTEGRATION,
-                                    )
-                    # Handle camera entities
-                    elif "strava_cam" in entity.entity_id:
-                        if user_input.get(CONF_PHOTOS):
-                            _entity_registry.async_update_entity(
-                                entity_id=entity.entity_id, disabled_by=None
-                            )
-                        else:
-                            _entity_registry.async_update_entity(
-                                entity_id=entity.entity_id,
-                                disabled_by=RegistryEntryDisabler.INTEGRATION,
-                            )
-                except (ValueError, IndexError):
-                    # Skip entities that don't match expected format
-                    _LOGGER.debug(
-                        f"Skipping entity with unexpected format: {entity.entity_id}"
-                    )
-                    continue
+                        # Handle recent activity entities
+                        elif "_recent" in entity.entity_id or entity.entity_id.endswith(
+                            "_recent"
+                        ):
+                            # Extract activity index from entity ID
+                            # Remove "sensor." prefix if present
+                            entity_id = entity.entity_id.split(".", 1)[-1]
+                            parts = entity_id.split("_")
+                            if len(parts) >= 3:
+                                activity_index = None
+                                # Check if this is a numbered recent activity
+                                # (e.g., strava_123_recent_2_title)
+                                # Note: Entity IDs use index+1
+                                # (recent_2 = activity_index 1, recent_3 = activity_index 2, etc.)
+                                if (
+                                    len(parts) >= 4
+                                    and parts[2] == "recent"
+                                    and parts[3].isdigit()
+                                ):
+                                    # Numbered recent activity: strava_{athlete_id}_recent_{index+1}
+                                    # The number in entity ID is activity_index + 1, so subtract 1
+                                    activity_index = int(parts[3]) - 1
+                                elif len(parts) == 3 and parts[2] == "recent":
+                                    # First recent activity (no number): strava_{athlete_id}_recent
+                                    activity_index = 0
+                                elif (
+                                    len(parts) >= 4
+                                    and parts[2] == "recent"
+                                    and not parts[3].isdigit()
+                                ):
+                                    # Attribute sensor for first recent activity: strava_{athlete_id}_recent_{attribute}
+                                    activity_index = 0
+                                elif (
+                                    len(parts) >= 5
+                                    and parts[2] == "recent"
+                                    and parts[3].isdigit()
+                                ):
+                                    # Attribute sensor for numbered recent activity:
+                                    # strava_{athlete_id}_recent_{index+1}_{attribute}
+                                    # The number in entity ID is activity_index + 1,
+                                    # so subtract 1
+                                    activity_index = int(parts[3]) - 1
+
+                                if activity_index is not None:
+                                    # Index 0 means first activity, so check index < num
+                                    if activity_index < new_num_recent_activities:
+                                        _entity_registry.async_update_entity(
+                                            entity.entity_id, disabled_by=None
+                                        )
+                                    else:
+                                        _entity_registry.async_update_entity(
+                                            entity.entity_id,
+                                            disabled_by=RegistryEntryDisabler.INTEGRATION,
+                                        )
+                    except (ValueError, IndexError, AttributeError) as e:
+                        # Skip entities that don't match expected format
+                        _LOGGER.debug(
+                            f"Skipping entity with unexpected format: {entity.entity_id}, error: {e}"
+                        )
+                        continue
 
             self._selected_activity_types = selected_activity_types
             self._import_strava_images = user_input.get(CONF_PHOTOS)
@@ -263,10 +379,11 @@ class OAuth2FlowHandler(
 
     DOMAIN = DOMAIN
     CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_PUSH
-    _import_photos_from_strava = True
-    _distance_unit_override = CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
-    _activity_types_to_track = DEFAULT_ACTIVITY_TYPES
-    _num_recent_activities = CONF_NUM_RECENT_ACTIVITIES_DEFAULT
+
+    def __init__(self):
+        """Initialize the OAuth2 flow handler."""
+        super().__init__()
+        self._user_input = None
 
     @property
     def logger(self) -> logging.Logger:
@@ -326,10 +443,7 @@ class OAuth2FlowHandler(
             return self.async_abort(reason="no_public_url")
 
         if user_input is not None:
-            self._import_photos_from_strava = user_input[CONF_PHOTOS]
-            self._distance_unit_override = user_input[CONF_DISTANCE_UNIT_OVERRIDE]
-            self._activity_types_to_track = user_input[CONF_ACTIVITY_TYPES_TO_TRACK]
-            self._num_recent_activities = user_input[CONF_NUM_RECENT_ACTIVITIES]
+            self._user_input = user_input
             config_entry_oauth2_flow.async_register_implementation(
                 self.hass,
                 DOMAIN,
@@ -370,10 +484,23 @@ class OAuth2FlowHandler(
         )
         data[CONF_CLIENT_ID] = self.flow_impl.client_id
         data[CONF_CLIENT_SECRET] = self.flow_impl.client_secret
-        data[CONF_PHOTOS] = self._import_photos_from_strava
-        data[CONF_DISTANCE_UNIT_OVERRIDE] = self._distance_unit_override
-        data[CONF_ACTIVITY_TYPES_TO_TRACK] = self._activity_types_to_track
-        data[CONF_NUM_RECENT_ACTIVITIES] = self._num_recent_activities
+
+        if self._user_input is not None:
+            data[CONF_PHOTOS] = self._user_input.get(CONF_PHOTOS, False)
+            data[CONF_DISTANCE_UNIT_OVERRIDE] = self._user_input.get(
+                CONF_DISTANCE_UNIT_OVERRIDE, CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
+            )
+            data[CONF_ACTIVITY_TYPES_TO_TRACK] = self._user_input.get(
+                CONF_ACTIVITY_TYPES_TO_TRACK, DEFAULT_ACTIVITY_TYPES
+            )
+            data[CONF_NUM_RECENT_ACTIVITIES] = self._user_input.get(
+                CONF_NUM_RECENT_ACTIVITIES, CONF_NUM_RECENT_ACTIVITIES_DEFAULT
+            )
+        else:
+            data[CONF_PHOTOS] = False
+            data[CONF_DISTANCE_UNIT_OVERRIDE] = CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
+            data[CONF_ACTIVITY_TYPES_TO_TRACK] = DEFAULT_ACTIVITY_TYPES
+            data[CONF_NUM_RECENT_ACTIVITIES] = CONF_NUM_RECENT_ACTIVITIES_DEFAULT
 
         return self.async_create_entry(title=title, data=data)
 
