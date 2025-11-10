@@ -1,6 +1,12 @@
+# Strava integration for Home Assistant (Unofficial)
+
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/integration)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/craibo/ha_strava?color=41BDF5&style=for-the-badge)](https://github.com/craibo/ha_strava/releases/latest)
 [![Integration Usage](https://img.shields.io/badge/dynamic/json?color=41BDF5&style=for-the-badge&logo=home-assistant&label=usage&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.ha_strava.total)](https://analytics.home-assistant.io/)
+
+<img src="https://raw.githubusercontent.com/craibo/ha_strava/main/img/api_logo_pwrdBy_strava_stack_light.png">
+
+The unofficial Strava intregration for Home Assistant. Adds a custom component to integrate Strava activity data into Home Assistant.
 
 ---
 
@@ -32,12 +38,6 @@ A maintenance mode 3.2 release branch will be maintained for a period of time fo
 4.0.0.
 
 ---
-
-# Strava integration for Home Assistant (Unofficial)
-
-<img src="https://raw.githubusercontent.com/craibo/ha_strava/main/img/api_logo_pwrdBy_strava_stack_light.png">
-
-The unofficial Strava intregration for Home Assistant. Adds a custom component to integrate Strava activity data into Home Assistant.
 
 ## Important Notes:
 
