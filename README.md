@@ -4,6 +4,13 @@
 
 ---
 
+## Support this project
+
+[![Sponsor me on GitHub](https://img.shields.io/badge/Sponsor-craibo%20on%20GitHub-blue.svg?logo=github)](https://github.com/sponsors/craibo)
+[![Donate with PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?logo=paypal)](craibo?country.x=AU&locale.x=en_AU)
+
+---
+
 ## ⚠️ Breaking Changes in v4.0.0
 
 **This is a major version update with significant architectural changes:**
