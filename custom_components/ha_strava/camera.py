@@ -2,17 +2,15 @@
 
 from __future__ import annotations
 
-import io
 import logging
 import os
-import pickle
-from datetime import timedelta
+from datetime import datetime, timedelta
 from hashlib import md5
 
-import aiofiles
 import aiohttp
 from homeassistant.components.camera import Camera
 from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
@@ -20,6 +18,8 @@ from .const import (
     CONF_IMG_UPDATE_INTERVAL_SECONDS_DEFAULT,
     CONF_MAX_NB_IMAGES,
     CONF_PHOTOS,
+    CONF_SENSOR_DATE,
+    CONF_SENSOR_ID,
     CONFIG_URL_DUMP_FILENAME,
     DOMAIN,
     MAX_NB_ACTIVITIES,
@@ -27,7 +27,11 @@ from .const import (
     generate_device_name,
     get_athlete_name_from_title,
 )
+
 from .coordinator import StravaDataUpdateCoordinator
+
+STORAGE_VERSION = 1
+STORAGE_KEY = f"{DOMAIN}_photo_urls"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -57,8 +61,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     if not photos_enabled:
         return
 
-    url_cam = UrlCam(coordinator, default_enabled=True, athlete_id=athlete_id)
-    await url_cam.setup_pickle_urls()
+    url_cam = UrlCam(coordinator, hass, default_enabled=True, athlete_id=athlete_id)
+    await url_cam.async_load_storage()
     async_add_entities([url_cam])
 
     async def image_update_listener(_):
@@ -84,16 +88,21 @@ class UrlCam(CoordinatorEntity, Camera):
     def __init__(
         self,
         coordinator: StravaDataUpdateCoordinator,
+        hass,
         athlete_id: str,
         default_enabled=True,
     ):
         """Initialize the camera."""
         super().__init__(coordinator)
         Camera.__init__(self)
+        self.hass = hass
         self._athlete_id = athlete_id
         self._athlete_name = get_athlete_name_from_title(self.coordinator.entry.title)
         self._attr_unique_id = f"strava_{athlete_id}_photos"
         self._attr_name = generate_device_name(self._athlete_name, "Photos")
+        self._store = Store(
+            hass, STORAGE_VERSION, f"{STORAGE_KEY}_{athlete_id}", encoder=self._json_encoder
+        )
         self._url_dump_filepath = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
             f"{self._athlete_id}_{CONFIG_URL_DUMP_FILENAME}",
@@ -102,26 +111,69 @@ class UrlCam(CoordinatorEntity, Camera):
         self._url_index = 0
         self._attr_entity_registry_enabled_default = default_enabled
 
-    async def setup_pickle_urls(self):
-        """Load image URLs from pickle file."""
+    @staticmethod
+    def _json_encoder(obj):
+        """JSON encoder for datetime objects."""
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+
+    async def async_load_storage(self):
+        """Load image URLs from Home Assistant storage."""
+        # Try to migrate from old pickle file if it exists
         if os.path.exists(self._url_dump_filepath):
-            await self._load_pickle_urls()
-        else:
-            await self._store_pickle_urls()
+            await self._migrate_from_pickle()
+            return
 
-    async def _load_pickle_urls(self):
+        # Load from Home Assistant storage
         try:
+            stored_data = await self._store.async_load()
+            if stored_data and isinstance(stored_data, dict):
+                # Convert ISO date strings back to datetime objects
+                for value in stored_data.values():
+                    if isinstance(value, dict) and "date" in value:
+                        try:
+                            value["date"] = datetime.fromisoformat(value["date"])
+                        except (ValueError, TypeError):
+                            _LOGGER.warning(f"Invalid date format in stored data: {value.get('date')}")
+                            continue
+                self._urls = stored_data
+        except (OSError, ValueError, TypeError) as err:
+            _LOGGER.error(f"Error loading stored URLs: {err}")
+            self._urls = {}
+
+    async def _migrate_from_pickle(self):
+        """Migrate from old pickle file to Home Assistant storage."""
+        try:
+            import pickle
+            import aiofiles
+            import io
+
+            _LOGGER.info(f"Migrating photo URLs from pickle file for athlete {self._athlete_id}")
             async with aiofiles.open(self._url_dump_filepath, "rb") as file:
-                self._urls = pickle.load(io.BytesIO(await file.read()))
-        except (OSError, pickle.PickleError) as err:
-            _LOGGER.error(f"Error loading pickled URLs: {err}")
+                pickled_data = pickle.load(io.BytesIO(await file.read()))
 
-    async def _store_pickle_urls(self):
+            if pickled_data and isinstance(pickled_data, dict):
+                self._urls = pickled_data
+                await self._async_save_storage()
+                _LOGGER.info(f"Successfully migrated {len(self._urls)} photo URLs")
+
+                # Remove old pickle file after successful migration
+                try:
+                    os.remove(self._url_dump_filepath)
+                    _LOGGER.info(f"Removed old pickle file: {self._url_dump_filepath}")
+                except OSError as err:
+                    _LOGGER.warning(f"Could not remove old pickle file: {err}")
+        except (OSError, ImportError, ValueError, TypeError) as err:
+            _LOGGER.error(f"Error migrating from pickle file: {err}")
+            self._urls = {}
+
+    async def _async_save_storage(self):
+        """Save image URLs to Home Assistant storage."""
         try:
-            async with aiofiles.open(self._url_dump_filepath, "wb") as file:
-                await file.write(pickle.dumps(self._urls))
-        except (OSError, pickle.PickleError) as err:
-            _LOGGER.error(f"Error storing pickled URLs: {err}")
+            await self._store.async_save(self._urls)
+        except (OSError, ValueError, TypeError) as err:
+            _LOGGER.error(f"Error saving URLs to storage: {err}")
 
     async def async_camera_image(
         self,
@@ -150,13 +202,6 @@ class UrlCam(CoordinatorEntity, Camera):
             self.async_write_ha_state()
 
     @property
-    def state(self):  # pylint: disable=overridden-final-method
-        """Return the current image URL."""
-        if not self._urls:
-            return _DEFAULT_IMAGE_URL
-        return list(self._urls.values())[self._url_index]["url"]
-
-    @property
     def extra_state_attributes(self):
         """Return the state attributes."""
         if not self._urls:
@@ -182,10 +227,13 @@ class UrlCam(CoordinatorEntity, Camera):
 
             if activities:
                 # Sort activities by date and take the 30 most recent
+                # Use a default datetime far in the past for None dates to ensure they sort last
                 sorted_activities = sorted(
-                    activities, key=lambda x: x.get("start_date", ""), reverse=True
+                    activities,
+                    key=lambda x: x.get(CONF_SENSOR_DATE) or datetime.min,
+                    reverse=True,
                 )[:MAX_NB_ACTIVITIES]
-                recent_activity_ids = {activity["id"] for activity in sorted_activities}
+                recent_activity_ids = {activity[CONF_SENSOR_ID] for activity in sorted_activities}
 
             # Filter images to only include those from recent activities
             for img_url in self.coordinator.data["images"]:
@@ -198,7 +246,7 @@ class UrlCam(CoordinatorEntity, Camera):
                     -CONF_MAX_NB_IMAGES:
                 ]
             )
-            await self._store_pickle_urls()
+            await self._async_save_storage()
 
     async def async_added_to_hass(self):
         """Handle entity being added to Home Assistant."""
