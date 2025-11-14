@@ -1,8 +1,10 @@
 """Data update coordinator for the Strava Home Assistant integration."""
 
+import asyncio
 import json
 import logging
 from datetime import datetime as dt
+from datetime import timedelta
 from typing import Tuple
 
 import aiohttp
@@ -12,6 +14,8 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .const import (
     CONF_ACTIVITY_TYPES_TO_TRACK,
+    CONF_API_RETRY_BASE_DELAY_SECONDS,
+    CONF_API_RETRY_MAX_ATTEMPTS,
     CONF_ATTR_COMMUTE,
     CONF_ATTR_END_LATLONG,
     CONF_ATTR_POLYLINE,
@@ -20,6 +24,9 @@ from .const import (
     CONF_ATTR_START_LATLONG,
     CONF_NUM_RECENT_ACTIVITIES,
     CONF_NUM_RECENT_ACTIVITIES_DEFAULT,
+    CONF_PHOTO_CACHE_HOURS,
+    CONF_PHOTO_FETCH_DELAY_SECONDS,
+    CONF_PHOTO_FETCH_INITIAL_LIMIT,
     CONF_PHOTOS,
     CONF_SENSOR_ACTIVITY_TYPE,
     CONF_SENSOR_CADENCE_AVG,
@@ -250,28 +257,132 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
 
         _LOGGER.debug("Fetching images")
         img_urls = []
-        for activity in activities:
+
+        cache_threshold = dt.now() - timedelta(hours=CONF_PHOTO_CACHE_HOURS)
+        activities_to_fetch = []
+
+        for activity in activities[:CONF_PHOTO_FETCH_INITIAL_LIMIT]:
             activity_id = activity.get(CONF_SENSOR_ID)
-            if (
-                dt.now() - self.image_updates.get(activity_id, dt(1990, 1, 1))
-            ).days <= 0:
-                continue
+            last_update = self.image_updates.get(activity_id, dt(1990, 1, 1))
 
-            response = await self.oauth_session.async_request(
-                method="GET", url=_PHOTOS_URL_TEMPLATE % (activity_id,)
-            )
-            if response.status != 200:
-                continue
-
-            self.image_updates[activity_id] = dt.now()
-            for image in await response.json():
-                img_date = dt.strptime(
-                    image.get("created_at_local", "2000-01-01T00:00:00Z"),
-                    "%Y-%m-%dT%H:%M:%SZ",
+            if last_update > cache_threshold:
+                _LOGGER.debug(
+                    f"Skipping photo fetch for activity {activity_id} "
+                    f"(cached within last {CONF_PHOTO_CACHE_HOURS} hours)"
                 )
-                img_url = list(image.get("urls").values())[0]
-                img_urls.append({"date": img_date, "url": img_url})
+                continue
+
+            activities_to_fetch.append(activity_id)
+
+        _LOGGER.debug(f"Fetching photos for {len(activities_to_fetch)} activities")
+
+        for activity_id in activities_to_fetch:
+            try:
+                response = await self._fetch_photo_with_retry(activity_id)
+                if response.status != 200:
+                    _LOGGER.warning(
+                        f"Failed to fetch photos for activity {activity_id}: "
+                        f"status {response.status}"
+                    )
+                    continue
+
+                self.image_updates[activity_id] = dt.now()
+                images_data = await response.json()
+                for image in images_data:
+                    img_date = dt.strptime(
+                        image.get("created_at_local", "2000-01-01T00:00:00Z"),
+                        "%Y-%m-%dT%H:%M:%SZ",
+                    )
+                    img_url = list(image.get("urls").values())[0]
+                    img_urls.append(
+                        {
+                            "date": img_date,
+                            "url": img_url,
+                            "activity_id": activity_id,
+                        }
+                    )
+
+                await asyncio.sleep(CONF_PHOTO_FETCH_DELAY_SECONDS)
+            except Exception as err:
+                _LOGGER.error(
+                    f"Error fetching photos for activity {activity_id}: {err}"
+                )
+                continue
+
         return img_urls
+
+    async def _fetch_photo_with_retry(self, activity_id: int):
+        """Fetch photo with exponential backoff retry logic."""
+        url = _PHOTOS_URL_TEMPLATE % (activity_id,)
+        last_exception = None
+
+        for attempt in range(CONF_API_RETRY_MAX_ATTEMPTS):
+            try:
+                response = await self.oauth_session.async_request(method="GET", url=url)
+
+                if response.status == 429:
+                    retry_after = int(
+                        response.headers.get(
+                            "Retry-After",
+                            CONF_API_RETRY_BASE_DELAY_SECONDS * (2**attempt),
+                        )
+                    )
+                    if attempt < CONF_API_RETRY_MAX_ATTEMPTS - 1:
+                        _LOGGER.warning(
+                            f"Rate limit hit for activity {activity_id}, "
+                            f"retrying after {retry_after} seconds "
+                            f"(attempt {attempt + 1}/{CONF_API_RETRY_MAX_ATTEMPTS})"
+                        )
+                        await asyncio.sleep(retry_after)
+                        continue
+                    else:
+                        _LOGGER.error(
+                            f"Rate limit exceeded for activity {activity_id} "
+                            f"after {CONF_API_RETRY_MAX_ATTEMPTS} attempts"
+                        )
+                        return response
+
+                response.raise_for_status()
+                return response
+
+            except aiohttp.ClientResponseError as err:
+                if err.status == 429 and attempt < CONF_API_RETRY_MAX_ATTEMPTS - 1:
+                    retry_after = int(
+                        err.headers.get(
+                            "Retry-After",
+                            CONF_API_RETRY_BASE_DELAY_SECONDS * (2**attempt),
+                        )
+                    )
+                    _LOGGER.warning(
+                        f"Rate limit hit for activity {activity_id}, "
+                        f"retrying after {retry_after} seconds "
+                        f"(attempt {attempt + 1}/{CONF_API_RETRY_MAX_ATTEMPTS})"
+                    )
+                    await asyncio.sleep(retry_after)
+                    last_exception = err
+                    continue
+                else:
+                    raise
+            except aiohttp.ClientError as err:
+                if attempt < CONF_API_RETRY_MAX_ATTEMPTS - 1:
+                    delay = CONF_API_RETRY_BASE_DELAY_SECONDS * (2**attempt)
+                    _LOGGER.warning(
+                        f"Error fetching photos for activity {activity_id}: {err}, "
+                        f"retrying after {delay} seconds "
+                        f"(attempt {attempt + 1}/{CONF_API_RETRY_MAX_ATTEMPTS})"
+                    )
+                    await asyncio.sleep(delay)
+                    last_exception = err
+                    continue
+                else:
+                    raise
+
+        if last_exception:
+            raise last_exception
+
+        raise UpdateFailed(
+            f"Failed to fetch photos for activity {activity_id} after {CONF_API_RETRY_MAX_ATTEMPTS} attempts"
+        )
 
     async def _fetch_gear(self, gear_id: str) -> dict:
         """Fetch gear details from Strava API."""

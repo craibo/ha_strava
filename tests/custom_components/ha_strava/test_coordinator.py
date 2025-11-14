@@ -1,5 +1,6 @@
 """Test coordinator for ha_strava."""
 
+from datetime import datetime, timedelta
 from unittest.mock import patch
 
 import pytest
@@ -10,7 +11,12 @@ from custom_components.ha_strava.const import (
     CONF_ACTIVITY_TYPES_TO_TRACK,
     CONF_ATTR_DEVICE_NAME,
     CONF_ATTR_DEVICE_TYPE,
+    CONF_PHOTO_CACHE_HOURS,
+    CONF_PHOTO_FETCH_DELAY_SECONDS,
+    CONF_PHOTO_FETCH_INITIAL_LIMIT,
+    CONF_PHOTOS,
     CONF_SENSOR_ACTIVITY_TYPE,
+    CONF_SENSOR_DATE,
     CONF_SENSOR_DISTANCE,
     CONF_SENSOR_ID,
     CONF_SENSOR_TITLE,
@@ -1100,3 +1106,365 @@ class TestStravaDataUpdateCoordinator:
         assert len(activities) > 0
         for activity in activities:
             assert activity.get(CONF_SENSOR_ACTIVITY_TYPE) == "Swim"
+
+    @pytest.mark.asyncio
+    async def test_fetch_images_disabled(
+        self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
+    ):
+        """Test that photo fetching is skipped when photos are disabled."""
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        mock_config_entry.options = {CONF_PHOTOS: False}
+        activities = [{CONF_SENSOR_ID: 1, CONF_SENSOR_DATE: datetime.now()}]
+
+        result = await coordinator._fetch_images(activities)
+
+        assert result is None
+
+    @pytest.mark.asyncio
+    async def test_fetch_images_success(
+        self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
+    ):
+        """Test successful photo fetching with rate limiting."""
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        mock_config_entry.options = {CONF_PHOTOS: True}
+        activities = [
+            {CONF_SENSOR_ID: 1, CONF_SENSOR_DATE: datetime.now()},
+            {CONF_SENSOR_ID: 2, CONF_SENSOR_DATE: datetime.now()},
+        ]
+
+        mock_photos_1 = [
+            {
+                "created_at_local": "2024-01-01T10:00:00Z",
+                "urls": {"512": "https://example.com/photo1.jpg"},
+            }
+        ]
+        mock_photos_2 = [
+            {
+                "created_at_local": "2024-01-01T11:00:00Z",
+                "urls": {"512": "https://example.com/photo2.jpg"},
+            }
+        ]
+
+        aioresponses_mock.get(
+            "https://www.strava.com/api/v3/activities/1/photos?size=512",
+            payload=mock_photos_1,
+            status=200,
+        )
+        aioresponses_mock.get(
+            "https://www.strava.com/api/v3/activities/2/photos?size=512",
+            payload=mock_photos_2,
+            status=200,
+        )
+
+        start_time = datetime.now()
+        result = await coordinator._fetch_images(activities)
+        end_time = datetime.now()
+
+        assert result is not None
+        assert len(result) == 2
+        assert result[0]["url"] == "https://example.com/photo1.jpg"
+        assert result[1]["url"] == "https://example.com/photo2.jpg"
+        assert result[0]["activity_id"] == 1
+        assert result[1]["activity_id"] == 2
+
+        elapsed = (end_time - start_time).total_seconds()
+        min_expected_delay = CONF_PHOTO_FETCH_DELAY_SECONDS
+        assert elapsed >= min_expected_delay, "Rate limiting delay not applied"
+
+    @pytest.mark.asyncio
+    async def test_fetch_images_initial_limit(
+        self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
+    ):
+        """Test that photo fetching is limited to initial limit."""
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        mock_config_entry.options = {CONF_PHOTOS: True}
+        activities = [
+            {CONF_SENSOR_ID: i, CONF_SENSOR_DATE: datetime.now()}
+            for i in range(1, CONF_PHOTO_FETCH_INITIAL_LIMIT + 5)
+        ]
+
+        for i in range(1, CONF_PHOTO_FETCH_INITIAL_LIMIT + 1):
+            aioresponses_mock.get(
+                f"https://www.strava.com/api/v3/activities/{i}/photos?size=512",
+                payload=[],
+                status=200,
+            )
+
+        result = await coordinator._fetch_images(activities)
+
+        assert result is not None
+        call_count = len(
+            [
+                call
+                for call in aioresponses_mock.requests.values()
+                if "photos" in str(call[0].kwargs.get("url", ""))
+            ]
+        )
+        assert call_count <= CONF_PHOTO_FETCH_INITIAL_LIMIT
+
+    @pytest.mark.asyncio
+    async def test_fetch_images_cache_skip(
+        self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
+    ):
+        """Test that cached photos are skipped."""
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        mock_config_entry.options = {CONF_PHOTOS: True}
+        activities = [
+            {CONF_SENSOR_ID: 1, CONF_SENSOR_DATE: datetime.now()},
+            {CONF_SENSOR_ID: 2, CONF_SENSOR_DATE: datetime.now()},
+        ]
+
+        recent_time = datetime.now() - timedelta(hours=CONF_PHOTO_CACHE_HOURS - 1)
+        old_time = datetime.now() - timedelta(hours=CONF_PHOTO_CACHE_HOURS + 1)
+
+        coordinator.image_updates[1] = recent_time
+        coordinator.image_updates[2] = old_time
+
+        aioresponses_mock.get(
+            "https://www.strava.com/api/v3/activities/2/photos?size=512",
+            payload=[],
+            status=200,
+        )
+
+        result = await coordinator._fetch_images(activities)
+
+        assert result is not None
+        call_count = len(
+            [
+                call
+                for call in aioresponses_mock.requests.values()
+                if "photos" in str(call[0].kwargs.get("url", ""))
+            ]
+        )
+        assert (
+            call_count == 1
+        ), "Should only fetch photos for activity 2 (activity 1 is cached)"
+
+    @pytest.mark.asyncio
+    async def test_fetch_photo_with_retry_success(
+        self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
+    ):
+        """Test successful photo fetch with retry logic."""
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        mock_photos = [
+            {
+                "created_at_local": "2024-01-01T10:00:00Z",
+                "urls": {"512": "https://example.com/photo1.jpg"},
+            }
+        ]
+
+        aioresponses_mock.get(
+            "https://www.strava.com/api/v3/activities/1/photos?size=512",
+            payload=mock_photos,
+            status=200,
+        )
+
+        response = await coordinator._fetch_photo_with_retry(1)
+
+        assert response.status == 200
+
+    @pytest.mark.asyncio
+    async def test_fetch_photo_with_retry_429_then_success(
+        self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
+    ):
+        """Test photo fetch retry on 429 error then success."""
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        mock_photos = [
+            {
+                "created_at_local": "2024-01-01T10:00:00Z",
+                "urls": {"512": "https://example.com/photo1.jpg"},
+            }
+        ]
+
+        aioresponses_mock.get(
+            "https://www.strava.com/api/v3/activities/1/photos?size=512",
+            status=429,
+            headers={"Retry-After": "1"},
+            payload={"message": "Rate limit exceeded"},
+        )
+        aioresponses_mock.get(
+            "https://www.strava.com/api/v3/activities/1/photos?size=512",
+            payload=mock_photos,
+            status=200,
+        )
+
+        start_time = datetime.now()
+        response = await coordinator._fetch_photo_with_retry(1)
+        end_time = datetime.now()
+
+        assert response.status == 200
+        elapsed = (end_time - start_time).total_seconds()
+        assert elapsed >= 1.0, "Should have waited for Retry-After header"
+
+    @pytest.mark.asyncio
+    async def test_fetch_photo_with_retry_429_max_attempts(
+        self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
+    ):
+        """Test photo fetch fails after max retry attempts on 429."""
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        aioresponses_mock.get(
+            "https://www.strava.com/api/v3/activities/1/photos?size=512",
+            status=429,
+            headers={"Retry-After": "1"},
+            payload={"message": "Rate limit exceeded"},
+            repeat=True,
+        )
+
+        response = await coordinator._fetch_photo_with_retry(1)
+
+        assert response.status == 429
+
+    @pytest.mark.asyncio
+    async def test_fetch_photo_with_retry_429_no_retry_after(
+        self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
+    ):
+        """Test photo fetch retry with exponential backoff when Retry-After not provided."""
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        mock_photos = [
+            {
+                "created_at_local": "2024-01-01T10:00:00Z",
+                "urls": {"512": "https://example.com/photo1.jpg"},
+            }
+        ]
+
+        aioresponses_mock.get(
+            "https://www.strava.com/api/v3/activities/1/photos?size=512",
+            status=429,
+            payload={"message": "Rate limit exceeded"},
+        )
+        aioresponses_mock.get(
+            "https://www.strava.com/api/v3/activities/1/photos?size=512",
+            payload=mock_photos,
+            status=200,
+        )
+
+        start_time = datetime.now()
+        response = await coordinator._fetch_photo_with_retry(1)
+        end_time = datetime.now()
+
+        assert response.status == 200
+        elapsed = (end_time - start_time).total_seconds()
+        assert elapsed >= 1.0, "Should have used exponential backoff"
+
+    @pytest.mark.asyncio
+    async def test_fetch_images_handles_429_gracefully(
+        self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
+    ):
+        """Test that photo fetching handles 429 errors gracefully."""
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        mock_config_entry.options = {CONF_PHOTOS: True}
+        activities = [
+            {CONF_SENSOR_ID: 1, CONF_SENSOR_DATE: datetime.now()},
+            {CONF_SENSOR_ID: 2, CONF_SENSOR_DATE: datetime.now()},
+        ]
+
+        mock_photos = [
+            {
+                "created_at_local": "2024-01-01T10:00:00Z",
+                "urls": {"512": "https://example.com/photo2.jpg"},
+            }
+        ]
+
+        aioresponses_mock.get(
+            "https://www.strava.com/api/v3/activities/1/photos?size=512",
+            status=429,
+            headers={"Retry-After": "1"},
+            payload={"message": "Rate limit exceeded"},
+            repeat=True,
+        )
+        aioresponses_mock.get(
+            "https://www.strava.com/api/v3/activities/2/photos?size=512",
+            payload=mock_photos,
+            status=200,
+        )
+
+        result = await coordinator._fetch_images(activities)
+
+        assert result is not None
+        assert len(result) == 1
+        assert result[0]["activity_id"] == 2
+
+    @pytest.mark.asyncio
+    async def test_fetch_images_handles_network_error(
+        self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
+    ):
+        """Test that photo fetching handles network errors gracefully."""
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        mock_config_entry.options = {CONF_PHOTOS: True}
+        activities = [
+            {CONF_SENSOR_ID: 1, CONF_SENSOR_DATE: datetime.now()},
+            {CONF_SENSOR_ID: 2, CONF_SENSOR_DATE: datetime.now()},
+        ]
+
+        mock_photos = [
+            {
+                "created_at_local": "2024-01-01T10:00:00Z",
+                "urls": {"512": "https://example.com/photo2.jpg"},
+            }
+        ]
+
+        aioresponses_mock.get(
+            "https://www.strava.com/api/v3/activities/1/photos?size=512",
+            exception=Exception("Network error"),
+        )
+        aioresponses_mock.get(
+            "https://www.strava.com/api/v3/activities/2/photos?size=512",
+            payload=mock_photos,
+            status=200,
+        )
+
+        result = await coordinator._fetch_images(activities)
+
+        assert result is not None
+        assert len(result) == 1
+        assert result[0]["activity_id"] == 2
