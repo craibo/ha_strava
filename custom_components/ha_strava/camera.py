@@ -27,7 +27,6 @@ from .const import (
     generate_device_name,
     get_athlete_name_from_title,
 )
-
 from .coordinator import StravaDataUpdateCoordinator
 
 STORAGE_VERSION = 1
@@ -101,7 +100,10 @@ class UrlCam(CoordinatorEntity, Camera):
         self._attr_unique_id = f"strava_{athlete_id}_photos"
         self._attr_name = generate_device_name(self._athlete_name, "Photos")
         self._store = Store(
-            hass, STORAGE_VERSION, f"{STORAGE_KEY}_{athlete_id}", encoder=self._json_encoder
+            hass,
+            STORAGE_VERSION,
+            f"{STORAGE_KEY}_{athlete_id}",
+            encoder=self._json_encoder,
         )
         self._url_dump_filepath = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
@@ -135,7 +137,9 @@ class UrlCam(CoordinatorEntity, Camera):
                         try:
                             value["date"] = datetime.fromisoformat(value["date"])
                         except (ValueError, TypeError):
-                            _LOGGER.warning(f"Invalid date format in stored data: {value.get('date')}")
+                            _LOGGER.warning(
+                                f"Invalid date format in stored data: {value.get('date')}"
+                            )
                             continue
                 self._urls = stored_data
         except (OSError, ValueError, TypeError) as err:
@@ -145,11 +149,14 @@ class UrlCam(CoordinatorEntity, Camera):
     async def _migrate_from_pickle(self):
         """Migrate from old pickle file to Home Assistant storage."""
         try:
-            import pickle
-            import aiofiles
             import io
+            import pickle
 
-            _LOGGER.info(f"Migrating photo URLs from pickle file for athlete {self._athlete_id}")
+            import aiofiles
+
+            _LOGGER.info(
+                f"Migrating photo URLs from pickle file for athlete {self._athlete_id}"
+            )
             async with aiofiles.open(self._url_dump_filepath, "rb") as file:
                 pickled_data = pickle.load(io.BytesIO(await file.read()))
 
@@ -233,7 +240,9 @@ class UrlCam(CoordinatorEntity, Camera):
                     key=lambda x: x.get(CONF_SENSOR_DATE) or datetime.min,
                     reverse=True,
                 )[:MAX_NB_ACTIVITIES]
-                recent_activity_ids = {activity[CONF_SENSOR_ID] for activity in sorted_activities}
+                recent_activity_ids = {
+                    activity[CONF_SENSOR_ID] for activity in sorted_activities
+                }
 
             # Filter images to only include those from recent activities
             for img_url in self.coordinator.data["images"]:
