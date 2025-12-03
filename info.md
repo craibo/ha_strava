@@ -13,8 +13,6 @@ The unofficial Strava intregration for Home Assistant. Adds a custom component t
 [![Sponsor me on GitHub](https://img.shields.io/badge/Sponsor-craibo%20on%20GitHub-blue.svg?logo=github)](https://github.com/sponsors/craibo)
 [![Donate with PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?logo=paypal)](https://paypal.me/craibo?country.x=AU&locale.x=en_AU)
 
-
-
 ## Important Notes:
 
 When configuring the Strava API, the **Authorization Callback Domain** must be set to: **my.home-assistant.io**

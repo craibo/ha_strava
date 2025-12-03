@@ -1,5 +1,4 @@
 import pytest
-from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
@@ -115,5 +114,3 @@ async def test_recent_activity_refresh_button_presses_triggers_single_refresh(
     await button.async_press()
 
     coordinator.async_refresh_activity.assert_called_once_with(20)
-
-

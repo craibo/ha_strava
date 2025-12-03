@@ -6,6 +6,7 @@ from typing import Any
 from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -70,11 +71,11 @@ async def async_setup_entry(
         )
 
     if buttons:
-        async_add_entities(buttons)
+        await async_add_entities(buttons)
 
 
 class StravaActivityRefreshButton(CoordinatorEntity, ButtonEntity):
-    _attr_entity_category = "config"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(
         self,
@@ -135,7 +136,7 @@ class StravaActivityRefreshButton(CoordinatorEntity, ButtonEntity):
 
 
 class StravaRecentActivityRefreshButton(CoordinatorEntity, ButtonEntity):
-    _attr_entity_category = "config"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(
         self,
@@ -194,5 +195,3 @@ class StravaRecentActivityRefreshButton(CoordinatorEntity, ButtonEntity):
             return
 
         await self.coordinator.async_refresh_activity(activity_id)
-
-

@@ -413,7 +413,9 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
         try:
             await self.oauth_session.async_ensure_token_valid()
         except aiohttp.ClientError as err:
-            _LOGGER.error(f"Error ensuring token is valid for activity {activity_id}: {err}")
+            _LOGGER.error(
+                f"Error ensuring token is valid for activity {activity_id}: {err}"
+            )
             return
 
         try:
@@ -427,7 +429,9 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.error(f"Error fetching activity {activity_id}: {err}")
             return
         except json.JSONDecodeError as json_err:
-            _LOGGER.error(f"Invalid JSON response for activity {activity_id}: {json_err}")
+            _LOGGER.error(
+                f"Invalid JSON response for activity {activity_id}: {json_err}"
+            )
             return
 
         processed_activity = self._sensor_activity(activity_detail, activity_detail)
