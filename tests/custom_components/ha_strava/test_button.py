@@ -41,7 +41,7 @@ async def test_button_setup_creates_buttons(
 
     entities: list = []
 
-    async def _async_add_entities(new_entities):
+    def _async_add_entities(new_entities):
         entities.extend(new_entities)
 
     await async_setup_entry(hass, mock_config_entry, _async_add_entities)
