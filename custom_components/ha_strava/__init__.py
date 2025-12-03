@@ -18,7 +18,7 @@ from .coordinator import StravaDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = ["sensor", "camera"]
+PLATFORMS = ["sensor", "camera", "button"]
 
 
 class StravaWebhookView(HomeAssistantView):

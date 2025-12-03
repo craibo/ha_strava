@@ -406,6 +406,58 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.error(f"Error fetching gear {gear_id}: {e}")
             return {}
 
+    async def async_refresh_activity(self, activity_id: int) -> None:
+        if not activity_id:
+            return
+
+        try:
+            await self.oauth_session.async_ensure_token_valid()
+        except aiohttp.ClientError as err:
+            _LOGGER.error(f"Error ensuring token is valid for activity {activity_id}: {err}")
+            return
+
+        try:
+            response = await self.oauth_session.async_request(
+                method="GET",
+                url=f"https://www.strava.com/api/v3/activities/{activity_id}",
+            )
+            response.raise_for_status()
+            activity_detail = await response.json()
+        except aiohttp.ClientError as err:
+            _LOGGER.error(f"Error fetching activity {activity_id}: {err}")
+            return
+        except json.JSONDecodeError as json_err:
+            _LOGGER.error(f"Invalid JSON response for activity {activity_id}: {json_err}")
+            return
+
+        processed_activity = self._sensor_activity(activity_detail, activity_detail)
+
+        current_data = self.data or {}
+        current_activities = current_data.get("activities") or []
+        updated = False
+        new_activities = []
+
+        for existing in current_activities:
+            if existing.get(CONF_SENSOR_ID) == processed_activity.get(CONF_SENSOR_ID):
+                new_activities.append(processed_activity)
+                updated = True
+            else:
+                new_activities.append(existing)
+
+        if not updated:
+            new_activities.append(processed_activity)
+
+        new_data = {
+            **current_data,
+            "activities": sorted(
+                new_activities,
+                key=lambda activity: activity[CONF_SENSOR_DATE],
+                reverse=True,
+            ),
+        }
+
+        self.async_set_updated_data(new_data)
+
     def _sensor_activity(self, activity: dict, activity_dto: dict) -> dict:
         # Extract device information
         device_name = "Unknown"
