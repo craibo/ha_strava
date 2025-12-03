@@ -8,36 +8,10 @@
 
 The unofficial Strava intregration for Home Assistant. Adds a custom component to integrate Strava activity data into Home Assistant.
 
----
-
 ## Support this project
 
 [![Sponsor me on GitHub](https://img.shields.io/badge/Sponsor-craibo%20on%20GitHub-blue.svg?logo=github)](https://github.com/sponsors/craibo)
 [![Donate with PayPal](https://img.shields.io/badge/Donate-PayPal-blue.svg?logo=paypal)](https://paypal.me/craibo?country.x=AU&locale.x=en_AU)
-
----
-
-## ⚠️ Breaking Changes in v4.0.0
-
-**This is a major version update with significant architectural changes:**
-
-1. **Complete Sensor Restructure**: All existing sensors will be removed and replaced with a new architecture
-2. **Activity Type Selection**: You must now select which activity types to track (defaults to Run, Ride, Swim)
-3. **Entity ID Changes**: All sensor entity IDs will change
-4. **No Migration Path**: You must manually reconfigure the integration after updating
-5. **Device Source Tracking**: New feature that automatically detects the device used for each activity
-6. **Removed Dependencies**: No longer requires geocode.xyz API key
-
-**Before updating to v4.0.0:**
-
-- Note down your current sensor entity IDs if you have automations or dashboards using them
-- Plan to reconfigure the integration after the update
-- Consider backing up your Home Assistant configuration
-
-A maintenance mode 3.2 release branch will be maintained for a period of time for those that do not want to upgrade to
-4.0.0.
-
----
 
 ## Important Notes:
 
