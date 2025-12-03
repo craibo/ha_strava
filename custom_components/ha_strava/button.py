@@ -71,7 +71,7 @@ async def async_setup_entry(
         )
 
     if buttons:
-        await async_add_entities(buttons)
+        async_add_entities(buttons)
 
 
 class StravaActivityRefreshButton(CoordinatorEntity, ButtonEntity):
