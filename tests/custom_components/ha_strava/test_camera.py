@@ -1,5 +1,6 @@
 """Test camera platform for ha_strava."""
 
+import sys
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -10,11 +11,13 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.ha_strava.const import CONF_PHOTOS, DOMAIN
 
-CameraMock = MagicMock
-
 # Mock homeassistant.components.camera to avoid turbojpeg dependency
-with patch("homeassistant.components.camera.Camera", CameraMock):
-    from custom_components.ha_strava.camera import async_setup_entry, UrlCam
+if "homeassistant.components.camera" not in sys.modules:
+    camera_module = MagicMock()
+    camera_module.Camera = MagicMock
+    sys.modules["homeassistant.components.camera"] = camera_module
+
+from custom_components.ha_strava.camera import UrlCam, async_setup_entry
 
 
 class TestStravaCamera:
@@ -134,7 +137,9 @@ class TestStravaCamera:
 
         async_add_entities_mock = AsyncMock()
 
-        with patch("custom_components.ha_strava.camera.async_track_time_interval"), patch.object(
+        with patch(
+            "custom_components.ha_strava.camera.async_track_time_interval"
+        ), patch.object(
             UrlCam, "async_load_storage", new_callable=AsyncMock
         ) as mock_load_storage:
             await async_setup_entry(hass, config_entry, async_add_entities_mock)
@@ -177,7 +182,9 @@ class TestStravaCamera:
 
         async_add_entities_mock = AsyncMock()
 
-        with patch("custom_components.ha_strava.camera.async_track_time_interval"), patch.object(
+        with patch(
+            "custom_components.ha_strava.camera.async_track_time_interval"
+        ), patch.object(
             UrlCam, "async_load_storage", new_callable=AsyncMock
         ) as mock_load_storage:
             await async_setup_entry(hass, config_entry, async_add_entities_mock)
@@ -368,12 +375,19 @@ class TestStravaCamera:
             }
         }
 
-        with patch("custom_components.ha_strava.camera.Store") as mock_store_class, patch(
+        with patch(
+            "custom_components.ha_strava.camera.Store"
+        ) as mock_store_class, patch(
             "custom_components.ha_strava.camera.os.path.exists", return_value=True
-        ), patch("custom_components.ha_strava.camera.os.path.dirname", return_value=str(tmp_path)), patch(
+        ), patch(
+            "custom_components.ha_strava.camera.os.path.dirname",
+            return_value=str(tmp_path),
+        ), patch(
             "custom_components.ha_strava.camera.os.path.abspath",
             return_value=str(tmp_path / "camera.py"),
-        ), patch("custom_components.ha_strava.camera.os.remove") as mock_remove:
+        ), patch(
+            "custom_components.ha_strava.camera.os.remove"
+        ) as mock_remove:
             # Create pickle file
             pickle_file = tmp_path / "12345_strava_img_urls.pickle"
             with open(pickle_file, "wb") as f:
@@ -387,7 +401,9 @@ class TestStravaCamera:
             camera._url_dump_filepath = str(pickle_file)
 
             # Mock aiofiles for migration
-            with patch("custom_components.ha_strava.camera.aiofiles.open") as mock_aiofiles:
+            with patch(
+                "custom_components.ha_strava.camera.aiofiles.open"
+            ) as mock_aiofiles:
                 mock_file = AsyncMock()
                 mock_file.read = AsyncMock(return_value=pickle.dumps(pickled_data))
                 mock_aiofiles.return_value.__aenter__.return_value = mock_file
@@ -428,7 +444,9 @@ class TestStravaCamera:
         coordinator.entry = config_entry
         hass.data[DOMAIN] = {config_entry.entry_id: coordinator}
 
-        with patch("custom_components.ha_strava.camera.Store") as mock_store_class, patch(
+        with patch(
+            "custom_components.ha_strava.camera.Store"
+        ) as mock_store_class, patch(
             "custom_components.ha_strava.camera.os.path.exists", return_value=False
         ):
             mock_store = MagicMock()
