@@ -451,13 +451,24 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
         if not updated:
             new_activities.append(processed_activity)
 
+        # Get number of recent activities from config
+        num_recent_activities = self.entry.options.get(
+            CONF_NUM_RECENT_ACTIVITIES, CONF_NUM_RECENT_ACTIVITIES_DEFAULT
+        )
+
+        # Sort activities by date and limit to configured number
+        sorted_activities = sorted(
+            new_activities,
+            key=lambda activity: activity[CONF_SENSOR_DATE],
+            reverse=True,
+        )
+
+        # Limit to configured number of recent activities
+        limited_activities = sorted_activities[:num_recent_activities]
+
         new_data = {
             **current_data,
-            "activities": sorted(
-                new_activities,
-                key=lambda activity: activity[CONF_SENSOR_DATE],
-                reverse=True,
-            ),
+            "activities": limited_activities,
         }
 
         self.async_set_updated_data(new_data)
