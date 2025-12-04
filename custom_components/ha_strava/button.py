@@ -12,6 +12,8 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
     CONF_ATTR_SPORT_TYPE,
+    CONF_NUM_RECENT_ACTIVITIES,
+    CONF_NUM_RECENT_ACTIVITIES_DEFAULT,
     CONF_SENSOR_ID,
     DOMAIN,
     generate_device_id,
@@ -39,6 +41,11 @@ async def async_setup_entry(
 
     activities = (coordinator.data or {}).get("activities") or []
 
+    # Get number of recent activities from config, default to 1
+    num_recent_activities = entry.options.get(
+        CONF_NUM_RECENT_ACTIVITIES, CONF_NUM_RECENT_ACTIVITIES_DEFAULT
+    )
+
     per_type_added: set[str] = set()
     for activity in activities:
         sport_type = activity.get(CONF_ATTR_SPORT_TYPE)
@@ -60,7 +67,8 @@ async def async_setup_entry(
             )
         )
 
-    for index, _ in enumerate(activities):
+    # Only create buttons for the configured number of recent activities
+    for index in range(num_recent_activities):
         buttons.append(
             StravaRecentActivityRefreshButton(
                 coordinator=coordinator,
