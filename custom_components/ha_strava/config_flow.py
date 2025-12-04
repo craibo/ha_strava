@@ -224,17 +224,15 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                             # Malformed recent device identifier, skip
                             continue
 
-                        # Disable if activity_index exceeds new_num_recent_activities
+                        # Remove if activity_index exceeds new_num_recent_activities
                         # Index 0 means first activity, so check index < num
                         if activity_index < new_num_recent_activities:
                             _device_registry.async_update_device(
                                 device.id, disabled_by=None
                             )
                         else:
-                            _device_registry.async_update_device(
-                                device.id,
-                                disabled_by=dr.DeviceEntryDisabler.INTEGRATION,
-                            )
+                            # Remove excess recent activity devices (not disable)
+                            _device_registry.async_remove_device(device.id)
                         continue
 
                     # Handle activity type devices (skip "stats")
@@ -254,11 +252,52 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                                 device.id, disabled_by=None
                             )
 
-            # Handle entity-level disabling for summary stats and recent activities
+            # Handle entity-level disabling for summary stats, activity type sensors, and recent activities
             # (these are not device-based)
             if _entity_registry is not None:
                 for entity in entities:
                     try:
+                        # Enable/disable activity type sensors based on activity type selection
+                        # Activity type sensors have unique_ids like: strava_{athlete_id}_{normalized_activity_type}
+                        # Entity IDs like: sensor.strava_12345_run, sensor.strava_12345_run_distance, etc.
+                        entity_id = entity.entity_id.split(".", 1)[-1] if "." in entity.entity_id else entity.entity_id
+                        parts = entity_id.split("_")
+                        
+                        # Check if this is an activity type sensor (not stats, not recent)
+                        # Format: strava_{athlete_id}_{normalized_activity_type} or
+                        #        strava_{athlete_id}_{normalized_activity_type}_{attribute}
+                        if (
+                            len(parts) >= 3
+                            and parts[0] == "strava"
+                            and parts[1] == athlete_id
+                            and "stats" not in entity_id
+                            and "recent" not in entity_id
+                        ):
+                            # Extract activity type from entity
+                            # For main sensor: strava_{athlete_id}_{normalized_type}
+                            # For attribute sensors: strava_{athlete_id}_{normalized_type}_{attribute}
+                            normalized_type = parts[2]
+                            
+                            # Find matching activity type (need to denormalize)
+                            matching_activity_type = None
+                            for activity_type in SUPPORTED_ACTIVITY_TYPES:
+                                if normalize_activity_type(activity_type) == normalized_type:
+                                    matching_activity_type = activity_type
+                                    break
+                            
+                            if matching_activity_type:
+                                if matching_activity_type in selected_activity_types:
+                                    _entity_registry.async_update_entity(
+                                        entity.entity_id, disabled_by=None
+                                    )
+                                else:
+                                    # Disable activity type sensors when activity type is deselected
+                                    _entity_registry.async_update_entity(
+                                        entity.entity_id,
+                                        disabled_by=RegistryEntryDisabler.INTEGRATION,
+                                    )
+                                continue
+                        
                         # Enable/disable summary stats based on activity type selection
                         if "strava_stats_" in entity.entity_id:
                             # Extract activity type from entity ID
@@ -326,10 +365,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                                             entity.entity_id, disabled_by=None
                                         )
                                     else:
-                                        _entity_registry.async_update_entity(
-                                            entity.entity_id,
-                                            disabled_by=RegistryEntryDisabler.INTEGRATION,
-                                        )
+                                        # Remove excess recent activity entities (not disable)
+                                        _entity_registry.async_remove(entity.entity_id)
                     except (ValueError, IndexError, AttributeError) as e:
                         # Skip entities that don't match expected format
                         _LOGGER.debug(
