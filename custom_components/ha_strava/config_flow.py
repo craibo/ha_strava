@@ -690,7 +690,7 @@ class OAuth2FlowHandler(
                     f"{get_url(self.hass, allow_internal=False, allow_ip=False)}/api/strava/webhook"
                 )
 
-            entry = self.hass.config_entries.async_get_entry(self.context["entry_id"])
+            entry = self._get_reauth_entry()
             return self.async_update_reload_and_abort(entry, data=data)
 
         self._abort_if_unique_id_configured()
