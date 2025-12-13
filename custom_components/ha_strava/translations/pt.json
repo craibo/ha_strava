@@ -18,6 +18,10 @@
           "client_secret": "Segredo do Cliente",
           "conf_photos": "Importar fotos do Strava?"
         }
+      },
+      "reauth_confirm": {
+        "title": "Reautenticação Necessária",
+        "description": "A sua autenticação do Strava expirou ou já não é válida. Por favor, clique em Submeter para reautenticar com o Strava e restaurar o acesso à sua integração."
       }
     }
   },
