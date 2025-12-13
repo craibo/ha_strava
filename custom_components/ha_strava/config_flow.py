@@ -2,6 +2,7 @@
 
 # generic imports
 import logging
+from typing import Any, Mapping, Optional
 
 import aiohttp
 import voluptuous as vol
@@ -10,6 +11,7 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from homeassistant.core import callback
+from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import config_entry_oauth2_flow
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import device_registry as dr
@@ -523,6 +525,7 @@ class OAuth2FlowHandler(
         """Initialize the OAuth2 flow handler."""
         super().__init__()
         self._user_input = None
+        self.reauth_entry_data: Optional[Mapping[str, Any]] = None
 
     @property
     def logger(self) -> logging.Logger:
@@ -543,6 +546,39 @@ class OAuth2FlowHandler(
     ):  # pylint: disable=missing-function-docstring,disable=unused-argument
         _LOGGER.debug("renew webhook subscription")
         return
+
+    async def async_step_reauth(self, entry_data: Mapping[str, Any]) -> FlowResult:
+        """Perform reauth upon an API authentication error."""
+        self.reauth_entry_data = entry_data
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self, user_input: Optional[Mapping[str, Any]] = None
+    ) -> FlowResult:
+        """Dialog that informs the user that reauth is required."""
+        if user_input is None:
+            return self.async_show_form(
+                step_id="reauth_confirm",
+                data_schema=vol.Schema({}),
+            )
+
+        assert self.reauth_entry_data is not None
+
+        # Register the implementation using existing credentials
+        config_entry_oauth2_flow.async_register_implementation(
+            self.hass,
+            DOMAIN,
+            config_entry_oauth2_flow.LocalOAuth2Implementation(
+                self.hass,
+                DOMAIN,
+                self.reauth_entry_data[CONF_CLIENT_ID],
+                self.reauth_entry_data[CONF_CLIENT_SECRET],
+                OAUTH2_AUTHORIZE,
+                OAUTH2_TOKEN,
+            ),
+        )
+
+        return await self.async_step_pick_implementation()
 
     async def async_step_user(self, user_input=None):
         """Ask user to provide Strava API Credentials"""
@@ -626,6 +662,38 @@ class OAuth2FlowHandler(
 
         athlete_id = athlete_info["id"]
         await self.async_set_unique_id(str(athlete_id))
+
+        if self.source == config_entries.SOURCE_REAUTH:
+            self._abort_if_unique_id_mismatch(reason="wrong_account")
+            # If re-authenticating, preserve existing options if not provided
+            if self._user_input is None and self.reauth_entry_data:
+                data[CONF_PHOTOS] = self.reauth_entry_data.get(CONF_PHOTOS, False)
+                data[CONF_DISTANCE_UNIT_OVERRIDE] = self.reauth_entry_data.get(
+                    CONF_DISTANCE_UNIT_OVERRIDE, CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
+                )
+                data[CONF_ACTIVITY_TYPES_TO_TRACK] = self.reauth_entry_data.get(
+                    CONF_ACTIVITY_TYPES_TO_TRACK, DEFAULT_ACTIVITY_TYPES
+                )
+                data[CONF_NUM_RECENT_ACTIVITIES] = self.reauth_entry_data.get(
+                    CONF_NUM_RECENT_ACTIVITIES, CONF_NUM_RECENT_ACTIVITIES_DEFAULT
+                )
+                data[CONF_GEAR_ENABLED] = self.reauth_entry_data.get(
+                    CONF_GEAR_ENABLED, False
+                )
+                data[CONF_NUM_GEAR_SENSORS] = self.reauth_entry_data.get(
+                    CONF_NUM_GEAR_SENSORS, CONF_NUM_GEAR_SENSORS_DEFAULT
+                )
+                # Ensure client credentials are included (they are added below for new entries too)
+                data[CONF_CLIENT_ID] = self.flow_impl.client_id
+                data[CONF_CLIENT_SECRET] = self.flow_impl.client_secret
+                data[CONF_CALLBACK_URL] = (
+                    f"{get_url(self.hass, allow_internal=False, allow_ip=False)}/api/strava/webhook"
+                )
+
+            return self.async_update_reload_and_abort(
+                self.context["entry_id"], data=data
+            )
+
         self._abort_if_unique_id_configured()
 
         title = f"Strava: {athlete_info.get('firstname', '')} {athlete_info.get('lastname', '')}".strip()
