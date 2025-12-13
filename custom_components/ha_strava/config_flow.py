@@ -28,8 +28,11 @@ from .const import (
     CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT,
     CONF_DISTANCE_UNIT_OVERRIDE_IMPERIAL,
     CONF_DISTANCE_UNIT_OVERRIDE_METRIC,
+    CONF_GEAR_ENABLED,
     CONF_IMG_UPDATE_INTERVAL_SECONDS,
     CONF_IMG_UPDATE_INTERVAL_SECONDS_DEFAULT,
+    CONF_NUM_GEAR_SENSORS,
+    CONF_NUM_GEAR_SENSORS_DEFAULT,
     CONF_NUM_RECENT_ACTIVITIES,
     CONF_NUM_RECENT_ACTIVITIES_DEFAULT,
     CONF_NUM_RECENT_ACTIVITIES_MAX,
@@ -125,6 +128,29 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                             min=1,
                             max=CONF_NUM_RECENT_ACTIVITIES_MAX,
                             msg=f"Must be between 1 and {CONF_NUM_RECENT_ACTIVITIES_MAX}",
+                        ),
+                    ),
+                    vol.Required(
+                        CONF_GEAR_ENABLED,
+                        default=self.config_entry.options.get(
+                            CONF_GEAR_ENABLED,
+                            self.config_entry.data.get(CONF_GEAR_ENABLED, False),
+                        ),
+                    ): bool,
+                    vol.Required(
+                        CONF_NUM_GEAR_SENSORS,
+                        default=self.config_entry.options.get(
+                            CONF_NUM_GEAR_SENSORS,
+                            self.config_entry.data.get(
+                                CONF_NUM_GEAR_SENSORS, CONF_NUM_GEAR_SENSORS_DEFAULT
+                            ),
+                        ),
+                    ): vol.All(
+                        vol.Coerce(int),
+                        vol.Range(
+                            min=1,
+                            max=20,
+                            msg="Must be between 1 and 20",
                         ),
                     ),
                 }
@@ -235,6 +261,32 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                             _device_registry.async_remove_device(device.id)
                         continue
 
+                    # Handle gear devices
+                    # Format: strava_{athlete_id}_gear_{index}
+                    if device_type == "gear":
+                        gear_enabled = user_input.get(CONF_GEAR_ENABLED, False)
+                        new_num_gear_sensors = user_input.get(CONF_NUM_GEAR_SENSORS, 0)
+
+                        if not gear_enabled:
+                            # Remove all gear devices if gear sensors are disabled
+                            _device_registry.async_remove_device(device.id)
+                            continue
+
+                        # Extract gear index from device identifier
+                        if len(parts) >= 4 and parts[3].isdigit():
+                            gear_index = int(parts[3])
+                            # Remove if gear_index >= new_num_gear_sensors (0-indexed, so >= means out of range)
+                            if gear_index >= new_num_gear_sensors:
+                                _device_registry.async_remove_device(device.id)
+                            else:
+                                _device_registry.async_update_device(
+                                    device.id, disabled_by=None
+                                )
+                        else:
+                            # Malformed gear device identifier, remove it
+                            _device_registry.async_remove_device(device.id)
+                        continue
+
                     # Handle activity type devices (skip "stats")
                     if device_type != "stats":
                         # Normalize device type and compare
@@ -260,9 +312,13 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         # Enable/disable activity type sensors based on activity type selection
                         # Activity type sensors have unique_ids like: strava_{athlete_id}_{normalized_activity_type}
                         # Entity IDs like: sensor.strava_12345_run, sensor.strava_12345_run_distance, etc.
-                        entity_id = entity.entity_id.split(".", 1)[-1] if "." in entity.entity_id else entity.entity_id
+                        entity_id = (
+                            entity.entity_id.split(".", 1)[-1]
+                            if "." in entity.entity_id
+                            else entity.entity_id
+                        )
                         parts = entity_id.split("_")
-                        
+
                         # Check if this is an activity type sensor (not stats, not recent)
                         # Format: strava_{athlete_id}_{normalized_activity_type} or
                         #        strava_{athlete_id}_{normalized_activity_type}_{attribute}
@@ -277,14 +333,17 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                             # For main sensor: strava_{athlete_id}_{normalized_type}
                             # For attribute sensors: strava_{athlete_id}_{normalized_type}_{attribute}
                             normalized_type = parts[2]
-                            
+
                             # Find matching activity type (need to denormalize)
                             matching_activity_type = None
                             for activity_type in SUPPORTED_ACTIVITY_TYPES:
-                                if normalize_activity_type(activity_type) == normalized_type:
+                                if (
+                                    normalize_activity_type(activity_type)
+                                    == normalized_type
+                                ):
                                     matching_activity_type = activity_type
                                     break
-                            
+
                             if matching_activity_type:
                                 if matching_activity_type in selected_activity_types:
                                     _entity_registry.async_update_entity(
@@ -297,7 +356,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                                         disabled_by=RegistryEntryDisabler.INTEGRATION,
                                     )
                                 continue
-                        
+
                         # Enable/disable summary stats based on activity type selection
                         if "strava_stats_" in entity.entity_id:
                             # Extract activity type from entity ID
@@ -367,6 +426,43 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                                     else:
                                         # Remove excess recent activity entities (not disable)
                                         _entity_registry.async_remove(entity.entity_id)
+                        # Handle gear entities
+                        # Format: strava_{athlete_id}_gear_{index}_{sensor_type}
+                        elif "_gear_" in entity.entity_id:
+                            gear_enabled = user_input.get(CONF_GEAR_ENABLED, False)
+                            new_num_gear_sensors = user_input.get(
+                                CONF_NUM_GEAR_SENSORS, 0
+                            )
+
+                            if not gear_enabled:
+                                # Remove all gear entities if gear sensors are disabled
+                                _entity_registry.async_remove(entity.entity_id)
+                                continue
+
+                            # Extract gear index from entity ID
+                            # Remove "sensor." prefix if present
+                            entity_id = entity.entity_id.split(".", 1)[-1]
+                            parts = entity_id.split("_")
+
+                            # Format: strava_{athlete_id}_gear_{index} or strava_{athlete_id}_gear_{index}_{sensor_type}
+                            if (
+                                len(parts) >= 4
+                                and parts[0] == "strava"
+                                and parts[1] == athlete_id
+                                and parts[2] == "gear"
+                                and parts[3].isdigit()
+                            ):
+                                gear_index = int(parts[3])
+                                # Remove if gear_index >= new_num_gear_sensors (0-indexed, so >= means out of range)
+                                if gear_index >= new_num_gear_sensors:
+                                    _entity_registry.async_remove(entity.entity_id)
+                                else:
+                                    _entity_registry.async_update_entity(
+                                        entity.entity_id, disabled_by=None
+                                    )
+                            else:
+                                # Malformed gear entity identifier, remove it
+                                _entity_registry.async_remove(entity.entity_id)
                     except (ValueError, IndexError, AttributeError) as e:
                         # Skip entities that don't match expected format
                         _LOGGER.debug(
@@ -400,6 +496,12 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 self._config_distance_unit_override
             )
             ha_strava_options[CONF_NUM_RECENT_ACTIVITIES] = self._num_recent_activities
+            ha_strava_options[CONF_GEAR_ENABLED] = user_input.get(
+                CONF_GEAR_ENABLED, False
+            )
+            ha_strava_options[CONF_NUM_GEAR_SENSORS] = user_input.get(
+                CONF_NUM_GEAR_SENSORS, CONF_NUM_GEAR_SENSORS_DEFAULT
+            )
 
             _LOGGER.debug(f"Strava Config Options: {ha_strava_options}")
             return self.async_create_entry(
@@ -470,6 +572,18 @@ class OAuth2FlowHandler(
                     msg=f"Must be between 1 and {CONF_NUM_RECENT_ACTIVITIES_MAX}",
                 ),
             ),
+            vol.Required(CONF_GEAR_ENABLED, default=False): bool,
+            vol.Required(
+                CONF_NUM_GEAR_SENSORS,
+                default=CONF_NUM_GEAR_SENSORS_DEFAULT,
+            ): vol.All(
+                vol.Coerce(int),
+                vol.Range(
+                    min=1,
+                    max=20,
+                    msg="Must be between 1 and 20",
+                ),
+            ),
         }
 
         assert self.hass is not None
@@ -533,11 +647,17 @@ class OAuth2FlowHandler(
             data[CONF_NUM_RECENT_ACTIVITIES] = self._user_input.get(
                 CONF_NUM_RECENT_ACTIVITIES, CONF_NUM_RECENT_ACTIVITIES_DEFAULT
             )
+            data[CONF_GEAR_ENABLED] = self._user_input.get(CONF_GEAR_ENABLED, False)
+            data[CONF_NUM_GEAR_SENSORS] = self._user_input.get(
+                CONF_NUM_GEAR_SENSORS, CONF_NUM_GEAR_SENSORS_DEFAULT
+            )
         else:
             data[CONF_PHOTOS] = False
             data[CONF_DISTANCE_UNIT_OVERRIDE] = CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
             data[CONF_ACTIVITY_TYPES_TO_TRACK] = DEFAULT_ACTIVITY_TYPES
             data[CONF_NUM_RECENT_ACTIVITIES] = CONF_NUM_RECENT_ACTIVITIES_DEFAULT
+            data[CONF_GEAR_ENABLED] = False
+            data[CONF_NUM_GEAR_SENSORS] = CONF_NUM_GEAR_SENSORS_DEFAULT
 
         return self.async_create_entry(title=title, data=data)
 

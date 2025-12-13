@@ -22,6 +22,9 @@ from .const import (
     CONF_ATTR_PRIVATE,
     CONF_ATTR_SPORT_TYPE,
     CONF_ATTR_START_LATLONG,
+    CONF_GEAR_ENABLED,
+    CONF_NUM_GEAR_SENSORS,
+    CONF_NUM_GEAR_SENSORS_DEFAULT,
     CONF_NUM_RECENT_ACTIVITIES,
     CONF_NUM_RECENT_ACTIVITIES_DEFAULT,
     CONF_PHOTO_CACHE_HOURS,
@@ -114,11 +117,13 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             raw_summary_stats = await self._fetch_summary_stats(athlete_id)
             summary_stats = self._sensor_summary_stats(raw_summary_stats)
             images = await self._fetch_images(activities)
+            gear = await self._fetch_gear(athlete_id)
 
             return {
                 "activities": activities,
                 "summary_stats": summary_stats,
                 "images": images,
+                "gear": gear,
             }
         except aiohttp.ClientError as err:
             _LOGGER.error(f"Error communicating with API: {err}")
@@ -384,8 +389,85 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             f"Failed to fetch photos for activity {activity_id} after {CONF_API_RETRY_MAX_ATTEMPTS} attempts"
         )
 
-    async def _fetch_gear(self, gear_id: str) -> dict:
-        """Fetch gear details from Strava API."""
+    async def _fetch_gear(self, athlete_id: str) -> list[dict]:
+        """Fetch gear list from Strava API.
+
+        Returns a list of gear items (bikes + shoes) sorted by distance (most used first),
+        limited to the configured number of gear sensors.
+        """
+        # Check if gear sensors are enabled
+        gear_enabled = (
+            self.entry.options.get(CONF_GEAR_ENABLED, False)
+            if CONF_GEAR_ENABLED in self.entry.options
+            else self.entry.data.get(CONF_GEAR_ENABLED, False)
+        )
+
+        if not gear_enabled:
+            _LOGGER.debug("Gear sensors are disabled, skipping gear fetch")
+            return []
+
+        num_gear_sensors = (
+            self.entry.options.get(CONF_NUM_GEAR_SENSORS, CONF_NUM_GEAR_SENSORS_DEFAULT)
+            if CONF_NUM_GEAR_SENSORS in self.entry.options
+            else self.entry.data.get(
+                CONF_NUM_GEAR_SENSORS, CONF_NUM_GEAR_SENSORS_DEFAULT
+            )
+        )
+
+        try:
+            _LOGGER.debug("Fetching athlete data to get gear list")
+            response = await self.oauth_session.async_request(
+                method="GET",
+                url="https://www.strava.com/api/v3/athlete",
+            )
+            if response.status != 200:
+                _LOGGER.warning(f"Failed to fetch athlete data: {response.status}")
+                return []
+
+            athlete_data = await response.json()
+            bikes = athlete_data.get("bikes", [])
+            shoes = athlete_data.get("shoes", [])
+
+            # Combine bikes and shoes
+            all_gear = bikes + shoes
+
+            # Sort by distance (descending) - most used gear first
+            # Gear without distance will be sorted to the end
+            all_gear.sort(key=lambda g: g.get("distance", 0), reverse=True)
+
+            # Limit to configured number
+            limited_gear = all_gear[:num_gear_sensors]
+
+            _LOGGER.debug(f"Found {len(limited_gear)} gear items to fetch details for")
+
+            # Fetch detailed info for each gear item
+            gear_list = []
+            for gear_summary in limited_gear:
+                gear_id = gear_summary.get("id")
+                if not gear_id:
+                    continue
+
+                try:
+                    gear_details = await self._fetch_gear_details(str(gear_id))
+                    if gear_details:
+                        # Merge summary data with detailed data
+                        merged_gear = {**gear_summary, **gear_details}
+                        gear_list.append(merged_gear)
+                    else:
+                        # Use summary data if details fetch fails
+                        gear_list.append(gear_summary)
+                except Exception as e:
+                    _LOGGER.warning(f"Error fetching details for gear {gear_id}: {e}")
+                    # Use summary data if details fetch fails
+                    gear_list.append(gear_summary)
+
+            return gear_list
+        except (aiohttp.ClientError, ValueError, KeyError) as e:
+            _LOGGER.error(f"Error fetching gear list: {e}")
+            return []
+
+    async def _fetch_gear_details(self, gear_id: str) -> dict:
+        """Fetch detailed gear information from Strava API."""
         if not gear_id:
             return {}
 
