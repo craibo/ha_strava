@@ -686,7 +686,9 @@ class OAuth2FlowHandler(
                 # Ensure client credentials are included (they are added below for new entries too)
                 data[CONF_CLIENT_ID] = self.flow_impl.client_id
                 data[CONF_CLIENT_SECRET] = self.flow_impl.client_secret
-                data[CONF_CALLBACK_URL] = f"{get_url(self.hass, allow_internal=False, allow_ip=False)}/api/strava/webhook"
+                data[CONF_CALLBACK_URL] = (
+                    f"{get_url(self.hass, allow_internal=False, allow_ip=False)}/api/strava/webhook"
+                )
 
             return self.async_update_reload_and_abort(
                 self.context["entry_id"], data=data
