@@ -9,6 +9,7 @@ from typing import Tuple
 
 import aiohttp
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import config_entry_oauth2_flow
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
@@ -425,6 +426,16 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
                 return []
 
             athlete_data = await response.json()
+
+            # Check for insufficient permissions (missing bikes/shoes in SummaryAthlete)
+            if "bikes" not in athlete_data or "shoes" not in athlete_data:
+                _LOGGER.warning(
+                    "Insufficient permissions to fetch gear data. Please re-authenticate."
+                )
+                raise ConfigEntryAuthFailed(
+                    "Insufficient permissions to fetch gear data. Please re-authenticate."
+                )
+
             bikes = athlete_data.get("bikes", [])
             shoes = athlete_data.get("shoes", [])
 
