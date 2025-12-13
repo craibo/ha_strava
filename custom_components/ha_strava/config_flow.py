@@ -691,9 +691,7 @@ class OAuth2FlowHandler(
                 )
 
             entry = self.hass.config_entries.async_get_entry(self.context["entry_id"])
-            return self.async_update_reload_and_abort(
-                entry, data=data
-            )
+            return self.async_update_reload_and_abort(entry, data=data)
 
         self._abort_if_unique_id_configured()
 
