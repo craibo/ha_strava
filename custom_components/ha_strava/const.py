@@ -45,6 +45,11 @@ CONF_NUM_RECENT_ACTIVITIES = "num_recent_activities"
 CONF_NUM_RECENT_ACTIVITIES_DEFAULT = 1
 CONF_NUM_RECENT_ACTIVITIES_MAX = 10
 
+# Gear Sensor Configuration
+CONF_GEAR_ENABLED = "gear_enabled"
+CONF_NUM_GEAR_SENSORS = "num_gear_sensors"
+CONF_NUM_GEAR_SENSORS_DEFAULT = 3
+
 STRAVA_ACTIVITY_BASE_URL = "https://www.strava.com/activities/"
 STRAVA_ACTHLETE_BASE_URL = "https://www.strava.com/dashboard"
 
@@ -562,6 +567,29 @@ def generate_recent_activity_sensor_name(
     return (
         f"Strava {athlete_name} Recent Activity {activity_index + 1} {formatted_sensor}"
     )
+
+
+def generate_gear_device_id(athlete_id: str, gear_index: int) -> str:
+    """Generate standardized gear device ID."""
+    return f"strava_{athlete_id}_gear_{gear_index}"
+
+
+def generate_gear_device_name(athlete_name: str, gear_name: str) -> str:
+    """Generate standardized gear device name."""
+    return f"Strava {athlete_name} {gear_name}"
+
+
+def generate_gear_sensor_id(athlete_id: str, gear_index: int, sensor_type: str) -> str:
+    """Generate standardized gear sensor ID."""
+    return f"strava_{athlete_id}_gear_{gear_index}_{sensor_type}"
+
+
+def generate_gear_sensor_name(
+    athlete_name: str, gear_name: str, sensor_type: str
+) -> str:
+    """Generate standardized gear sensor name."""
+    formatted_sensor = sensor_type.replace("_", " ").title()
+    return f"Strava {athlete_name} {gear_name} {formatted_sensor}"
 
 
 def normalize_activity_type(activity_type: str) -> str:
