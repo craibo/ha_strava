@@ -310,6 +310,62 @@ class StravaStatsSensor(CoordinatorEntity, SensorEntity):
         self._attr_unique_id = f"strava_{self._athlete_id}_{self._activity_index}_{self._sensor_index}"
 ```
 
+### Button Platform Multi-User Support
+
+```python
+class StravaActivityRefreshButton(CoordinatorEntity, ButtonEntity):
+    """Button for refreshing activity data for a specific user."""
+
+    def __init__(
+        self,
+        coordinator: StravaDataUpdateCoordinator,
+        athlete_id: str,
+        athlete_name: str,
+        activity_type: str,
+    ) -> None:
+        super().__init__(coordinator)
+        self._athlete_id = athlete_id  # User-specific identifier
+        self._athlete_name = athlete_name
+        self._activity_type = activity_type
+        self._normalized_activity_type = normalize_activity_type(activity_type)
+
+        # Include athlete ID in unique ID for namespace isolation
+        self._attr_unique_id = (
+            f"strava_{athlete_id}_{self._normalized_activity_type}_refresh"
+        )
+
+    @property
+    def device_info(self) -> dict[str, Any]:
+        """Return device information for this user's button."""
+        return {
+            "identifiers": {
+                (
+                    DOMAIN,
+                    generate_device_id(
+                        self._athlete_id,  # User-specific device ID
+                        self._normalized_activity_type,
+                    ),
+                )
+            },
+            "name": generate_device_name(self._athlete_name, self._activity_type),
+            "manufacturer": "Powered by Strava",
+            "model": f"{self._activity_type} Activity",
+        }
+
+    async def async_press(self) -> None:
+        """Refresh activity data for this user's coordinator."""
+        activity = self._get_latest_activity()
+        if not activity:
+            return
+
+        activity_id = activity.get(CONF_SENSOR_ID)
+        if not activity_id:
+            return
+
+        # Refresh activity using user-specific coordinator
+        await self.coordinator.async_refresh_activity(activity_id)
+```
+
 ### Device Information Per User
 
 ```python

@@ -19,6 +19,7 @@ This file contains specific patterns and best practices for developing Home Assi
 - `coordinator.py` - Data update coordinator for API management
 - `sensor.py` - Sensor platform implementation
 - `camera.py` - Camera platform implementation
+- `button.py` - Button platform implementation
 - `translations/` - Internationalization support
 
 ### Entry Point Functions
@@ -145,6 +146,131 @@ class StravaCamera(CoordinatorEntity, Camera):
         """Return image response."""
         # Fetch and return image data
         pass
+```
+
+### Button Entity Pattern
+
+```python
+class StravaActivityRefreshButton(CoordinatorEntity, ButtonEntity):
+    """A button for manually refreshing Strava activity data."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+
+    def __init__(
+        self,
+        coordinator: StravaDataUpdateCoordinator,
+        athlete_id: str,
+        athlete_name: str,
+        activity_type: str,
+    ) -> None:
+        super().__init__(coordinator)
+        self._athlete_id = athlete_id
+        self._athlete_name = athlete_name
+        self._activity_type = activity_type
+        self._normalized_activity_type = normalize_activity_type(activity_type)
+        self._attr_unique_id = (
+            f"strava_{athlete_id}_{self._normalized_activity_type}_refresh"
+        )
+        self._attr_name = "Refresh Activity"
+
+    @property
+    def device_info(self) -> dict[str, Any]:
+        """Return device information."""
+        return {
+            "identifiers": {
+                (
+                    DOMAIN,
+                    generate_device_id(
+                        self._athlete_id,
+                        self._normalized_activity_type,
+                    ),
+                )
+            },
+            "name": generate_device_name(self._athlete_name, self._activity_type),
+            "manufacturer": "Powered by Strava",
+            "model": f"{self._activity_type} Activity",
+        }
+
+    @property
+    def available(self) -> bool:
+        """Return if entity is available."""
+        return self._get_latest_activity() is not None
+
+    def _get_latest_activity(self) -> dict | None:
+        """Get the latest activity of this type."""
+        data = self.coordinator.data or {}
+        activities = data.get("activities") or []
+        for activity in activities:
+            if activity.get(CONF_ATTR_SPORT_TYPE) == self._activity_type:
+                return activity
+        return None
+
+    async def async_press(self) -> None:
+        """Handle button press to refresh activity data."""
+        activity = self._get_latest_activity()
+        if not activity:
+            return
+
+        activity_id = activity.get(CONF_SENSOR_ID)
+        if not activity_id:
+            return
+
+        await self.coordinator.async_refresh_activity(activity_id)
+```
+
+### Button Platform Setup
+
+```python
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up the button platform."""
+    coordinator: StravaDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+    athlete_id = entry.unique_id
+    athlete_name = get_athlete_name_from_title(entry.title)
+
+    buttons: list[ButtonEntity] = []
+    activities = (coordinator.data or {}).get("activities") or []
+
+    # Create buttons for each activity type
+    per_type_added: set[str] = set()
+    for activity in activities:
+        sport_type = activity.get(CONF_ATTR_SPORT_TYPE)
+        if not sport_type:
+            continue
+
+        normalized_type = normalize_activity_type(sport_type)
+        if normalized_type in per_type_added:
+            continue
+
+        per_type_added.add(normalized_type)
+        buttons.append(
+            StravaActivityRefreshButton(
+                coordinator=coordinator,
+                athlete_id=athlete_id,
+                athlete_name=athlete_name,
+                activity_type=sport_type,
+            )
+        )
+
+    # Create buttons for recent activities
+    num_recent_activities = entry.options.get(
+        CONF_NUM_RECENT_ACTIVITIES, CONF_NUM_RECENT_ACTIVITIES_DEFAULT
+    )
+    for index in range(num_recent_activities):
+        buttons.append(
+            StravaRecentActivityRefreshButton(
+                coordinator=coordinator,
+                athlete_id=athlete_id,
+                athlete_name=athlete_name,
+                activity_index=index,
+            )
+        )
+
+    if buttons:
+        async_add_entities(buttons)
 ```
 
 ## Webhook Implementation

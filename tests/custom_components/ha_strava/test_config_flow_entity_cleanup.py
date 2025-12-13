@@ -5,7 +5,6 @@ from unittest.mock import MagicMock, patch
 import pytest
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_registry import RegistryEntryDisabler
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.ha_strava.config_flow import OptionsFlowHandler
@@ -67,8 +66,21 @@ class TestEntityCleanupInOptionsFlow:
 
         # Attribute sensors for recent activity 3
         entities.append(MagicMock())
+        entities[-1].entity_id = "sensor.strava_12345_recent_3"
+        entities[-1].unique_id = "strava_12345_recent_3"
+
+        entities.append(MagicMock())
         entities[-1].entity_id = "sensor.strava_12345_recent_3_title"
         entities[-1].unique_id = "strava_12345_recent_3_title"
+
+        # Attribute sensors for recent activity 4
+        entities.append(MagicMock())
+        entities[-1].entity_id = "sensor.strava_12345_recent_4"
+        entities[-1].unique_id = "strava_12345_recent_4"
+
+        entities.append(MagicMock())
+        entities[-1].entity_id = "sensor.strava_12345_recent_4_title"
+        entities[-1].unique_id = "strava_12345_recent_4_title"
 
         # Non-recent activity entities (should not be affected)
         entities.append(MagicMock())
@@ -150,19 +162,16 @@ class TestEntityCleanupInOptionsFlow:
             with patch.object(options_flow, "async_create_entry"):
                 await options_flow.async_step_init(user_input)
 
-                # Check that entities for recent activity 3 and 4 are disabled
-                disable_calls = [
-                    call
-                    for call in mock_entity_registry.async_update_entity.call_args_list
-                    if call[1].get("disabled_by") == RegistryEntryDisabler.INTEGRATION
-                ]
+                # Check that entities for recent activity 3 and 4 are removed
+                # (The implementation removes excess entities, not disables them)
+                remove_calls = mock_entity_registry.async_remove.call_args_list
 
-                # Should disable entities for recent activity 3 and 4
-                disabled_entities = [call[0][0] for call in disable_calls]
-                assert "sensor.strava_12345_recent_3" in disabled_entities
-                assert "sensor.strava_12345_recent_3_title" in disabled_entities
-                assert "sensor.strava_12345_recent_4" in disabled_entities
-                assert "sensor.strava_12345_recent_4" in disabled_entities
+                # Should remove entities for recent activity 3 and 4
+                removed_entities = [call[0][0] for call in remove_calls]
+                assert "sensor.strava_12345_recent_3" in removed_entities
+                assert "sensor.strava_12345_recent_3_title" in removed_entities
+                assert "sensor.strava_12345_recent_4" in removed_entities
+                assert "sensor.strava_12345_recent_4_title" in removed_entities
 
                 # Should enable entities for recent activity 1 and 2
                 enable_calls = [
@@ -245,23 +254,19 @@ class TestEntityCleanupInOptionsFlow:
             with patch.object(options_flow, "async_create_entry"):
                 await options_flow.async_step_init(user_input)
 
-                # Check that all recent activity entities are disabled
-                disable_calls = [
-                    call
-                    for call in mock_entity_registry.async_update_entity.call_args_list
-                    if call[1].get("disabled_by") == RegistryEntryDisabler.INTEGRATION
-                ]
-
-                disabled_entities = [call[0][0] for call in disable_calls]
-                assert "sensor.strava_12345_recent" in disabled_entities
-                assert "sensor.strava_12345_recent_title" in disabled_entities
-                assert "sensor.strava_12345_recent_distance" in disabled_entities
-                assert "sensor.strava_12345_recent_2" in disabled_entities
-                assert "sensor.strava_12345_recent_2_title" in disabled_entities
-                assert "sensor.strava_12345_recent_2_distance" in disabled_entities
-                assert "sensor.strava_12345_recent_3" in disabled_entities
-                assert "sensor.strava_12345_recent_3_title" in disabled_entities
-                assert "sensor.strava_12345_recent_4" in disabled_entities
+                # Check that all recent activity entities are removed
+                # (The implementation removes excess entities, not disables them)
+                remove_calls = mock_entity_registry.async_remove.call_args_list
+                removed_entities = [call[0][0] for call in remove_calls]
+                assert "sensor.strava_12345_recent" in removed_entities
+                assert "sensor.strava_12345_recent_title" in removed_entities
+                assert "sensor.strava_12345_recent_distance" in removed_entities
+                assert "sensor.strava_12345_recent_2" in removed_entities
+                assert "sensor.strava_12345_recent_2_title" in removed_entities
+                assert "sensor.strava_12345_recent_2_distance" in removed_entities
+                assert "sensor.strava_12345_recent_3" in removed_entities
+                assert "sensor.strava_12345_recent_3_title" in removed_entities
+                assert "sensor.strava_12345_recent_4" in removed_entities
 
     @pytest.mark.asyncio
     async def test_increase_recent_activities_from_2_to_4(

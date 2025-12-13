@@ -13,8 +13,15 @@ from custom_components.ha_strava.const import CONF_PHOTOS, DOMAIN
 
 # Mock homeassistant.components.camera to avoid turbojpeg dependency
 if "homeassistant.components.camera" not in sys.modules:
+
+    class MockCamera:
+        """Mock Camera class for testing."""
+
+        def __init__(self, *args, **kwargs):
+            """Initialize mock camera."""
+
     camera_module = MagicMock()
-    camera_module.Camera = MagicMock
+    camera_module.Camera = MockCamera
     sys.modules["homeassistant.components.camera"] = camera_module
 
 from custom_components.ha_strava.camera import UrlCam, async_setup_entry
@@ -333,9 +340,9 @@ class TestStravaCamera:
             mock_store.async_save.assert_called_once()
             saved_data = mock_store.async_save.call_args[0][0]
             assert "abc123" in saved_data
-            # Verify date was serialized to ISO string
-            assert isinstance(saved_data["abc123"]["date"], str)
-            assert saved_data["abc123"]["date"] == test_date.isoformat()
+            # Verify date is present (Store encoder will serialize it to ISO string)
+            # In the mock, we see the raw data before encoding
+            assert saved_data["abc123"]["date"] == test_date
 
     @pytest.mark.asyncio
     async def test_pickle_migration(self, hass: HomeAssistant, tmp_path):
@@ -400,23 +407,21 @@ class TestStravaCamera:
             camera = UrlCam(coordinator, hass, athlete_id="12345")
             camera._url_dump_filepath = str(pickle_file)
 
-            # Mock aiofiles for migration
-            with patch(
-                "custom_components.ha_strava.camera.aiofiles.open"
-            ) as mock_aiofiles:
+            # Mock aiofiles for migration (aiofiles is imported inside the method)
+            with patch("aiofiles.open", create=True) as mock_aiofiles:
                 mock_file = AsyncMock()
                 mock_file.read = AsyncMock(return_value=pickle.dumps(pickled_data))
                 mock_aiofiles.return_value.__aenter__.return_value = mock_file
 
                 await camera.async_load_storage()
 
-                # Verify migration occurred
-                assert len(camera._urls) == 1
-                assert "abc123" in camera._urls
-                # Verify data was saved to new storage
-                mock_store.async_save.assert_called_once()
-                # Verify pickle file was removed
-                mock_remove.assert_called_once_with(str(pickle_file))
+            # Verify migration occurred
+            assert len(camera._urls) == 1
+            assert "abc123" in camera._urls
+            # Verify data was saved to new storage
+            mock_store.async_save.assert_called_once()
+            # Verify pickle file was removed
+            mock_remove.assert_called_once_with(str(pickle_file))
 
     @pytest.mark.asyncio
     async def test_storage_empty_on_first_load(self, hass: HomeAssistant):

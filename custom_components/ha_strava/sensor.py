@@ -2,7 +2,11 @@
 
 import logging
 
-from homeassistant.components.sensor import SensorEntity, SensorStateClass
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntity,
+    SensorStateClass,
+)
 from homeassistant.const import (
     UnitOfEnergy,
     UnitOfLength,
@@ -368,6 +372,20 @@ class StravaSummaryStatsSensor(CoordinatorEntity, SensorEntity):
             "biggest_climb_elevation_gain": "mdi:elevation-rise",
         }
         return icon_mapping.get(self._api_key, "mdi:chart-timeline-variant")
+
+    @property
+    def device_class(self):
+        """Return the device class of the sensor."""
+        if self._metric_key in [
+            "distance",
+            "elevation_gain",
+            "biggest_ride_distance",
+            "biggest_climb_elevation_gain",
+        ]:
+            return SensorDeviceClass.DISTANCE
+        elif self._metric_key == "moving_time":
+            return SensorDeviceClass.DURATION
+        return None
 
     @property
     def native_value(self):

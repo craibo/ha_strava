@@ -284,19 +284,13 @@ class TestStravaActivityTypeSensor:
         # Get sensor attributes
         attributes = sensor.extra_state_attributes
 
-        # Verify swimming-specific attributes are present
-        assert "distance" in attributes
-        assert "moving_time" in attributes
-        assert "kcal" in attributes
-
-        # Verify values from mock data
-        swim_activities = [a for a in mock_strava_activities if a["type"] == "Swim"]
-        assert len(swim_activities) == 1
-        swim_activity = swim_activities[0]
-
-        assert attributes["distance"] == swim_activity["distance"]
-        assert attributes["moving_time"] == swim_activity["moving_time"]
-        assert attributes["kcal"] == swim_activity["calories"]
+        # Verify core activity attributes are present
+        # Note: Detailed metrics (distance, moving_time, kcal) are now available
+        # through separate attribute sensors, not in the main activity type sensor's
+        # extra_state_attributes
+        assert "activity_id" in attributes
+        assert "sport_type" in attributes
+        assert attributes["sport_type"] == "Swim"
 
     def test_sensor_device_info(self):
         """Test sensor device info."""
@@ -524,8 +518,5 @@ class TestStravaActivityTypeSensor:
         # Verify sensor handles missing data gracefully
         assert state == "Invalid Activity"  # Should still show the name
         assert attributes["activity_id"] == "1"  # activity_id is returned as string
-        assert attributes["distance"] is None  # Default value for missing field
-        assert attributes["moving_time"] is None  # Default value for missing field
-        assert attributes["elapsed_time"] is None  # Default value for missing field
-        assert attributes["elevation_gain"] is None  # Default value for missing field
-        assert attributes["date"] is None  # Default value for missing field
+        assert attributes["sport_type"] == "Run"  # Core attribute should be present
+        # Note: Detailed metrics are now in separate attribute sensors, not here
