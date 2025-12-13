@@ -26,6 +26,7 @@ When configuring the Strava API, the **Authorization Callback Domain** must be s
 - Activity data in Home Assistant **auto-updates** whenever you add, modify, or delete activities on Strava
 - **Activity Type Selection**: Choose which of the 50 supported activity types to track
 - **Device Source Tracking**: Automatically detects and displays the device used for each activity
+- **Gear Sensors**: Track your bikes and shoes with distance and detailed information (brand, model, etc.)
 - **Multi-User Support**: Add multiple Strava accounts, each with their own unique Strava app credentials
 - **Webhook-First Architecture**: Uses Strava webhooks for real-time updates, respecting API rate limits
 - **Easy set-up**: only enter your Strava Client-ID and Client-Secret and you're ready to go
@@ -54,6 +55,12 @@ The Strava Home Assistant Integration creates **sensor entities** for each activ
 - **Recent** (last 4 weeks): Distance, activity count, and other metrics
 - **Year-to-Date**: Cumulative statistics for the current year
 - **All-Time**: Lifetime statistics for each activity type
+
+**Gear Sensors:**
+
+- **Gear Name**: Shows the name of each gear item (bike or shoe) with attributes including brand, model, and description
+- **Gear Distance**: Tracks the total distance for each gear item with proper unit conversion
+- Configure the number of gear sensors to display (1-20, default: 3)
 
 **Supported Activity Types:**
 The integration supports all 50 Strava activity types including Run, Ride, Walk, Swim, Hike, AlpineSki, BackcountrySki, Badminton, Canoeing, Crossfit, EBikeRide, Elliptical, Golf, GravelRide, Handcycle, HighIntensityIntervalTraining, IceSkate, InlineSkate, Kayaking, Kitesurf, MountainBikeRide, NordicSki, Pickleball, Pilates, Racquetball, RockClimbing, RollerSki, Rowing, Sail, Skateboard, Snowboard, Snowshoe, Soccer, Squash, StairStepper, StandUpPaddling, Surfing, TableTennis, Tennis, TrailRun, Velomobile, VirtualRide, VirtualRow, VirtualRun, WeightTraining, Wheelchair, Windsurf, Workout, and Yoga.
@@ -148,6 +155,23 @@ This setting is selectable during initial setup and can be changed later under `
 ### 3. Photo Updates
 
 You can enable or disable automatic photo updates for the camera entity. When enabled, the integration will fetch new photos from your activities and update the camera entity accordingly.
+
+### 4. Gear Sensors
+
+You can enable gear sensors to track your bikes and shoes from Strava. When enabled, the integration will:
+
+- Fetch your most recently used gear items (bikes and shoes combined)
+- Create a device for each gear item
+- Create two sensors per gear:
+  - **Gear Name**: Shows the gear name with attributes (id, brand_name, model_name, primary, description)
+  - **Gear Distance**: Shows the total distance for the gear with proper unit conversion
+
+**Configuration Options:**
+
+- **Enable Gear Sensors**: Checkbox to enable/disable gear sensors
+- **Number of Gear Sensors**: Slider to select how many gear items to track (1-20, default: 3)
+
+The gear items are sorted by distance (most used first), and the integration respects API rate limits by caching gear details.
 
 **_NOTES_**
 

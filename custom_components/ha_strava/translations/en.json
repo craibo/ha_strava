@@ -19,8 +19,14 @@
           "conf_photos": "Import Photos from Strava?",
           "conf_distance_unit": "Distance unit system to use",
           "activity_types_to_track": "Activity Types to Track",
-          "num_recent_activities": "Number of Recent Activities"
+          "num_recent_activities": "Number of Recent Activities",
+          "gear_enabled": "Enable Gear Sensors",
+          "num_gear_sensors": "Number of Gear Sensors"
         }
+      },
+      "reauth_confirm": {
+        "title": "Re-authentication Required",
+        "description": "Your Strava authentication has expired or is no longer valid. Please click Submit to re-authenticate with Strava and restore access to your integration."
       }
     }
   },
@@ -34,7 +40,9 @@
           "img_update_interval_seconds": "Image rotation (seconds)",
           "conf_photos": "Import Photos from Strava?",
           "conf_distance_unit": "Distance unit system to use",
-          "num_recent_activities": "Number of Recent Activities"
+          "num_recent_activities": "Number of Recent Activities",
+          "gear_enabled": "Enable Gear Sensors",
+          "num_gear_sensors": "Number of Gear Sensors"
         }
       }
     },
