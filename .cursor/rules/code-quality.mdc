@@ -298,6 +298,75 @@ class TestStravaCoordinator:
 - Use context managers for file operations
 - Avoid storing large objects in memory unnecessarily
 
+## Pre-Commit Hooks
+
+### Running Pre-Commit Checks
+
+**IMPORTANT: Always activate the virtual environment before running pre-commit checks.**
+
+The project uses pre-commit hooks to ensure code quality. These hooks run Black, isort, flake8, and pylint, which must be executed from the virtual environment.
+
+```bash
+# Activate virtual environment (required)
+source venv/bin/activate
+
+# Install pre-commit hooks (first time setup)
+pre-commit install
+
+# Run pre-commit checks on all files
+pre-commit run --all-files
+
+# Run pre-commit checks on staged files only (default)
+pre-commit run
+
+# Run a specific hook
+pre-commit run black --all-files
+pre-commit run flake8 --all-files
+pre-commit run pylint --all-files
+pre-commit run isort --all-files
+```
+
+### Manual Code Quality Checks
+
+You can also run the code quality tools manually:
+
+```bash
+# Activate virtual environment (required)
+source venv/bin/activate
+
+# Format code with Black
+black custom_components/ tests/
+
+# Sort imports with isort
+isort custom_components/ tests/
+
+# Check code style with flake8
+flake8 custom_components/ tests/
+
+# Lint code with pylint
+pylint custom_components/ tests/
+```
+
+### Virtual Environment Setup
+
+All code quality checks must be run within the project's virtual environment:
+
+```bash
+# Activate virtual environment (required before running checks)
+source venv/bin/activate
+
+# Verify tools are available
+black --version
+isort --version
+flake8 --version
+pylint --version
+
+# Deactivate when done (optional)
+deactivate
+```
+
+**Note**: If the virtual environment is not activated, pre-commit hooks may fail or use incorrect tool versions.
+
 ## Security Best Practices
 
 ### Input Validation

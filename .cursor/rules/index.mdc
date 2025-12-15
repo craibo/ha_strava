@@ -15,6 +15,7 @@ The ha_strava project is a Home Assistant custom component that integrates with 
 - Activity data and statistics
 - Summary statistics (recent, year-to-date, all-time)
 - Activity photos and images
+- Refresh buttons for manual data updates
 - Multi-user support
 - Real-time updates via webhooks
 
@@ -22,25 +23,25 @@ The ha_strava project is a Home Assistant custom component that integrates with 
 
 ### Core Rules
 
-- **[core.md](core.md)** - Core development rules that should always be applied
-- **[index.md](index.md)** - This index file (always applied)
+- **[core.mdc](core.mdc)** - Core development rules that should always be applied
+- **[index.mdc](index.mdc)** - This index file (always applied)
 
 ### Architecture and Patterns
 
-- **[home-assistant-patterns.md](home-assistant-patterns.md)** - Home Assistant integration patterns and best practices
-- **[architecture-patterns.md](architecture-patterns.md)** - OAuth2, webhooks, coordinators, and multi-user architecture
-- **[multi-user-support.md](multi-user-support.md)** - Multi-user support patterns and implementation
-- **[credential-validation.md](credential-validation.md)** - Credential validation and uniqueness enforcement
-- **[migration.md](migration.md)** - ConfigEntry migration patterns and implementation
+- **[home-assistant-patterns.mdc](home-assistant-patterns.mdc)** - Home Assistant integration patterns and best practices
+- **[architecture-patterns.mdc](architecture-patterns.mdc)** - OAuth2, webhooks, coordinators, and multi-user architecture
+- **[multi-user-support.mdc](multi-user-support.mdc)** - Multi-user support patterns and implementation
+- **[credential-validation.mdc](credential-validation.mdc)** - Credential validation and uniqueness enforcement
+- **[migration.mdc](migration.mdc)** - ConfigEntry migration patterns and implementation
 
 ### Code Quality and Standards
 
-- **[code-quality.md](code-quality.md)** - Code quality standards, formatting, and style guidelines
-- **[testing-patterns.md](testing-patterns.md)** - Testing patterns and guidelines using pytest-homeassistant-custom-component
+- **[code-quality.mdc](code-quality.mdc)** - Code quality standards, formatting, and style guidelines
+- **[testing-patterns.mdc](testing-patterns.mdc)** - Testing patterns and guidelines using pytest-homeassistant-custom-component
 
 ### API Integration
 
-- **[api-integration.md](api-integration.md)** - Strava API integration patterns and external service integration
+- **[api-integration.mdc](api-integration.mdc)** - Strava API integration patterns and external service integration
 
 ## Quick Reference
 
@@ -48,26 +49,26 @@ The ha_strava project is a Home Assistant custom component that integrates with 
 
 **Always Applied:**
 
-- `core.md` - Contains core principles and standards that apply to all development work
+- `core.mdc` - Contains core principles and standards that apply to all development work
 
 **For Home Assistant Development:**
 
-- `home-assistant-patterns.md` - When working on component structure, entities, config flows, or OAuth2
-- `architecture-patterns.md` - When implementing coordinators, webhooks, or data flow patterns
+- `home-assistant-patterns.mdc` - When working on component structure, entities, config flows, or OAuth2
+- `architecture-patterns.mdc` - When implementing coordinators, webhooks, or data flow patterns
 
 **For Code Quality:**
 
-- `code-quality.md` - When writing or reviewing code for style, formatting, and best practices
-- `testing-patterns.md` - When writing or maintaining tests
+- `code-quality.mdc` - When writing or reviewing code for style, formatting, and best practices
+- `testing-patterns.mdc` - When writing or maintaining tests
 
 **For API Work:**
 
-- `api-integration.md` - When working with Strava API, webhooks, or external services
+- `api-integration.mdc` - When working with Strava API, webhooks, or external services
 
 **For Multi-User Features:**
 
-- `multi-user-support.md` - When implementing or modifying multi-user functionality
-- `credential-validation.md` - When implementing credential validation and uniqueness enforcement
+- `multi-user-support.mdc` - When implementing or modifying multi-user functionality
+- `credential-validation.mdc` - When implementing credential validation and uniqueness enforcement
 
 ## Project-Specific Guidelines
 
@@ -127,6 +128,7 @@ custom_components/ha_strava/
 ├── coordinator.py      # Data update coordinator
 ├── sensor.py           # Sensor platform implementation
 ├── camera.py           # Camera platform implementation
+├── button.py           # Button platform implementation
 └── translations/       # Internationalization support
 ```
 
@@ -137,10 +139,19 @@ tests/
 ├── conftest.py         # Test configuration and fixtures
 └── custom_components/ha_strava/
     ├── test_config_flow.py
+    ├── test_config_flow_entity_cleanup.py
     ├── test_coordinator.py
     ├── test_sensor.py
+    ├── test_activity_attribute_sensors.py
+    ├── test_activity_type_sensors.py
     ├── test_camera.py
-    └── test_init.py
+    ├── test_button.py
+    ├── test_init.py
+    ├── test_device_source_detection.py
+    ├── test_multiple_recent_activities.py
+    ├── test_options_flow_reload.py
+    ├── test_time_formatting.py
+    └── test_constants_multiple_activities.py
 ```
 
 ## Contributing Guidelines

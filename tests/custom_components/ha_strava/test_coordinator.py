@@ -20,6 +20,7 @@ from custom_components.ha_strava.const import (
     CONF_SENSOR_DISTANCE,
     CONF_SENSOR_ID,
     CONF_SENSOR_TITLE,
+    DOMAIN,
 )
 from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
 
@@ -590,9 +591,16 @@ class TestStravaDataUpdateCoordinator:
         # Verify activities
         assert len(result["activities"]) == len(mock_strava_activities)
 
-        # Verify summary stats
-        assert "Run" in result["summary_stats"]
-        assert "Ride" in result["summary_stats"]
+        # Verify summary stats structure
+        # Summary stats now use keys like "recent_run_totals", "all_run_totals", etc.
+        assert (
+            "recent_run_totals" in result["summary_stats"]
+            or "all_run_totals" in result["summary_stats"]
+        )
+        assert (
+            "recent_ride_totals" in result["summary_stats"]
+            or "all_ride_totals" in result["summary_stats"]
+        )
 
     @pytest.mark.asyncio
     async def test_coordinator_error_handling(
@@ -1115,10 +1123,21 @@ class TestStravaDataUpdateCoordinator:
         async for hass_instance in hass:
             hass = hass_instance
             break
-        with patch("homeassistant.helpers.frame.report_usage"):
-            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
 
-        mock_config_entry.options = {CONF_PHOTOS: False}
+        # Create a new config entry with photos disabled
+        config_entry_with_photos_disabled = MockConfigEntry(
+            domain=DOMAIN,
+            unique_id=mock_config_entry.unique_id,
+            data=mock_config_entry.data,
+            options={CONF_PHOTOS: False},
+            title=mock_config_entry.title,
+        )
+
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(
+                hass, entry=config_entry_with_photos_disabled
+            )
+
         activities = [{CONF_SENSOR_ID: 1, CONF_SENSOR_DATE: datetime.now()}]
 
         result = await coordinator._fetch_images(activities)
@@ -1133,10 +1152,20 @@ class TestStravaDataUpdateCoordinator:
         async for hass_instance in hass:
             hass = hass_instance
             break
-        with patch("homeassistant.helpers.frame.report_usage"):
-            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+        # Create config entry with photos enabled
+        config_entry_with_photos = MockConfigEntry(
+            domain=DOMAIN,
+            unique_id=mock_config_entry.unique_id,
+            data=mock_config_entry.data,
+            options={CONF_PHOTOS: True},
+            title=mock_config_entry.title,
+        )
 
-        mock_config_entry.options = {CONF_PHOTOS: True}
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(
+                hass, entry=config_entry_with_photos
+            )
+
         activities = [
             {CONF_SENSOR_ID: 1, CONF_SENSOR_DATE: datetime.now()},
             {CONF_SENSOR_ID: 2, CONF_SENSOR_DATE: datetime.now()},
@@ -1189,10 +1218,20 @@ class TestStravaDataUpdateCoordinator:
         async for hass_instance in hass:
             hass = hass_instance
             break
-        with patch("homeassistant.helpers.frame.report_usage"):
-            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+        # Create config entry with photos enabled
+        config_entry_with_photos = MockConfigEntry(
+            domain=DOMAIN,
+            unique_id=mock_config_entry.unique_id,
+            data=mock_config_entry.data,
+            options={CONF_PHOTOS: True},
+            title=mock_config_entry.title,
+        )
 
-        mock_config_entry.options = {CONF_PHOTOS: True}
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(
+                hass, entry=config_entry_with_photos
+            )
+
         activities = [
             {CONF_SENSOR_ID: i, CONF_SENSOR_DATE: datetime.now()}
             for i in range(1, CONF_PHOTO_FETCH_INITIAL_LIMIT + 5)
@@ -1210,9 +1249,9 @@ class TestStravaDataUpdateCoordinator:
         assert result is not None
         call_count = len(
             [
-                call
-                for call in aioresponses_mock.requests.values()
-                if "photos" in str(call[0].kwargs.get("url", ""))
+                key
+                for key in aioresponses_mock.requests.keys()
+                if "photos" in str(key[1])
             ]
         )
         assert call_count <= CONF_PHOTO_FETCH_INITIAL_LIMIT
@@ -1225,10 +1264,20 @@ class TestStravaDataUpdateCoordinator:
         async for hass_instance in hass:
             hass = hass_instance
             break
-        with patch("homeassistant.helpers.frame.report_usage"):
-            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+        # Create config entry with photos enabled
+        config_entry_with_photos = MockConfigEntry(
+            domain=DOMAIN,
+            unique_id=mock_config_entry.unique_id,
+            data=mock_config_entry.data,
+            options={CONF_PHOTOS: True},
+            title=mock_config_entry.title,
+        )
 
-        mock_config_entry.options = {CONF_PHOTOS: True}
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(
+                hass, entry=config_entry_with_photos
+            )
+
         activities = [
             {CONF_SENSOR_ID: 1, CONF_SENSOR_DATE: datetime.now()},
             {CONF_SENSOR_ID: 2, CONF_SENSOR_DATE: datetime.now()},
@@ -1251,9 +1300,9 @@ class TestStravaDataUpdateCoordinator:
         assert result is not None
         call_count = len(
             [
-                call
-                for call in aioresponses_mock.requests.values()
-                if "photos" in str(call[0].kwargs.get("url", ""))
+                key
+                for key in aioresponses_mock.requests.keys()
+                if "photos" in str(key[1])
             ]
         )
         assert (
@@ -1394,10 +1443,20 @@ class TestStravaDataUpdateCoordinator:
         async for hass_instance in hass:
             hass = hass_instance
             break
-        with patch("homeassistant.helpers.frame.report_usage"):
-            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+        # Create config entry with photos enabled
+        config_entry_with_photos = MockConfigEntry(
+            domain=DOMAIN,
+            unique_id=mock_config_entry.unique_id,
+            data=mock_config_entry.data,
+            options={CONF_PHOTOS: True},
+            title=mock_config_entry.title,
+        )
 
-        mock_config_entry.options = {CONF_PHOTOS: True}
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(
+                hass, entry=config_entry_with_photos
+            )
+
         activities = [
             {CONF_SENSOR_ID: 1, CONF_SENSOR_DATE: datetime.now()},
             {CONF_SENSOR_ID: 2, CONF_SENSOR_DATE: datetime.now()},
@@ -1437,10 +1496,20 @@ class TestStravaDataUpdateCoordinator:
         async for hass_instance in hass:
             hass = hass_instance
             break
-        with patch("homeassistant.helpers.frame.report_usage"):
-            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+        # Create config entry with photos enabled
+        config_entry_with_photos = MockConfigEntry(
+            domain=DOMAIN,
+            unique_id=mock_config_entry.unique_id,
+            data=mock_config_entry.data,
+            options={CONF_PHOTOS: True},
+            title=mock_config_entry.title,
+        )
 
-        mock_config_entry.options = {CONF_PHOTOS: True}
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(
+                hass, entry=config_entry_with_photos
+            )
+
         activities = [
             {CONF_SENSOR_ID: 1, CONF_SENSOR_DATE: datetime.now()},
             {CONF_SENSOR_ID: 2, CONF_SENSOR_DATE: datetime.now()},

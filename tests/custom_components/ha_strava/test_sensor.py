@@ -3,6 +3,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -320,6 +321,85 @@ class TestStravaSummaryStatsSensor:
         assert "moving_time" in attributes
         assert "elevation_gain" in attributes
         assert attributes["count"] == 5
+
+    def test_sensor_device_class(self):
+        """Test sensor device class for different metric types."""
+        coordinator = MagicMock()
+        coordinator.data = {
+            "summary_stats": {
+                "recent_run_totals": {
+                    "distance": 5000.0,
+                    "moving_time": 1800,
+                    "count": 5,
+                    "elevation_gain": 100.0,
+                },
+                "biggest_ride_distance": 10000.0,
+                "biggest_climb_elevation_gain": 500.0,
+            },
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+        coordinator.entry = MagicMock()
+        coordinator.entry.title = "Strava: Test User"
+
+        # Test distance metric
+        distance_sensor = StravaSummaryStatsSensor(
+            coordinator=coordinator,
+            api_key="recent_run_totals",
+            display_name="Recent Run Distance",
+            metric_key="distance",
+            athlete_id="12345",
+        )
+        assert distance_sensor.device_class == SensorDeviceClass.DISTANCE
+
+        # Test elevation_gain metric
+        elevation_sensor = StravaSummaryStatsSensor(
+            coordinator=coordinator,
+            api_key="recent_run_totals",
+            display_name="Recent Run Elevation",
+            metric_key="elevation_gain",
+            athlete_id="12345",
+        )
+        assert elevation_sensor.device_class == SensorDeviceClass.DISTANCE
+
+        # Test biggest_ride_distance metric
+        biggest_distance_sensor = StravaSummaryStatsSensor(
+            coordinator=coordinator,
+            api_key="biggest_ride_distance",
+            display_name="Biggest Ride Distance",
+            metric_key="biggest_ride_distance",
+            athlete_id="12345",
+        )
+        assert biggest_distance_sensor.device_class == SensorDeviceClass.DISTANCE
+
+        # Test biggest_climb_elevation_gain metric
+        biggest_climb_sensor = StravaSummaryStatsSensor(
+            coordinator=coordinator,
+            api_key="biggest_climb_elevation_gain",
+            display_name="Biggest Climb Elevation",
+            metric_key="biggest_climb_elevation_gain",
+            athlete_id="12345",
+        )
+        assert biggest_climb_sensor.device_class == SensorDeviceClass.DISTANCE
+
+        # Test moving_time metric
+        time_sensor = StravaSummaryStatsSensor(
+            coordinator=coordinator,
+            api_key="recent_run_totals",
+            display_name="Recent Run Moving Time",
+            metric_key="moving_time",
+            athlete_id="12345",
+        )
+        assert time_sensor.device_class == SensorDeviceClass.DURATION
+
+        # Test count metric (should return None)
+        count_sensor = StravaSummaryStatsSensor(
+            coordinator=coordinator,
+            api_key="recent_run_totals",
+            display_name="Recent Run Count",
+            metric_key="count",
+            athlete_id="12345",
+        )
+        assert count_sensor.device_class is None
 
 
 class TestSensorPlatform:

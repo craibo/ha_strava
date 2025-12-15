@@ -339,19 +339,22 @@ class TestSensorSetupWithMultipleActivities:
         }
         coordinator.entry = mock_config_entry
 
-        with patch(
-            "homeassistant.core.HomeAssistant.data",
-            {DOMAIN: {mock_config_entry.entry_id: coordinator}},
-        ):
-            entities = []
-            await async_setup_entry(hass, mock_config_entry, entities.append)
+        # Set up hass.data directly instead of patching
+        hass.data[DOMAIN] = {mock_config_entry.entry_id: coordinator}
 
-            # Should create 1 recent activity device (default)
-            recent_activity_sensors = [
-                e for e in entities if isinstance(e, StravaRecentActivitySensor)
-            ]
-            assert len(recent_activity_sensors) == 1
-            assert recent_activity_sensors[0]._activity_index == 0
+        entities = []
+
+        def _async_add_entities(new_entities):
+            entities.extend(new_entities)
+
+        await async_setup_entry(hass, mock_config_entry, _async_add_entities)
+
+        # Should create 1 recent activity device (default)
+        recent_activity_sensors = [
+            e for e in entities if isinstance(e, StravaRecentActivitySensor)
+        ]
+        assert len(recent_activity_sensors) == 1
+        assert recent_activity_sensors[0]._activity_index == 0
 
     @pytest.mark.asyncio
     async def test_setup_with_multiple_recent_activities(self, hass: HomeAssistant):
@@ -387,28 +390,31 @@ class TestSensorSetupWithMultipleActivities:
         }
         coordinator.entry = config_entry
 
-        with patch(
-            "homeassistant.core.HomeAssistant.data",
-            {DOMAIN: {config_entry.entry_id: coordinator}},
-        ):
-            entities = []
-            await async_setup_entry(hass, config_entry, entities.append)
+        # Set up hass.data directly
+        hass.data[DOMAIN] = {config_entry.entry_id: coordinator}
 
-            # Should create 3 recent activity devices
-            recent_activity_sensors = [
-                e for e in entities if isinstance(e, StravaRecentActivitySensor)
-            ]
-            assert len(recent_activity_sensors) == 3
+        entities = []
 
-            # Check indices
-            indices = [sensor._activity_index for sensor in recent_activity_sensors]
-            assert sorted(indices) == [0, 1, 2]
+        def _async_add_entities(new_entities):
+            entities.extend(new_entities)
 
-            # Check names
-            names = [sensor.name for sensor in recent_activity_sensors]
-            assert "Strava Test User Recent Activity" in names  # Index 0
-            assert "Strava Test User Recent Activity 2" in names  # Index 1
-            assert "Strava Test User Recent Activity 3" in names  # Index 2
+        await async_setup_entry(hass, config_entry, _async_add_entities)
+
+        # Should create 3 recent activity devices
+        recent_activity_sensors = [
+            e for e in entities if isinstance(e, StravaRecentActivitySensor)
+        ]
+        assert len(recent_activity_sensors) == 3
+
+        # Check indices
+        indices = [sensor._activity_index for sensor in recent_activity_sensors]
+        assert sorted(indices) == [0, 1, 2]
+
+        # Check names
+        names = [sensor.name for sensor in recent_activity_sensors]
+        assert "Strava Test User Recent Activity" in names  # Index 0
+        assert "Strava Test User Recent Activity 2" in names  # Index 1
+        assert "Strava Test User Recent Activity 3" in names  # Index 2
 
     @pytest.mark.asyncio
     async def test_setup_with_max_recent_activities(self, hass: HomeAssistant):
@@ -440,18 +446,21 @@ class TestSensorSetupWithMultipleActivities:
         coordinator.data = {"activities": activities}
         coordinator.entry = config_entry
 
-        with patch(
-            "homeassistant.core.HomeAssistant.data",
-            {DOMAIN: {config_entry.entry_id: coordinator}},
-        ):
-            entities = []
-            await async_setup_entry(hass, config_entry, entities.append)
+        # Set up hass.data directly
+        hass.data[DOMAIN] = {config_entry.entry_id: coordinator}
 
-            # Should create max number of recent activity devices
-            recent_activity_sensors = [
-                e for e in entities if isinstance(e, StravaRecentActivitySensor)
-            ]
-            assert len(recent_activity_sensors) == CONF_NUM_RECENT_ACTIVITIES_MAX
+        entities = []
+
+        def _async_add_entities(new_entities):
+            entities.extend(new_entities)
+
+        await async_setup_entry(hass, config_entry, _async_add_entities)
+
+        # Should create max number of recent activity devices
+        recent_activity_sensors = [
+            e for e in entities if isinstance(e, StravaRecentActivitySensor)
+        ]
+        assert len(recent_activity_sensors) == CONF_NUM_RECENT_ACTIVITIES_MAX
 
     @pytest.mark.asyncio
     async def test_setup_with_zero_recent_activities(self, hass: HomeAssistant):
@@ -479,18 +488,21 @@ class TestSensorSetupWithMultipleActivities:
         coordinator.data = {"activities": []}
         coordinator.entry = config_entry
 
-        with patch(
-            "homeassistant.core.HomeAssistant.data",
-            {DOMAIN: {config_entry.entry_id: coordinator}},
-        ):
-            entities = []
-            await async_setup_entry(hass, config_entry, entities.append)
+        # Set up hass.data directly
+        hass.data[DOMAIN] = {config_entry.entry_id: coordinator}
 
-            # Should create no recent activity devices
-            recent_activity_sensors = [
-                e for e in entities if isinstance(e, StravaRecentActivitySensor)
-            ]
-            assert len(recent_activity_sensors) == 0
+        entities = []
+
+        def _async_add_entities(new_entities):
+            entities.extend(new_entities)
+
+        await async_setup_entry(hass, config_entry, _async_add_entities)
+
+        # Should create no recent activity devices
+        recent_activity_sensors = [
+            e for e in entities if isinstance(e, StravaRecentActivitySensor)
+        ]
+        assert len(recent_activity_sensors) == 0
 
 
 class TestConfigFlowWithMultipleActivities:
@@ -560,11 +572,27 @@ class TestConfigFlowWithMultipleActivities:
 
             result = await flow.async_step_user()
             data_schema = result["data_schema"]
-            schema_dict = {field.schema: field for field in data_schema.schema}
+            # The schema is a dict where keys are vol.Required objects and values are validators
+            # We need to find the validator for CONF_NUM_RECENT_ACTIVITIES
+            num_recent_validator = None
+            for key, validator in data_schema.schema.items():
+                if hasattr(key, "schema") and key.schema == CONF_NUM_RECENT_ACTIVITIES:
+                    num_recent_validator = validator
+                    break
 
-            num_recent_field = schema_dict[CONF_NUM_RECENT_ACTIVITIES]
-            # Check validation range
-            assert hasattr(num_recent_field, "vol")
-            # The field should have range validation from 1 to max
-            assert num_recent_field.vol.min == 1
-            assert num_recent_field.vol.max == CONF_NUM_RECENT_ACTIVITIES_MAX
+            assert (
+                num_recent_validator is not None
+            ), "num_recent_activities field not found in schema"
+            # The validator should be vol.All containing vol.Range
+            # Check that it's a vol.All validator
+            assert hasattr(num_recent_validator, "validators")
+            # Find the vol.Range validator within vol.All
+            range_validator = None
+            for validator in num_recent_validator.validators:
+                if hasattr(validator, "min") and hasattr(validator, "max"):
+                    range_validator = validator
+                    break
+
+            assert range_validator is not None, "vol.Range validator not found"
+            assert range_validator.min == 1
+            assert range_validator.max == CONF_NUM_RECENT_ACTIVITIES_MAX
