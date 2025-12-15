@@ -10,7 +10,14 @@ This file contains core development rules that should always be applied when wor
 
 ## Project Context
 
-This is a Home Assistant custom component that integrates with the Strava API to provide activity data, summary statistics, and photos from Strava activities. The component supports multiple users and uses OAuth2 authentication with webhook-driven updates.
+This is a Home Assistant custom component that integrates with the Strava API to provide activity data, summary statistics, photos from Strava activities, and refresh buttons for manual data updates. The component supports multiple users and uses OAuth2 authentication with webhook-driven updates.
+
+## Supported Platforms
+
+The component implements three platforms:
+- **sensor** - Activity data, summary statistics, and gear sensors
+- **camera** - Activity photos and images
+- **button** - Manual refresh buttons for activities
 
 ## Core Principles
 

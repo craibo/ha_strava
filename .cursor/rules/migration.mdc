@@ -112,10 +112,9 @@ Idempotency rules:
 
 Useful references in this repo:
 
-- `tests/custom_components/ha_strava/test_migration.py`
-- `tests/custom_components/ha_strava/test_migration_integration.py`
-- `tests/test_migration_runner.py`
-- `tests/validate_migration_logic.py`
+- Migration logic: `custom_components/ha_strava/__init__.py` (search for `async_migrate_entry`)
+- Test patterns: See `testing-patterns.mdc` for migration testing patterns
+- Camera migration test: `tests/custom_components/ha_strava/test_camera.py` (test_pickle_migration)
 
 ## Developer Checklist (per migration step)
 
@@ -134,4 +133,4 @@ Useful references in this repo:
 
 ## Related Rules
 
-- See `testing-patterns.md` for required test coverage and patterns.
+- See `testing-patterns.mdc` for required test coverage and patterns.
