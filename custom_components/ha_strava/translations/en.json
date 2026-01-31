@@ -12,7 +12,7 @@
     "step": {
       "get_oauth_info": {
         "title": "Please enter your Strava API Credentials",
-        "description": "You can find more information on how to obtain your Strava API Credentials at the [Strava API settings page]({strava_api_url}).",
+        "description": "Enter your Strava API Client ID and Client Secret. You can obtain these from your Strava API settings page.",
         "data": {
           "client_id": "Client ID",
           "client_secret": "Client Secret",
@@ -22,9 +22,6 @@
           "num_recent_activities": "Number of Recent Activities",
           "gear_enabled": "Enable Gear Sensors",
           "num_gear_sensors": "Number of Gear Sensors"
-        },
-        "description_placeholders": {
-          "strava_api_url": "https://www.strava.com/settings/api"
         }
       },
       "reauth_confirm": {
@@ -37,7 +34,7 @@
     "step": {
       "init": {
         "title": "Strava Home Assistant Configuration",
-        "description": "Strava Home Assistant integration configurations. You can find more information on the options at the [GitHub repository]({docs_url}).",
+        "description": "Configure your Strava Home Assistant integration settings.",
         "data": {
           "activity_types_to_track": "Activity Types to Track",
           "img_update_interval_seconds": "Image rotation (seconds)",
@@ -46,9 +43,6 @@
           "num_recent_activities": "Number of Recent Activities",
           "gear_enabled": "Enable Gear Sensors",
           "num_gear_sensors": "Number of Gear Sensors"
-        },
-        "description_placeholders": {
-          "docs_url": "https://github.com/craibo/ha_strava"
         }
       }
     },

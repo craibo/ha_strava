@@ -12,7 +12,7 @@
     "step": {
       "get_oauth_info": {
         "title": "Por favor, insira as suas credenciais da API do Strava",
-        "description": "Pode encontrar mais informações sobre como obter as suas credenciais da API do Strava na [página de configurações da API do Strava]({strava_api_url}).",
+        "description": "Insira o seu Client ID e Client Secret da API do Strava. Pode obtê-los na página de configurações da API do Strava.",
         "data": {
           "client_id": "ID do Cliente",
           "client_secret": "Segredo do Cliente",
@@ -22,9 +22,6 @@
           "num_recent_activities": "Número de Atividades Recentes",
           "gear_enabled": "Ativar Sensores de Equipamento",
           "num_gear_sensors": "Número de Sensores de Equipamento"
-        },
-        "description_placeholders": {
-          "strava_api_url": "https://www.strava.com/settings/api"
         }
       },
       "reauth_confirm": {
@@ -37,7 +34,7 @@
     "step": {
       "init": {
         "title": "Configuração do Strava com Home Assistant",
-        "description": "Configurações da integração Strava com Home Assistant. Pode encontrar mais informações sobre as opções no [repositório GitHub]({docs_url}).",
+        "description": "Configure as definições da sua integração Strava com Home Assistant.",
         "data": {
           "activity_types_to_track": "Tipos de Atividade para Rastrear",
           "img_update_interval_seconds": "Rotação de imagem (segundos)",
@@ -46,9 +43,6 @@
           "num_recent_activities": "Número de Atividades Recentes",
           "gear_enabled": "Ativar Sensores de Equipamento",
           "num_gear_sensors": "Número de Sensores de Equipamento"
-        },
-        "description_placeholders": {
-          "docs_url": "https://github.com/craibo/ha_strava"
         }
       }
     },
