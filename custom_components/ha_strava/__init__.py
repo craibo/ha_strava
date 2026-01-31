@@ -5,6 +5,7 @@ import logging
 from http import HTTPStatus
 
 import aiohttp
+import homeassistant.helpers.config_validation as cv
 from aiohttp.web import Request, Response, json_response
 from homeassistant.components.http.view import HomeAssistantView
 from homeassistant.config_entries import ConfigEntry
@@ -19,6 +20,7 @@ from .coordinator import StravaDataUpdateCoordinator
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = ["sensor", "camera", "button"]
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 class StravaWebhookView(HomeAssistantView):

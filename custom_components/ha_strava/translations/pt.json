@@ -1,6 +1,6 @@
 {
+  "title": "Strava (Não Oficial)",
   "config": {
-    "title": "Integração Strava com Home Assistant (Não Oficial)",
     "create_entry": {
       "default": "A sua integração Strava com Home Assistant foi instalada com sucesso"
     },
@@ -12,11 +12,19 @@
     "step": {
       "get_oauth_info": {
         "title": "Por favor, insira as suas credenciais da API do Strava",
-        "description": "Pode encontrar mais informações sobre como obter as suas credenciais da API do Strava aqui: https://www.strava.com/settings/api",
+        "description": "Pode encontrar mais informações sobre como obter as suas credenciais da API do Strava na [página de configurações da API do Strava]({strava_api_url}).",
         "data": {
           "client_id": "ID do Cliente",
           "client_secret": "Segredo do Cliente",
-          "conf_photos": "Importar fotos do Strava?"
+          "conf_photos": "Importar fotos do Strava?",
+          "conf_distance_unit": "Sistema de unidades de distância a usar",
+          "activity_types_to_track": "Tipos de Atividade para Rastrear",
+          "num_recent_activities": "Número de Atividades Recentes",
+          "gear_enabled": "Ativar Sensores de Equipamento",
+          "num_gear_sensors": "Número de Sensores de Equipamento"
+        },
+        "description_placeholders": {
+          "strava_api_url": "https://www.strava.com/settings/api"
         }
       },
       "reauth_confirm": {
@@ -29,12 +37,18 @@
     "step": {
       "init": {
         "title": "Configuração do Strava com Home Assistant",
-        "description": "Configurações da integração Strava com Home Assistant. Pode encontrar mais informações sobre as opções aqui: https://github.com/craibo/ha_strava",
+        "description": "Configurações da integração Strava com Home Assistant. Pode encontrar mais informações sobre as opções no [repositório GitHub]({docs_url}).",
         "data": {
           "activity_types_to_track": "Tipos de Atividade para Rastrear",
           "img_update_interval_seconds": "Rotação de imagem (segundos)",
           "conf_photos": "Importar fotos do Strava?",
-          "conf_distance_unit": "Sistema de unidades de distância a usar"
+          "conf_distance_unit": "Sistema de unidades de distância a usar",
+          "num_recent_activities": "Número de Atividades Recentes",
+          "gear_enabled": "Ativar Sensores de Equipamento",
+          "num_gear_sensors": "Número de Sensores de Equipamento"
+        },
+        "description_placeholders": {
+          "docs_url": "https://github.com/craibo/ha_strava"
         }
       }
     },
