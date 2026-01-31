@@ -549,10 +549,21 @@ class StravaSummaryStatsSensor(CoordinatorEntity, SensorEntity):
 
     def _is_metric(self):
         """Determine if the user has configured metric units."""
-        override = self.coordinator.entry.options.get(CONF_DISTANCE_UNIT_OVERRIDE)
+        override = (
+            self.coordinator.entry.options.get(CONF_DISTANCE_UNIT_OVERRIDE)
+            if CONF_DISTANCE_UNIT_OVERRIDE in self.coordinator.entry.options
+            else (
+                self.coordinator.entry.data.get(CONF_DISTANCE_UNIT_OVERRIDE)
+                if CONF_DISTANCE_UNIT_OVERRIDE in self.coordinator.entry.data
+                else None
+            )
+        )
         if override == CONF_DISTANCE_UNIT_OVERRIDE_METRIC:
             return True
         if override == CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT:
+            return self.hass.config.units is METRIC_SYSTEM
+        # If override is None or imperial, check HA system units as fallback
+        if override is None:
             return self.hass.config.units is METRIC_SYSTEM
         return False
 
@@ -702,10 +713,21 @@ class StravaActivityTypeSensor(CoordinatorEntity, SensorEntity):
 
     def _is_metric(self):
         """Determine if the user has configured metric units."""
-        override = self.coordinator.entry.options.get(CONF_DISTANCE_UNIT_OVERRIDE)
+        override = (
+            self.coordinator.entry.options.get(CONF_DISTANCE_UNIT_OVERRIDE)
+            if CONF_DISTANCE_UNIT_OVERRIDE in self.coordinator.entry.options
+            else (
+                self.coordinator.entry.data.get(CONF_DISTANCE_UNIT_OVERRIDE)
+                if CONF_DISTANCE_UNIT_OVERRIDE in self.coordinator.entry.data
+                else None
+            )
+        )
         if override == CONF_DISTANCE_UNIT_OVERRIDE_METRIC:
             return True
         if override == CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT:
+            return self.hass.config.units is METRIC_SYSTEM
+        # If override is None or imperial, check HA system units as fallback
+        if override is None:
             return self.hass.config.units is METRIC_SYSTEM
         return False
 
@@ -801,10 +823,21 @@ class StravaActivityAttributeSensor(CoordinatorEntity, SensorEntity):
 
     def _is_metric(self):
         """Determine if the user has configured metric units."""
-        override = self.coordinator.entry.options.get(CONF_DISTANCE_UNIT_OVERRIDE)
+        override = (
+            self.coordinator.entry.options.get(CONF_DISTANCE_UNIT_OVERRIDE)
+            if CONF_DISTANCE_UNIT_OVERRIDE in self.coordinator.entry.options
+            else (
+                self.coordinator.entry.data.get(CONF_DISTANCE_UNIT_OVERRIDE)
+                if CONF_DISTANCE_UNIT_OVERRIDE in self.coordinator.entry.data
+                else None
+            )
+        )
         if override == CONF_DISTANCE_UNIT_OVERRIDE_METRIC:
             return True
         if override == CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT:
+            return self.hass.config.units is METRIC_SYSTEM
+        # If override is None or imperial, check HA system units as fallback
+        if override is None:
             return self.hass.config.units is METRIC_SYSTEM
         return False
 
@@ -1348,10 +1381,21 @@ class StravaRecentActivityAttributeSensor(CoordinatorEntity, SensorEntity):
 
     def _is_metric(self):
         """Determine if the user has configured metric units."""
-        override = self.coordinator.entry.options.get(CONF_DISTANCE_UNIT_OVERRIDE)
+        override = (
+            self.coordinator.entry.options.get(CONF_DISTANCE_UNIT_OVERRIDE)
+            if CONF_DISTANCE_UNIT_OVERRIDE in self.coordinator.entry.options
+            else (
+                self.coordinator.entry.data.get(CONF_DISTANCE_UNIT_OVERRIDE)
+                if CONF_DISTANCE_UNIT_OVERRIDE in self.coordinator.entry.data
+                else None
+            )
+        )
         if override == CONF_DISTANCE_UNIT_OVERRIDE_METRIC:
             return True
         if override == CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT:
+            return self.hass.config.units is METRIC_SYSTEM
+        # If override is None or imperial, check HA system units as fallback
+        if override is None:
             return self.hass.config.units is METRIC_SYSTEM
         return False
 
@@ -1859,9 +1903,20 @@ class StravaGearDistanceSensor(CoordinatorEntity, SensorEntity):
 
     def _is_metric(self):
         """Determine if the user has configured metric units."""
-        override = self.coordinator.entry.options.get(CONF_DISTANCE_UNIT_OVERRIDE)
+        override = (
+            self.coordinator.entry.options.get(CONF_DISTANCE_UNIT_OVERRIDE)
+            if CONF_DISTANCE_UNIT_OVERRIDE in self.coordinator.entry.options
+            else (
+                self.coordinator.entry.data.get(CONF_DISTANCE_UNIT_OVERRIDE)
+                if CONF_DISTANCE_UNIT_OVERRIDE in self.coordinator.entry.data
+                else None
+            )
+        )
         if override == CONF_DISTANCE_UNIT_OVERRIDE_METRIC:
             return True
         if override == CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT:
+            return self.hass.config.units is METRIC_SYSTEM
+        # If override is None or imperial, check HA system units as fallback
+        if override is None:
             return self.hass.config.units is METRIC_SYSTEM
         return False
