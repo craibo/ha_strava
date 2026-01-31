@@ -6,12 +6,15 @@ import pytest
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from homeassistant.core import HomeAssistant
+from homeassistant.util.unit_system import METRIC_SYSTEM
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.ha_strava.const import (
     CONF_ACTIVITY_TYPES_TO_TRACK,
     CONF_ATTR_ACTIVITY_ID,
     CONF_DISTANCE_UNIT_OVERRIDE,
+    CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT,
+    CONF_DISTANCE_UNIT_OVERRIDE_IMPERIAL,
     CONF_DISTANCE_UNIT_OVERRIDE_METRIC,
     DOMAIN,
 )
@@ -400,6 +403,351 @@ class TestStravaSummaryStatsSensor:
             athlete_id="12345",
         )
         assert count_sensor.device_class is None
+
+    @pytest.mark.asyncio
+    async def test_is_metric_from_options_metric(self, hass: HomeAssistant):
+        """Test _is_metric() returns True when metric is configured in options."""
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+        summary_stats = {
+            "ytd_run_totals": {
+                "distance": 5000.0,
+                "moving_time": 1800,
+                "count": 5,
+            }
+        }
+        coordinator = MagicMock()
+        coordinator.data = {"summary_stats": summary_stats}
+        coordinator.entry = MagicMock()
+        coordinator.entry.title = "Strava: Test User"
+        coordinator.entry.options = {
+            CONF_DISTANCE_UNIT_OVERRIDE: CONF_DISTANCE_UNIT_OVERRIDE_METRIC
+        }
+        coordinator.entry.data = {}
+        coordinator.hass = hass
+
+        sensor = StravaSummaryStatsSensor(
+            coordinator=coordinator,
+            api_key="ytd_run_totals",
+            display_name="YTD Run Distance",
+            metric_key="distance",
+            athlete_id="12345",
+        )
+
+        assert sensor._is_metric() is True
+
+    @pytest.mark.asyncio
+    async def test_is_metric_from_data_metric(self, hass: HomeAssistant):
+        """Test _is_metric() returns True when metric is configured in data."""
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+        summary_stats = {
+            "ytd_run_totals": {
+                "distance": 5000.0,
+                "moving_time": 1800,
+                "count": 5,
+            }
+        }
+        coordinator = MagicMock()
+        coordinator.data = {"summary_stats": summary_stats}
+        coordinator.entry = MagicMock()
+        coordinator.entry.title = "Strava: Test User"
+        coordinator.entry.options = {}
+        coordinator.entry.data = {
+            CONF_DISTANCE_UNIT_OVERRIDE: CONF_DISTANCE_UNIT_OVERRIDE_METRIC
+        }
+        coordinator.hass = hass
+
+        sensor = StravaSummaryStatsSensor(
+            coordinator=coordinator,
+            api_key="ytd_run_totals",
+            display_name="YTD Run Distance",
+            metric_key="distance",
+            athlete_id="12345",
+        )
+
+        assert sensor._is_metric() is True
+
+    @pytest.mark.asyncio
+    async def test_is_metric_from_options_imperial(self, hass: HomeAssistant):
+        """Test _is_metric() returns False when imperial is configured in options."""
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+        summary_stats = {
+            "ytd_run_totals": {
+                "distance": 5000.0,
+                "moving_time": 1800,
+                "count": 5,
+            }
+        }
+        coordinator = MagicMock()
+        coordinator.data = {"summary_stats": summary_stats}
+        coordinator.entry = MagicMock()
+        coordinator.entry.title = "Strava: Test User"
+        coordinator.entry.options = {
+            CONF_DISTANCE_UNIT_OVERRIDE: CONF_DISTANCE_UNIT_OVERRIDE_IMPERIAL
+        }
+        coordinator.entry.data = {}
+        coordinator.hass = hass
+
+        sensor = StravaSummaryStatsSensor(
+            coordinator=coordinator,
+            api_key="ytd_run_totals",
+            display_name="YTD Run Distance",
+            metric_key="distance",
+            athlete_id="12345",
+        )
+
+        assert sensor._is_metric() is False
+
+    @pytest.mark.asyncio
+    async def test_is_metric_from_data_imperial(self, hass: HomeAssistant):
+        """Test _is_metric() returns False when imperial is configured in data."""
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+        summary_stats = {
+            "ytd_run_totals": {
+                "distance": 5000.0,
+                "moving_time": 1800,
+                "count": 5,
+            }
+        }
+        coordinator = MagicMock()
+        coordinator.data = {"summary_stats": summary_stats}
+        coordinator.entry = MagicMock()
+        coordinator.entry.title = "Strava: Test User"
+        coordinator.entry.options = {}
+        coordinator.entry.data = {
+            CONF_DISTANCE_UNIT_OVERRIDE: CONF_DISTANCE_UNIT_OVERRIDE_IMPERIAL
+        }
+        coordinator.hass = hass
+
+        sensor = StravaSummaryStatsSensor(
+            coordinator=coordinator,
+            api_key="ytd_run_totals",
+            display_name="YTD Run Distance",
+            metric_key="distance",
+            athlete_id="12345",
+        )
+
+        assert sensor._is_metric() is False
+
+    @pytest.mark.asyncio
+    async def test_is_metric_from_options_default(self, hass: HomeAssistant):
+        """Test _is_metric() uses HA system units when default is configured in options."""
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+        summary_stats = {
+            "ytd_run_totals": {
+                "distance": 5000.0,
+                "moving_time": 1800,
+                "count": 5,
+            }
+        }
+        coordinator = MagicMock()
+        coordinator.data = {"summary_stats": summary_stats}
+        coordinator.entry = MagicMock()
+        coordinator.entry.title = "Strava: Test User"
+        coordinator.entry.options = {
+            CONF_DISTANCE_UNIT_OVERRIDE: CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
+        }
+        coordinator.entry.data = {}
+        coordinator.hass = hass
+
+        sensor = StravaSummaryStatsSensor(
+            coordinator=coordinator,
+            api_key="ytd_run_totals",
+            display_name="YTD Run Distance",
+            metric_key="distance",
+            athlete_id="12345",
+        )
+
+        # Should return True if HA is configured with metric system
+        expected = hass.config.units is METRIC_SYSTEM
+        assert sensor._is_metric() == expected
+
+    @pytest.mark.asyncio
+    async def test_is_metric_from_data_default(self, hass: HomeAssistant):
+        """Test _is_metric() uses HA system units when default is configured in data."""
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+        summary_stats = {
+            "ytd_run_totals": {
+                "distance": 5000.0,
+                "moving_time": 1800,
+                "count": 5,
+            }
+        }
+        coordinator = MagicMock()
+        coordinator.data = {"summary_stats": summary_stats}
+        coordinator.entry = MagicMock()
+        coordinator.entry.title = "Strava: Test User"
+        coordinator.entry.options = {}
+        coordinator.entry.data = {
+            CONF_DISTANCE_UNIT_OVERRIDE: CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
+        }
+        coordinator.hass = hass
+
+        sensor = StravaSummaryStatsSensor(
+            coordinator=coordinator,
+            api_key="ytd_run_totals",
+            display_name="YTD Run Distance",
+            metric_key="distance",
+            athlete_id="12345",
+        )
+
+        # Should return True if HA is configured with metric system
+        expected = hass.config.units is METRIC_SYSTEM
+        assert sensor._is_metric() == expected
+
+    @pytest.mark.asyncio
+    async def test_is_metric_no_config_fallback(self, hass: HomeAssistant):
+        """Test _is_metric() falls back to HA system units when no config is set."""
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+        summary_stats = {
+            "ytd_run_totals": {
+                "distance": 5000.0,
+                "moving_time": 1800,
+                "count": 5,
+            }
+        }
+        coordinator = MagicMock()
+        coordinator.data = {"summary_stats": summary_stats}
+        coordinator.entry = MagicMock()
+        coordinator.entry.title = "Strava: Test User"
+        coordinator.entry.options = {}
+        coordinator.entry.data = {}
+        coordinator.hass = hass
+
+        sensor = StravaSummaryStatsSensor(
+            coordinator=coordinator,
+            api_key="ytd_run_totals",
+            display_name="YTD Run Distance",
+            metric_key="distance",
+            athlete_id="12345",
+        )
+
+        # Should fallback to HA system units when no config is set
+        expected = hass.config.units is METRIC_SYSTEM
+        assert sensor._is_metric() == expected
+
+    @pytest.mark.asyncio
+    async def test_is_metric_options_takes_precedence_over_data(self, hass: HomeAssistant):
+        """Test _is_metric() prioritizes options over data when both are set."""
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+        summary_stats = {
+            "ytd_run_totals": {
+                "distance": 5000.0,
+                "moving_time": 1800,
+                "count": 5,
+            }
+        }
+        coordinator = MagicMock()
+        coordinator.data = {"summary_stats": summary_stats}
+        coordinator.entry = MagicMock()
+        coordinator.entry.title = "Strava: Test User"
+        # Options has metric, data has imperial - options should win
+        coordinator.entry.options = {
+            CONF_DISTANCE_UNIT_OVERRIDE: CONF_DISTANCE_UNIT_OVERRIDE_METRIC
+        }
+        coordinator.entry.data = {
+            CONF_DISTANCE_UNIT_OVERRIDE: CONF_DISTANCE_UNIT_OVERRIDE_IMPERIAL
+        }
+        coordinator.hass = hass
+
+        sensor = StravaSummaryStatsSensor(
+            coordinator=coordinator,
+            api_key="ytd_run_totals",
+            display_name="YTD Run Distance",
+            metric_key="distance",
+            athlete_id="12345",
+        )
+
+        # Options should take precedence
+        assert sensor._is_metric() is True
+
+    @pytest.mark.asyncio
+    async def test_ytd_distance_metric_from_data(self, hass: HomeAssistant):
+        """Test YTD distance sensor uses metric units when configured in data."""
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+        summary_stats = {
+            "ytd_run_totals": {
+                "distance": 5000.0,  # 5 km in meters
+                "moving_time": 1800,
+                "count": 5,
+            }
+        }
+        coordinator = MagicMock()
+        coordinator.data = {"summary_stats": summary_stats}
+        coordinator.entry = MagicMock()
+        coordinator.entry.title = "Strava: Test User"
+        coordinator.entry.options = {}
+        coordinator.entry.data = {
+            CONF_DISTANCE_UNIT_OVERRIDE: CONF_DISTANCE_UNIT_OVERRIDE_METRIC
+        }
+        coordinator.hass = hass
+
+        sensor = StravaSummaryStatsSensor(
+            coordinator=coordinator,
+            api_key="ytd_run_totals",
+            display_name="YTD Run Distance",
+            metric_key="distance",
+            athlete_id="12345",
+        )
+
+        # Should return 5.0 km (5000 meters / 1000)
+        assert sensor.native_value == 5.0
+        assert sensor.native_unit_of_measurement == "km"
+
+    @pytest.mark.asyncio
+    async def test_ytd_distance_imperial_from_data(self, hass: HomeAssistant):
+        """Test YTD distance sensor uses imperial units when configured in data."""
+        async for hass_instance in hass:
+            hass = hass_instance
+            break
+        summary_stats = {
+            "ytd_run_totals": {
+                "distance": 5000.0,  # 5 km in meters
+                "moving_time": 1800,
+                "count": 5,
+            }
+        }
+        coordinator = MagicMock()
+        coordinator.data = {"summary_stats": summary_stats}
+        coordinator.entry = MagicMock()
+        coordinator.entry.title = "Strava: Test User"
+        coordinator.entry.options = {}
+        coordinator.entry.data = {
+            CONF_DISTANCE_UNIT_OVERRIDE: CONF_DISTANCE_UNIT_OVERRIDE_IMPERIAL
+        }
+        coordinator.hass = hass
+
+        sensor = StravaSummaryStatsSensor(
+            coordinator=coordinator,
+            api_key="ytd_run_totals",
+            display_name="YTD Run Distance",
+            metric_key="distance",
+            athlete_id="12345",
+        )
+
+        # Should return miles (5 km ≈ 3.11 miles)
+        value = sensor.native_value
+        assert value is not None
+        assert value > 3.0  # Approximately 3.11 miles
+        assert value < 3.2
+        assert sensor.native_unit_of_measurement == "mi"
 
 
 class TestSensorPlatform:
