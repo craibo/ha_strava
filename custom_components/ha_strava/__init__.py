@@ -164,7 +164,7 @@ async def renew_webhook_subscription(
             raw_subscriptions = await response.json()
 
         if not isinstance(raw_subscriptions, list):
-            _LOGGER.debug(
+            _LOGGER.info(
                 "Webhook URL mismatch or unconfirmed; deleting and re-creating."
             )
             stored_id = entry.data.get(CONF_WEBHOOK_ID)
@@ -179,7 +179,7 @@ async def renew_webhook_subscription(
             sub_url = sub.get("callback_url")
             sub_id = sub.get("id")
             if not sub_url:
-                _LOGGER.debug(
+                _LOGGER.info(
                     "Deleting webhook subscription %s (no callback_url to confirm).",
                     sub_id,
                 )
@@ -188,7 +188,7 @@ async def renew_webhook_subscription(
                 continue
             sub_normalized = _normalize_callback_url(sub_url)
             if sub_normalized != normalized_callback_url:
-                _LOGGER.debug(
+                _LOGGER.info(
                     "Deleting outdated webhook subscription: %s", sub_id
                 )
                 if sub_id is not None:
@@ -214,7 +214,7 @@ async def renew_webhook_subscription(
         if stored_id is not None:
             await _delete_subscription_async(int(stored_id))
     else:
-        _LOGGER.debug(
+        _LOGGER.info(
             "Webhook URL mismatch or unconfirmed; deleting and re-creating."
         )
 
