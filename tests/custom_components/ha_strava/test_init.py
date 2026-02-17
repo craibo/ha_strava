@@ -24,9 +24,6 @@ class TestStravaWebhookView:
     @pytest.mark.asyncio
     async def test_webhook_view_get_success(self, hass: HomeAssistant):
         """Test successful GET request to webhook."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         view = StravaWebhookView(hass)
 
         # Mock request
@@ -43,9 +40,6 @@ class TestStravaWebhookView:
     @pytest.mark.asyncio
     async def test_webhook_view_get_no_challenge(self, hass: HomeAssistant):
         """Test GET request without challenge."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         view = StravaWebhookView(hass)
 
         # Mock request
@@ -63,9 +57,6 @@ class TestStravaWebhookView:
         self, hass, mock_webhook_data, mock_coordinator
     ):
         """Test successful POST request to webhook."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         view = StravaWebhookView(hass)
 
         # Mock request
@@ -86,9 +77,6 @@ class TestStravaWebhookView:
     @pytest.mark.asyncio
     async def test_webhook_view_post_invalid_json(self, hass: HomeAssistant):
         """Test POST request with invalid JSON."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         view = StravaWebhookView(hass)
 
         # Mock request
@@ -108,9 +96,6 @@ class TestStravaWebhookView:
     @pytest.mark.asyncio
     async def test_webhook_view_post_no_owner_id(self, hass: HomeAssistant):
         """Test POST request without owner_id."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         view = StravaWebhookView(hass)
 
         # Mock request
@@ -126,9 +111,6 @@ class TestStravaWebhookView:
     @pytest.mark.asyncio
     async def test_webhook_view_post_unknown_user(self, hass, mock_webhook_data):
         """Test POST request for unknown user."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         view = StravaWebhookView(hass)
 
         # Mock request
@@ -152,9 +134,6 @@ class TestWebhookSubscription:
         self, hass, mock_config_entry, aioresponses_mock
     ):
         """Test successful webhook subscription renewal."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         # Add config entry to hass
         mock_config_entry.add_to_hass(hass)
 
@@ -162,6 +141,9 @@ class TestWebhookSubscription:
         with patch(
             "custom_components.ha_strava.get_url", return_value="https://example.com"
         ):
+            aioresponses_mock.get(
+                "https://example.com/api/strava/webhook", status=200
+            )
             # Mock existing subscriptions
             aioresponses_mock.get(
                 "https://www.strava.com/api/v3/push_subscriptions"
@@ -189,9 +171,6 @@ class TestWebhookSubscription:
         self, hass, mock_config_entry
     ):
         """Test webhook subscription without public URL."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         # Mock get_url to raise NoURLAvailableError
         with patch(
             "custom_components.ha_strava.get_url", side_effect=NoURLAvailableError
@@ -205,41 +184,85 @@ class TestWebhookSubscription:
     async def test_renew_webhook_subscription_existing_subscription(
         self, hass, mock_config_entry, aioresponses_mock
     ):
-        """Test webhook subscription with existing subscription."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-        # Mock get_url
+        """Test webhook subscription with existing subscription; entry updated with subscription id."""
+        mock_config_entry.add_to_hass(hass)
         with patch(
             "custom_components.ha_strava.get_url", return_value="https://example.com"
-        ):
-            # Mock existing subscription
+        ), patch.object(
+            hass.config_entries,
+            "async_update_entry",
+            wraps=hass.config_entries.async_update_entry,
+        ) as mock_update:
             aioresponses_mock.get(
-                "https://www.strava.com/api/v3/push_subscriptions",
+                "https://example.com/api/strava/webhook", status=200
+            )
+            push_subs_url = (
+                "https://www.strava.com/api/v3/push_subscriptions"
+                "?client_id=test_client_id&client_secret=test_client_secret"
+            )
+            aioresponses_mock.get(
+                push_subs_url,
                 payload=[
                     {"id": 1, "callback_url": "https://example.com/api/strava/webhook"}
                 ],
                 status=200,
             )
 
-            # Test webhook subscription
             await renew_webhook_subscription(hass, mock_config_entry)
 
-            # Should not create new subscription
+            mock_update.assert_called_once()
+            data = mock_update.call_args[1]["data"]
+            assert data.get(CONF_WEBHOOK_ID) == 1
+
+    @pytest.mark.asyncio
+    async def test_renew_webhook_subscription_existing_subscription_url_normalized(
+        self, hass, mock_config_entry, aioresponses_mock
+    ):
+        """Test subscription with trailing slash in callback_url is treated as match."""
+        mock_config_entry.add_to_hass(hass)
+        with patch(
+            "custom_components.ha_strava.get_url", return_value="https://example.com"
+        ), patch.object(
+            hass.config_entries,
+            "async_update_entry",
+            wraps=hass.config_entries.async_update_entry,
+        ) as mock_update:
+            aioresponses_mock.get(
+                "https://example.com/api/strava/webhook", status=200
+            )
+            push_subs_url = (
+                "https://www.strava.com/api/v3/push_subscriptions"
+                "?client_id=test_client_id&client_secret=test_client_secret"
+            )
+            aioresponses_mock.get(
+                push_subs_url,
+                payload=[
+                    {
+                        "id": 2,
+                        "callback_url": "https://example.com/api/strava/webhook/",
+                    }
+                ],
+                status=200,
+            )
+
+            await renew_webhook_subscription(hass, mock_config_entry)
+
+            mock_update.assert_called_once()
+            data = mock_update.call_args[1]["data"]
+            assert data.get(CONF_WEBHOOK_ID) == 2
 
     @pytest.mark.asyncio
     async def test_renew_webhook_subscription_cleanup_old(
         self, hass, mock_config_entry, aioresponses_mock
     ):
         """Test webhook subscription cleanup of old subscriptions."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-        # Mock get_url
+        mock_config_entry.add_to_hass(hass)
         with patch(
             "custom_components.ha_strava.get_url", return_value="https://example.com"
         ):
-            # Mock existing subscriptions with different callback URL
+            aioresponses_mock.get(
+                "https://example.com/api/strava/webhook", status=200
+            )
             aioresponses_mock.get(
                 "https://www.strava.com/api/v3/push_subscriptions",
                 payload=[
@@ -250,35 +273,64 @@ class TestWebhookSubscription:
                 ],
                 status=200,
             )
-
-            # Mock deletion of old subscription
             aioresponses_mock.delete(
                 "https://www.strava.com/api/v3/push_subscriptions/1", status=200
             )
-
-            # Mock new subscription creation
             aioresponses_mock.post(
                 "https://www.strava.com/api/v3/push_subscriptions",
                 payload={"id": 123},
                 status=200,
             )
 
-            # Test webhook subscription
             await renew_webhook_subscription(hass, mock_config_entry)
+
+    @pytest.mark.asyncio
+    async def test_renew_webhook_subscription_missing_callback_url_deletes_and_creates(
+        self, hass, mock_config_entry, aioresponses_mock
+    ):
+        """Test subscription without callback_url is deleted and new one created."""
+        mock_config_entry.add_to_hass(hass)
+        with patch(
+            "custom_components.ha_strava.get_url", return_value="https://example.com"
+        ), patch.object(
+            hass.config_entries,
+            "async_update_entry",
+            wraps=hass.config_entries.async_update_entry,
+        ) as mock_update:
+            aioresponses_mock.get(
+                "https://example.com/api/strava/webhook", status=200
+            )
+            aioresponses_mock.get(
+                "https://www.strava.com/api/v3/push_subscriptions",
+                payload=[{"id": 1}],
+                status=200,
+            )
+            aioresponses_mock.delete(
+                "https://www.strava.com/api/v3/push_subscriptions/1", status=200
+            )
+            aioresponses_mock.post(
+                "https://www.strava.com/api/v3/push_subscriptions",
+                payload={"id": 123},
+                status=200,
+            )
+
+            await renew_webhook_subscription(hass, mock_config_entry)
+
+            mock_update.assert_called_once()
+            assert mock_update.call_args[1]["data"].get(CONF_WEBHOOK_ID) == 123
 
     @pytest.mark.asyncio
     async def test_renew_webhook_subscription_cleanup_old_404(
         self, hass, mock_config_entry, aioresponses_mock
     ):
         """Test webhook subscription cleanup when old subscription returns 404."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-        # Mock get_url
+        mock_config_entry.add_to_hass(hass)
         with patch(
             "custom_components.ha_strava.get_url", return_value="https://example.com"
         ):
-            # Mock existing subscriptions with different callback URL
+            aioresponses_mock.get(
+                "https://example.com/api/strava/webhook", status=200
+            )
             aioresponses_mock.get(
                 "https://www.strava.com/api/v3/push_subscriptions",
                 payload=[
@@ -289,45 +341,60 @@ class TestWebhookSubscription:
                 ],
                 status=200,
             )
-
-            # Mock deletion of old subscription returning 404 (already deleted)
             aioresponses_mock.delete(
                 "https://www.strava.com/api/v3/push_subscriptions/1", status=404
             )
-
-            # Mock new subscription creation
             aioresponses_mock.post(
                 "https://www.strava.com/api/v3/push_subscriptions",
                 payload={"id": 123},
                 status=200,
             )
 
-            # Test webhook subscription - should not raise exception
             await renew_webhook_subscription(hass, mock_config_entry)
 
     @pytest.mark.asyncio
     async def test_renew_webhook_subscription_error(
         self, hass, mock_config_entry, aioresponses_mock
     ):
-        """Test webhook subscription with error."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-        # Mock get_url
+        """Test GET subscriptions failure: delete by stored webhook_id then create new."""
+        entry_with_webhook = MockConfigEntry(
+            domain=DOMAIN,
+            unique_id="12345",
+            data={
+                **mock_config_entry.data,
+                CONF_WEBHOOK_ID: 999,
+            },
+        )
+        entry_with_webhook.add_to_hass(hass)
         with patch(
             "custom_components.ha_strava.get_url", return_value="https://example.com"
-        ):
-            # Mock API error
+        ), patch.object(
+            hass.config_entries,
+            "async_update_entry",
+            wraps=hass.config_entries.async_update_entry,
+        ) as mock_update:
+            aioresponses_mock.get(
+                "https://example.com/api/strava/webhook", status=200
+            )
             aioresponses_mock.get(
                 "https://www.strava.com/api/v3/push_subscriptions",
                 status=500,
                 payload={"message": "Internal server error"},
             )
+            aioresponses_mock.delete(
+                "https://www.strava.com/api/v3/push_subscriptions/999",
+                status=200,
+            )
+            aioresponses_mock.post(
+                "https://www.strava.com/api/v3/push_subscriptions",
+                payload={"id": 456},
+                status=200,
+            )
 
-            # Test webhook subscription
-            await renew_webhook_subscription(hass, mock_config_entry)
+            await renew_webhook_subscription(hass, entry_with_webhook)
 
-            # Should not raise exception
+            mock_update.assert_called_once()
+            assert mock_update.call_args[1]["data"].get(CONF_WEBHOOK_ID) == 456
 
 
 class TestAsyncSetup:
@@ -336,18 +403,12 @@ class TestAsyncSetup:
     @pytest.mark.asyncio
     async def test_async_setup_success(self, hass: HomeAssistant):
         """Test successful async setup."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         result = await async_setup(hass, {})
         assert result is True
 
     @pytest.mark.asyncio
     async def test_async_setup_with_config(self, hass: HomeAssistant):
         """Test async setup with config."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         config = {"strava": {"client_id": "test", "client_secret": "test"}}
         result = await async_setup(hass, config)
         assert result is True
@@ -361,9 +422,6 @@ class TestAsyncSetupEntry:
         self, hass, mock_config_entry, mock_coordinator
     ):
         """Test successful async setup entry."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         with patch(
             "custom_components.ha_strava.StravaDataUpdateCoordinator",
             return_value=mock_coordinator,
@@ -384,9 +442,6 @@ class TestAsyncSetupEntry:
     @pytest.mark.asyncio
     async def test_async_setup_entry_error(self, hass, mock_config_entry):
         """Test async setup entry with error."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         with patch(
             "custom_components.ha_strava.StravaDataUpdateCoordinator",
             side_effect=Exception("Test error"),
@@ -403,9 +458,6 @@ class TestAsyncUnloadEntry:
         self, hass, mock_config_entry, aioresponses_mock
     ):
         """Test successful async unload entry."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         # Mock webhook deletion
         aioresponses_mock.delete(
             "https://www.strava.com/api/v3/push_subscriptions/123", status=200
@@ -428,9 +480,6 @@ class TestAsyncUnloadEntry:
     @pytest.mark.asyncio
     async def test_async_unload_entry_no_webhook_id(self, hass, mock_config_entry):
         """Test async unload entry without webhook ID."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         hass.data[DOMAIN] = {mock_config_entry.entry_id: MagicMock()}
 
         # Test unload
@@ -442,9 +491,6 @@ class TestAsyncUnloadEntry:
         self, hass, mock_config_entry, aioresponses_mock
     ):
         """Test async unload entry with webhook deletion error."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         # Mock webhook deletion error
         aioresponses_mock.delete(
             "https://www.strava.com/api/v3/push_subscriptions/123",
@@ -471,9 +517,6 @@ class TestAsyncUnloadEntry:
         self, hass, mock_config_entry
     ):
         """Test async unload entry with platform unload failure."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         hass.data[DOMAIN] = {mock_config_entry.entry_id: MagicMock()}
 
         # Mock platform unload failure
@@ -490,10 +533,6 @@ class TestAsyncReloadEntry:
     @pytest.mark.asyncio
     async def test_async_reload_entry_success(self, hass, mock_config_entry):
         """Test successful async reload entry."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Mock the async_reload method
         with patch.object(
             hass.config_entries, "async_reload", new_callable=AsyncMock
@@ -507,10 +546,6 @@ class TestAsyncReloadEntry:
     @pytest.mark.asyncio
     async def test_async_reload_entry_with_different_entry_id(self, hass):
         """Test async reload entry with different entry ID."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Create a different config entry
         from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 
@@ -536,10 +571,6 @@ class TestAsyncReloadEntry:
     @pytest.mark.asyncio
     async def test_async_reload_entry_reload_error(self, hass, mock_config_entry):
         """Test async reload entry when reload raises an error."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Mock the async_reload method to raise an exception
         with patch.object(
             hass.config_entries,
@@ -563,10 +594,6 @@ class TestUpdateListenerRegistration:
         self, hass, mock_config_entry, mock_coordinator
     ):
         """Test that update listener is registered during setup."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Mock the entry's add_update_listener method
         mock_entry = MagicMock()
         mock_entry.entry_id = mock_config_entry.entry_id
@@ -607,10 +634,6 @@ class TestUpdateListenerRegistration:
         self, hass, mock_config_entry, mock_coordinator
     ):
         """Test that reload is triggered when options are saved."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Mock the entry's add_update_listener method
         mock_entry = MagicMock()
         mock_entry.entry_id = mock_config_entry.entry_id
@@ -653,10 +676,6 @@ class TestUpdateListenerRegistration:
     @pytest.mark.asyncio
     async def test_update_listener_with_multiple_entries(self, hass, mock_coordinator):
         """Test update listener works with multiple config entries."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Create multiple mock entries
         entry1 = MagicMock()
         entry1.entry_id = "entry_1"
@@ -720,10 +739,6 @@ class TestUpdateListenerRegistration:
         self, hass, mock_config_entry, mock_coordinator
     ):
         """Test that update listener is properly cleaned up on unload."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Mock the entry
         mock_entry = MagicMock()
         mock_entry.entry_id = mock_config_entry.entry_id

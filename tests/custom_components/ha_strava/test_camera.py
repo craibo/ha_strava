@@ -35,10 +35,6 @@ class TestStravaCamera:
         self, hass: HomeAssistant
     ):
         """Test camera is not created when photos are disabled in options."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         config_entry = MockConfigEntry(
             domain=DOMAIN,
             unique_id="12345",
@@ -64,10 +60,6 @@ class TestStravaCamera:
         self, hass: HomeAssistant
     ):
         """Test camera is not created when photos are disabled in data."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         config_entry = MockConfigEntry(
             domain=DOMAIN,
             unique_id="12345",
@@ -91,10 +83,6 @@ class TestStravaCamera:
     @pytest.mark.asyncio
     async def test_camera_not_created_when_photos_missing(self, hass: HomeAssistant):
         """Test camera is not created when photos setting is missing."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         config_entry = MockConfigEntry(
             domain=DOMAIN,
             unique_id="12345",
@@ -119,10 +107,6 @@ class TestStravaCamera:
         self, hass: HomeAssistant
     ):
         """Test camera is created when photos are enabled in options."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         config_entry = MockConfigEntry(
             domain=DOMAIN,
             unique_id="12345",
@@ -164,10 +148,6 @@ class TestStravaCamera:
         self, hass: HomeAssistant
     ):
         """Test camera is created when photos are enabled in data (backward compatibility)."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         config_entry = MockConfigEntry(
             domain=DOMAIN,
             unique_id="12345",
@@ -207,10 +187,6 @@ class TestStravaCamera:
     @pytest.mark.asyncio
     async def test_camera_priority_options_over_data(self, hass: HomeAssistant):
         """Test that options take priority over data for photos setting."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Photos disabled in options but enabled in data - should not create camera
         config_entry = MockConfigEntry(
             domain=DOMAIN,
@@ -236,10 +212,6 @@ class TestStravaCamera:
     @pytest.mark.asyncio
     async def test_storage_loading(self, hass: HomeAssistant):
         """Test loading URLs from Home Assistant storage."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         config_entry = MockConfigEntry(
             domain=DOMAIN,
             unique_id="12345",
@@ -291,10 +263,6 @@ class TestStravaCamera:
     @pytest.mark.asyncio
     async def test_storage_saving(self, hass: HomeAssistant):
         """Test saving URLs to Home Assistant storage."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         config_entry = MockConfigEntry(
             domain=DOMAIN,
             unique_id="12345",
@@ -347,10 +315,6 @@ class TestStravaCamera:
     @pytest.mark.asyncio
     async def test_pickle_migration(self, hass: HomeAssistant, tmp_path):
         """Test migration from pickle file to Home Assistant storage."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         config_entry = MockConfigEntry(
             domain=DOMAIN,
             unique_id="12345",
@@ -426,10 +390,6 @@ class TestStravaCamera:
     @pytest.mark.asyncio
     async def test_storage_empty_on_first_load(self, hass: HomeAssistant):
         """Test that storage returns empty dict when no data exists."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         config_entry = MockConfigEntry(
             domain=DOMAIN,
             unique_id="12345",

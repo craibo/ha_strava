@@ -325,10 +325,6 @@ class TestSensorSetupWithMultipleActivities:
         self, hass: HomeAssistant, mock_config_entry
     ):
         """Test sensor setup with default number of recent activities (1)."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Mock coordinator
         coordinator = MagicMock()
         coordinator.data = {
@@ -359,10 +355,6 @@ class TestSensorSetupWithMultipleActivities:
     @pytest.mark.asyncio
     async def test_setup_with_multiple_recent_activities(self, hass: HomeAssistant):
         """Test sensor setup with multiple recent activity devices."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Create config entry with 3 recent activities
         config_entry = MockConfigEntry(
             domain=DOMAIN,
@@ -419,10 +411,6 @@ class TestSensorSetupWithMultipleActivities:
     @pytest.mark.asyncio
     async def test_setup_with_max_recent_activities(self, hass: HomeAssistant):
         """Test sensor setup with maximum number of recent activity devices."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Create config entry with max recent activities
         config_entry = MockConfigEntry(
             domain=DOMAIN,
@@ -465,10 +453,6 @@ class TestSensorSetupWithMultipleActivities:
     @pytest.mark.asyncio
     async def test_setup_with_zero_recent_activities(self, hass: HomeAssistant):
         """Test sensor setup with zero recent activity devices (edge case)."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Create config entry with 0 recent activities
         config_entry = MockConfigEntry(
             domain=DOMAIN,
@@ -511,10 +495,6 @@ class TestConfigFlowWithMultipleActivities:
     @pytest.mark.asyncio
     async def test_initial_setup_with_num_recent_activities(self, hass: HomeAssistant):
         """Test initial setup flow includes num_recent_activities field."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         from custom_components.ha_strava.config_flow import OAuth2FlowHandler
 
         flow = OAuth2FlowHandler()
@@ -537,10 +517,6 @@ class TestConfigFlowWithMultipleActivities:
         self, hass: HomeAssistant, mock_config_entry
     ):
         """Test options flow includes num_recent_activities field."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         from custom_components.ha_strava.config_flow import OptionsFlowHandler
 
         options_flow = OptionsFlowHandler()
@@ -558,10 +534,6 @@ class TestConfigFlowWithMultipleActivities:
     @pytest.mark.asyncio
     async def test_validation_range_limits(self, hass: HomeAssistant):
         """Test validation of num_recent_activities range limits."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         from custom_components.ha_strava.config_flow import OAuth2FlowHandler
 
         flow = OAuth2FlowHandler()

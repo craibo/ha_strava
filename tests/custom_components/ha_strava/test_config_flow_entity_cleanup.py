@@ -99,10 +99,6 @@ class TestEntityCleanupInOptionsFlow:
         self, hass: HomeAssistant, mock_entity_registry
     ):
         """Test reducing recent activities from 4 to 2 disables excess entities."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Create config entry with 4 recent activities
         config_entry = MockConfigEntry(
             domain=DOMAIN,
@@ -193,10 +189,6 @@ class TestEntityCleanupInOptionsFlow:
         self, hass: HomeAssistant, mock_entity_registry
     ):
         """Test reducing recent activities to 0 disables all recent activity entities."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         config_entry = MockConfigEntry(
             domain=DOMAIN,
             unique_id="12345",
@@ -273,10 +265,6 @@ class TestEntityCleanupInOptionsFlow:
         self, hass: HomeAssistant, mock_entity_registry
     ):
         """Test increasing recent activities from 2 to 4 enables previously disabled entities."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         config_entry = MockConfigEntry(
             domain=DOMAIN,
             unique_id="12345",
@@ -357,10 +345,6 @@ class TestEntityCleanupInOptionsFlow:
         self, hass: HomeAssistant, mock_entity_registry
     ):
         """Test that non-recent activity entities are not affected by recent activity changes."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         config_entry = MockConfigEntry(
             domain=DOMAIN,
             unique_id="12345",
@@ -431,10 +415,6 @@ class TestEntityCleanupInOptionsFlow:
     @pytest.mark.asyncio
     async def test_entity_cleanup_with_malformed_entity_ids(self, hass: HomeAssistant):
         """Test entity cleanup handles malformed entity IDs gracefully."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Create entity registry with malformed entities
         registry = MagicMock()
         entities = []
