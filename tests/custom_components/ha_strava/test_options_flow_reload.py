@@ -26,10 +26,6 @@ class TestOptionsFlowReload:
         self, hass: HomeAssistant, mock_config_entry
     ):
         """Test that saving options triggers a reload."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Add config entry to hass
         mock_config_entry.add_to_hass(hass)
 
@@ -76,10 +72,6 @@ class TestOptionsFlowReload:
         self, hass: HomeAssistant, mock_config_entry, mock_coordinator
     ):
         """Test that options flow works with reload listener registered."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Add config entry to hass
         mock_config_entry.add_to_hass(hass)
 
@@ -152,10 +144,6 @@ class TestOptionsFlowReload:
         self, hass: HomeAssistant, mock_config_entry, mock_coordinator
     ):
         """Test full integration of options flow with reload functionality."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Add config entry to hass
         mock_config_entry.add_to_hass(hass)
 
@@ -236,10 +224,6 @@ class TestOptionsFlowReload:
         self, hass: HomeAssistant, mock_config_entry
     ):
         """Test options flow with entity registry updates."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Add config entry to hass
         mock_config_entry.add_to_hass(hass)
 
@@ -346,10 +330,6 @@ class TestOptionsFlowReload:
         self, hass: HomeAssistant, mock_config_entry
     ):
         """Test options flow error handling."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Add config entry to hass
         mock_config_entry.add_to_hass(hass)
 
@@ -392,10 +372,6 @@ class TestOptionsFlowReload:
         self, hass: HomeAssistant, mock_config_entry
     ):
         """Test options flow with minimal required data."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Add config entry to hass
         mock_config_entry.add_to_hass(hass)
 

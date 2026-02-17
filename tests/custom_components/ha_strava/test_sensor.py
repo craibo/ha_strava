@@ -407,9 +407,6 @@ class TestStravaSummaryStatsSensor:
     @pytest.mark.asyncio
     async def test_is_metric_from_options_metric(self, hass: HomeAssistant):
         """Test _is_metric() returns True when metric is configured in options."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         summary_stats = {
             "ytd_run_totals": {
                 "distance": 5000.0,
@@ -440,9 +437,6 @@ class TestStravaSummaryStatsSensor:
     @pytest.mark.asyncio
     async def test_is_metric_from_data_metric(self, hass: HomeAssistant):
         """Test _is_metric() returns True when metric is configured in data."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         summary_stats = {
             "ytd_run_totals": {
                 "distance": 5000.0,
@@ -473,9 +467,6 @@ class TestStravaSummaryStatsSensor:
     @pytest.mark.asyncio
     async def test_is_metric_from_options_imperial(self, hass: HomeAssistant):
         """Test _is_metric() returns False when imperial is configured in options."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         summary_stats = {
             "ytd_run_totals": {
                 "distance": 5000.0,
@@ -506,9 +497,6 @@ class TestStravaSummaryStatsSensor:
     @pytest.mark.asyncio
     async def test_is_metric_from_data_imperial(self, hass: HomeAssistant):
         """Test _is_metric() returns False when imperial is configured in data."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         summary_stats = {
             "ytd_run_totals": {
                 "distance": 5000.0,
@@ -537,11 +525,10 @@ class TestStravaSummaryStatsSensor:
         assert sensor._is_metric() is False
 
     @pytest.mark.asyncio
-    async def test_is_metric_from_options_default(self, hass: HomeAssistant):
+    async def test_is_metric_from_options_default(self):
         """Test _is_metric() uses HA system units when default is configured in options."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
+        mock_hass = MagicMock()
+        mock_hass.config.units = METRIC_SYSTEM
         summary_stats = {
             "ytd_run_totals": {
                 "distance": 5000.0,
@@ -557,7 +544,7 @@ class TestStravaSummaryStatsSensor:
             CONF_DISTANCE_UNIT_OVERRIDE: CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
         }
         coordinator.entry.data = {}
-        coordinator.hass = hass
+        coordinator.hass = mock_hass
 
         sensor = StravaSummaryStatsSensor(
             coordinator=coordinator,
@@ -566,17 +553,15 @@ class TestStravaSummaryStatsSensor:
             metric_key="distance",
             athlete_id="12345",
         )
+        sensor.hass = mock_hass
 
-        # Should return True if HA is configured with metric system
-        expected = hass.config.units is METRIC_SYSTEM
-        assert sensor._is_metric() == expected
+        assert sensor._is_metric() is True
 
     @pytest.mark.asyncio
-    async def test_is_metric_from_data_default(self, hass: HomeAssistant):
+    async def test_is_metric_from_data_default(self):
         """Test _is_metric() uses HA system units when default is configured in data."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
+        mock_hass = MagicMock()
+        mock_hass.config.units = METRIC_SYSTEM
         summary_stats = {
             "ytd_run_totals": {
                 "distance": 5000.0,
@@ -592,7 +577,7 @@ class TestStravaSummaryStatsSensor:
         coordinator.entry.data = {
             CONF_DISTANCE_UNIT_OVERRIDE: CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT
         }
-        coordinator.hass = hass
+        coordinator.hass = mock_hass
 
         sensor = StravaSummaryStatsSensor(
             coordinator=coordinator,
@@ -601,17 +586,15 @@ class TestStravaSummaryStatsSensor:
             metric_key="distance",
             athlete_id="12345",
         )
+        sensor.hass = mock_hass
 
-        # Should return True if HA is configured with metric system
-        expected = hass.config.units is METRIC_SYSTEM
-        assert sensor._is_metric() == expected
+        assert sensor._is_metric() is True
 
     @pytest.mark.asyncio
-    async def test_is_metric_no_config_fallback(self, hass: HomeAssistant):
+    async def test_is_metric_no_config_fallback(self):
         """Test _is_metric() falls back to HA system units when no config is set."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
+        mock_hass = MagicMock()
+        mock_hass.config.units = METRIC_SYSTEM
         summary_stats = {
             "ytd_run_totals": {
                 "distance": 5000.0,
@@ -625,7 +608,7 @@ class TestStravaSummaryStatsSensor:
         coordinator.entry.title = "Strava: Test User"
         coordinator.entry.options = {}
         coordinator.entry.data = {}
-        coordinator.hass = hass
+        coordinator.hass = mock_hass
 
         sensor = StravaSummaryStatsSensor(
             coordinator=coordinator,
@@ -634,17 +617,13 @@ class TestStravaSummaryStatsSensor:
             metric_key="distance",
             athlete_id="12345",
         )
+        sensor.hass = mock_hass
 
-        # Should fallback to HA system units when no config is set
-        expected = hass.config.units is METRIC_SYSTEM
-        assert sensor._is_metric() == expected
+        assert sensor._is_metric() is True
 
     @pytest.mark.asyncio
     async def test_is_metric_options_takes_precedence_over_data(self, hass: HomeAssistant):
         """Test _is_metric() prioritizes options over data when both are set."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         summary_stats = {
             "ytd_run_totals": {
                 "distance": 5000.0,
@@ -679,9 +658,6 @@ class TestStravaSummaryStatsSensor:
     @pytest.mark.asyncio
     async def test_ytd_distance_metric_from_data(self, hass: HomeAssistant):
         """Test YTD distance sensor uses metric units when configured in data."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         summary_stats = {
             "ytd_run_totals": {
                 "distance": 5000.0,  # 5 km in meters
@@ -714,9 +690,6 @@ class TestStravaSummaryStatsSensor:
     @pytest.mark.asyncio
     async def test_ytd_distance_imperial_from_data(self, hass: HomeAssistant):
         """Test YTD distance sensor uses imperial units when configured in data."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         summary_stats = {
             "ytd_run_totals": {
                 "distance": 5000.0,  # 5 km in meters
@@ -758,10 +731,6 @@ class TestSensorPlatform:
         self, hass: HomeAssistant, mock_config_entry
     ):
         """Test successful sensor platform setup."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         coordinator = MagicMock()
         coordinator.data = {
             "activities": [],
@@ -810,10 +779,6 @@ class TestSensorPlatform:
         self, hass: HomeAssistant, mock_config_entry
     ):
         """Test sensor platform setup with specific activity types."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Create new config entry with options
         config_entry = MockConfigEntry(
             domain=DOMAIN,
@@ -847,10 +812,6 @@ class TestSensorPlatform:
         self, hass: HomeAssistant, mock_config_entry_all_activities
     ):
         """Test sensor platform setup with all activity types."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         coordinator = MagicMock()
         coordinator.data = {
             "activities": [],
@@ -872,10 +833,6 @@ class TestSensorPlatform:
         self, hass: HomeAssistant, mock_config_entry
     ):
         """Test sensor platform setup error handling."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         coordinator = MagicMock()
         hass.data[DOMAIN] = {mock_config_entry.entry_id: coordinator}
 
@@ -892,10 +849,6 @@ class TestSensorPlatform:
     @pytest.mark.asyncio
     async def test_async_setup_entry_missing_config(self, hass: HomeAssistant):
         """Test sensor platform setup with missing config."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Create config entry without required data
         config_entry = MockConfigEntry(
             domain=DOMAIN,
@@ -911,10 +864,6 @@ class TestSensorPlatform:
     @pytest.mark.asyncio
     async def test_async_setup_entry_invalid_activity_types(self, hass: HomeAssistant):
         """Test sensor platform setup with invalid activity types."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Create config entry with invalid activity types
         config_entry = MockConfigEntry(
             domain=DOMAIN,
@@ -936,10 +885,6 @@ class TestSensorPlatform:
     @pytest.mark.asyncio
     async def test_async_setup_entry_empty_activity_types(self, hass: HomeAssistant):
         """Test sensor platform setup with empty activity types."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Create config entry with empty activity types
         config_entry = MockConfigEntry(
             domain=DOMAIN,
@@ -978,10 +923,6 @@ class TestSensorPlatform:
     @pytest.mark.asyncio
     async def test_async_setup_entry_none_activity_types(self, hass: HomeAssistant):
         """Test sensor platform setup with None activity types."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Create config entry with None activity types
         config_entry = MockConfigEntry(
             domain=DOMAIN,
@@ -1173,10 +1114,6 @@ class TestStravaActivityGearSensor:
     @pytest.mark.asyncio
     async def test_async_setup_entry_missing_activity_types(self, hass: HomeAssistant):
         """Test sensor platform setup with missing activity types - should create no activity type sensors."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Create config entry without activity types in both options and data
         config_entry = MockConfigEntry(
             domain=DOMAIN,
@@ -1216,10 +1153,6 @@ class TestStravaActivityGearSensor:
         self, hass: HomeAssistant
     ):
         """Test sensor platform setup with activity types in data (backward compatibility)."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Create config entry with activity types in data (not options)
         config_entry = MockConfigEntry(
             domain=DOMAIN,

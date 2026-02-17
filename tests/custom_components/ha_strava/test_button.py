@@ -18,10 +18,6 @@ from custom_components.ha_strava.const import (
 async def test_button_setup_creates_buttons(
     hass: HomeAssistant, mock_config_entry, mock_coordinator
 ) -> None:
-    async for hass_instance in hass:
-        hass = hass_instance
-        break
-
     activities = [
         {
             CONF_SENSOR_ID: 1,
@@ -54,10 +50,6 @@ async def test_button_setup_creates_buttons(
 async def test_activity_refresh_button_presses_triggers_single_refresh(
     hass: HomeAssistant, mock_config_entry, mock_coordinator
 ) -> None:
-    async for hass_instance in hass:
-        hass = hass_instance
-        break
-
     activities = [
         {
             CONF_SENSOR_ID: 10,
@@ -87,10 +79,6 @@ async def test_activity_refresh_button_presses_triggers_single_refresh(
 async def test_recent_activity_refresh_button_presses_triggers_single_refresh(
     hass: HomeAssistant, mock_config_entry, mock_coordinator
 ) -> None:
-    async for hass_instance in hass:
-        hass = hass_instance
-        break
-
     activities = [
         {
             CONF_SENSOR_ID: 20,

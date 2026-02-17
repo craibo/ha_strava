@@ -33,10 +33,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, mock_config_entry
     ):
         """Test coordinator initialization."""
-        # Extract hass from async generator fixture
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
 
@@ -54,10 +50,6 @@ class TestStravaDataUpdateCoordinator:
         aioresponses_mock,
     ):
         """Test successful activity fetching."""
-        # Extract hass from async generator fixture
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
 
@@ -111,10 +103,6 @@ class TestStravaDataUpdateCoordinator:
         aioresponses_mock,
     ):
         """Test activity fetching with type filtering."""
-        # Extract hass from async generator fixture
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         # Setup config with specific activity types in options
         filtered_config_entry = MockConfigEntry(
             domain="ha_strava",
@@ -198,10 +186,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, mock_config_entry
     ):
         """Test device type detection for Garmin devices."""
-        # Extract hass from async generator fixture
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
 
@@ -225,10 +209,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, mock_config_entry
     ):
         """Test device type detection for Apple devices."""
-        # Extract hass from async generator fixture
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
 
@@ -252,10 +232,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, mock_config_entry
     ):
         """Test device type detection for unknown devices."""
-        # Extract hass from async generator fixture
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
 
@@ -290,10 +266,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, mock_config_entry, mock_strava_activities
     ):
         """Test sensor activity processing with device information."""
-        # Extract hass from async generator fixture
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
 
@@ -315,10 +287,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, mock_config_entry
     ):
         """Test sensor activity processing without device information."""
-        # Extract hass from async generator fixture
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
 
@@ -351,10 +319,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, mock_config_entry, mock_strava_activities_all_types
     ):
         """Test summary stats calculation for all activity types."""
-        # Extract hass from async generator fixture
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
 
@@ -423,10 +387,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, mock_config_entry, mock_strava_activities_all_types
     ):
         """Test summary stats calculation for filtered activity types."""
-        # Extract hass from async generator fixture
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         # Setup config with specific activity types in options
         filtered_config_entry = MockConfigEntry(
             domain="ha_strava",
@@ -535,10 +495,6 @@ class TestStravaDataUpdateCoordinator:
         aioresponses_mock,
     ):
         """Test coordinator data update."""
-        # Extract hass from async generator fixture
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
 
@@ -607,10 +563,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
     ):
         """Test coordinator error handling."""
-        # Extract hass from async generator fixture
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
 
@@ -630,10 +582,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
     ):
         """Test coordinator rate limit handling."""
-        # Extract hass from async generator fixture
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
 
@@ -654,10 +602,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
     ):
         """Test coordinator unauthorized handling."""
-        # Extract hass from async generator fixture
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
 
@@ -677,10 +621,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
     ):
         """Test coordinator network error handling."""
-        # Extract hass from async generator fixture
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
 
@@ -699,10 +639,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
     ):
         """Test coordinator invalid JSON handling."""
-        # Extract hass from async generator fixture
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
 
@@ -722,10 +658,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
     ):
         """Test coordinator empty response handling."""
-        # Extract hass from async generator fixture
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
 
@@ -750,10 +682,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
     ):
         """Test coordinator malformed activity handling."""
-        # Extract hass from async generator fixture
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
 
@@ -828,10 +756,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, mock_config_entry
     ):
         """Test calories and power data processing in _sensor_activity method."""
-        # Extract hass from async generator fixture
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
 
@@ -938,10 +862,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, aioresponses_mock, mock_strava_activities_all_types
     ):
         """Test that coordinator handles empty activity types list correctly."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Create config entry with empty activity types
         empty_config_entry = MockConfigEntry(
             domain="ha_strava",
@@ -994,10 +914,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, aioresponses_mock, mock_strava_activities_all_types
     ):
         """Test that coordinator handles missing activity types config correctly."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Create config entry without activity types in both options and data
         missing_config_entry = MockConfigEntry(
             domain="ha_strava",
@@ -1049,10 +965,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, aioresponses_mock, mock_strava_activities_all_types
     ):
         """Test that coordinator reads activity types from data when not in options."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Create config entry with activity types in data (not options)
         data_config_entry = MockConfigEntry(
             domain="ha_strava",
@@ -1120,10 +1032,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
     ):
         """Test that photo fetching is skipped when photos are disabled."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
-
         # Create a new config entry with photos disabled
         config_entry_with_photos_disabled = MockConfigEntry(
             domain=DOMAIN,
@@ -1149,9 +1057,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
     ):
         """Test successful photo fetching with rate limiting."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         # Create config entry with photos enabled
         config_entry_with_photos = MockConfigEntry(
             domain=DOMAIN,
@@ -1215,9 +1120,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
     ):
         """Test that photo fetching is limited to initial limit."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         # Create config entry with photos enabled
         config_entry_with_photos = MockConfigEntry(
             domain=DOMAIN,
@@ -1261,9 +1163,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
     ):
         """Test that cached photos are skipped."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         # Create config entry with photos enabled
         config_entry_with_photos = MockConfigEntry(
             domain=DOMAIN,
@@ -1314,9 +1213,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
     ):
         """Test successful photo fetch with retry logic."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
 
@@ -1342,9 +1238,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
     ):
         """Test photo fetch retry on 429 error then success."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
 
@@ -1380,9 +1273,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
     ):
         """Test photo fetch fails after max retry attempts on 429."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
 
@@ -1403,9 +1293,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
     ):
         """Test photo fetch retry with exponential backoff when Retry-After not provided."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
 
@@ -1440,9 +1327,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
     ):
         """Test that photo fetching handles 429 errors gracefully."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         # Create config entry with photos enabled
         config_entry_with_photos = MockConfigEntry(
             domain=DOMAIN,
@@ -1493,9 +1377,6 @@ class TestStravaDataUpdateCoordinator:
         self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
     ):
         """Test that photo fetching handles network errors gracefully."""
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         # Create config entry with photos enabled
         config_entry_with_photos = MockConfigEntry(
             domain=DOMAIN,

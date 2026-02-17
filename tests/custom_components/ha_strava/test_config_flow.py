@@ -32,9 +32,6 @@ class TestStravaConfigFlow:
     async def test_user_step_success(self, hass: HomeAssistant):
         """Test successful user step."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OAuth2FlowHandler()
         flow.hass = hass
 
@@ -73,9 +70,6 @@ class TestStravaConfigFlow:
     async def test_oauth_step_success(self, hass: HomeAssistant):
         """Test successful OAuth step."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OAuth2FlowHandler()
         flow.hass = hass
 
@@ -101,9 +95,6 @@ class TestStravaConfigFlow:
     async def test_oauth_step_error(self, hass: HomeAssistant):
         """Test OAuth step with error."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OAuth2FlowHandler()
         flow.hass = hass
 
@@ -121,9 +112,6 @@ class TestStravaConfigFlow:
     async def test_options_step_success(self, hass: HomeAssistant, mock_config_entry):
         """Test successful options step."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OptionsFlowHandler(mock_config_entry)
         flow.hass = hass
         flow.options = {}
@@ -153,9 +141,6 @@ class TestStravaConfigFlow:
     ):
         """Test options step with validation error."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OptionsFlowHandler(mock_config_entry)
         flow.hass = hass
         flow.options = {}
@@ -180,9 +165,6 @@ class TestStravaConfigFlow:
     ):
         """Test options step with invalid activity types."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OptionsFlowHandler(mock_config_entry)
         flow.hass = hass
         flow.options = {}
@@ -210,9 +192,6 @@ class TestStravaConfigFlow:
     ):
         """Test options step with mix of valid and invalid activity types."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OptionsFlowHandler(mock_config_entry)
         flow.hass = hass
         flow.options = {}
@@ -241,9 +220,6 @@ class TestStravaConfigFlow:
     ):
         """Test options step with all activity types selected."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OptionsFlowHandler(mock_config_entry)
         flow.hass = hass
         flow.options = {}
@@ -268,9 +244,6 @@ class TestStravaConfigFlow:
     ):
         """Test options step with default activity types."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OptionsFlowHandler(mock_config_entry)
         flow.hass = hass
         flow.options = {}  # Test options step with default activity types
@@ -294,9 +267,6 @@ class TestStravaConfigFlow:
     ):
         """Test options step with case sensitivity."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OptionsFlowHandler(mock_config_entry)
         flow.hass = hass
         flow.options = {}  # Test options step with different case
@@ -318,9 +288,6 @@ class TestStravaConfigFlow:
     ):
         """Test options step with duplicate activity types."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OptionsFlowHandler(mock_config_entry)
         flow.hass = hass
         flow.options = {}  # Test options step with duplicates
@@ -349,9 +316,6 @@ class TestStravaConfigFlow:
     ):
         """Test options step with whitespace in activity types."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OptionsFlowHandler(mock_config_entry)
         flow.hass = hass
         flow.options = {}  # Test options step with whitespace
@@ -373,9 +337,6 @@ class TestStravaConfigFlow:
     ):
         """Test options step with None activity types."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OptionsFlowHandler(mock_config_entry)
         flow.hass = hass
         flow.options = {}  # Test options step with None
@@ -397,9 +358,6 @@ class TestStravaConfigFlow:
     ):
         """Test options step with missing activity types."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OptionsFlowHandler(mock_config_entry)
         flow.hass = hass
         flow.options = {}  # Test options step without activity types
@@ -421,9 +379,6 @@ class TestStravaConfigFlow:
     ):
         """Test options step with non-list activity types."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OptionsFlowHandler(mock_config_entry)
         flow.hass = hass
         flow.options = {}
@@ -449,9 +404,6 @@ class TestStravaConfigFlow:
     ):
         """Test options step with very long activity types list."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OptionsFlowHandler(mock_config_entry)
         flow.hass = hass
         flow.options = (
@@ -477,9 +429,6 @@ class TestStravaConfigFlow:
     ):
         """Test options step with activity types containing special characters."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OptionsFlowHandler(mock_config_entry)
         flow.hass = hass
         flow.options = {}  # Test options step with special characters
@@ -501,9 +450,6 @@ class TestStravaConfigFlow:
     ):
         """Test options step with activity types containing numbers."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OptionsFlowHandler(mock_config_entry)
         flow.hass = hass
         flow.options = {}  # Test options step with numbers
@@ -525,9 +471,6 @@ class TestStravaConfigFlow:
     ):
         """Test options step with activity types containing unicode."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OptionsFlowHandler(mock_config_entry)
         flow.hass = hass
         flow.options = {}  # Test options step with unicode
@@ -549,9 +492,6 @@ class TestStravaConfigFlow:
     ):
         """Test options step with activity types containing only whitespace."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OptionsFlowHandler(mock_config_entry)
         flow.hass = hass
         flow.options = {}  # Test options step with whitespace only
@@ -573,9 +513,6 @@ class TestStravaConfigFlow:
     ):
         """Test options step with activity types containing empty strings."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OptionsFlowHandler(mock_config_entry)
         flow.hass = hass
         flow.options = {}  # Test options step with empty strings
@@ -597,9 +534,6 @@ class TestStravaConfigFlow:
     ):
         """Test options step with activity types containing None values."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OptionsFlowHandler(mock_config_entry)
         flow.hass = hass
         flow.options = {}  # Test options step with None values
@@ -621,9 +555,6 @@ class TestStravaConfigFlow:
     ):
         """Test options step with activity types containing mixed data types."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OptionsFlowHandler(mock_config_entry)
         flow.hass = hass
         flow.options = {}  # Test options step with mixed types
@@ -645,9 +576,6 @@ class TestStravaConfigFlow:
     ):
         """Test options step with activity types containing dict values."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OptionsFlowHandler(mock_config_entry)
         flow.hass = hass
         flow.options = {}  # Test options step with dict values
@@ -669,9 +597,6 @@ class TestStravaConfigFlow:
     ):
         """Test options step with activity types containing list values."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OptionsFlowHandler(mock_config_entry)
         flow.hass = hass
         flow.options = {}
@@ -697,9 +622,6 @@ class TestStravaConfigFlow:
     ):
         """Test options step with activity types containing boolean values."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OptionsFlowHandler(mock_config_entry)
         flow.hass = hass
         flow.options = {}  # Test options step with boolean values
@@ -721,9 +643,6 @@ class TestStravaConfigFlow:
     ):
         """Test options step with activity types containing float values."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OptionsFlowHandler(mock_config_entry)
         flow.hass = hass
         flow.options = {}  # Test options step with float values
@@ -745,9 +664,6 @@ class TestStravaConfigFlow:
     ):
         """Test options step with activity types containing complex values."""
         # Setup
-        async for hass_instance in hass:
-            hass = hass_instance
-            break
         flow = OptionsFlowHandler(mock_config_entry)
         flow.hass = hass
         flow.options = {}
