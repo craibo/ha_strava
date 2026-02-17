@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.const import UnitOfLength, UnitOfTime
+from homeassistant.util.unit_system import METRIC_SYSTEM
 
 from custom_components.ha_strava.const import (
     CONF_DISTANCE_UNIT_OVERRIDE,
@@ -424,6 +425,9 @@ class TestStravaActivityMetricSensor:
             "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
         }
         coordinator.entry = MagicMock()
+        mock_hass = MagicMock()
+        mock_hass.config.units = METRIC_SYSTEM
+        coordinator.hass = mock_hass
 
         sensor = StravaActivityMetricSensor(
             coordinator=coordinator,
@@ -431,6 +435,7 @@ class TestStravaActivityMetricSensor:
             metric_type=CONF_SENSOR_PACE,
             athlete_id="12345",
         )
+        sensor.hass = mock_hass
 
         value = sensor.native_value
         assert value is not None
@@ -444,6 +449,9 @@ class TestStravaActivityMetricSensor:
             "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
         }
         coordinator.entry = MagicMock()
+        mock_hass = MagicMock()
+        mock_hass.config.units = METRIC_SYSTEM
+        coordinator.hass = mock_hass
 
         sensor = StravaActivityMetricSensor(
             coordinator=coordinator,
@@ -451,6 +459,7 @@ class TestStravaActivityMetricSensor:
             metric_type=CONF_SENSOR_SPEED,
             athlete_id="12345",
         )
+        sensor.hass = mock_hass
 
         value = sensor.native_value
         assert value is not None

@@ -3,6 +3,7 @@
 import json
 import logging
 from http import HTTPStatus
+from urllib.parse import urlparse
 
 import aiohttp
 import homeassistant.helpers.config_validation as cv
@@ -18,6 +19,19 @@ from .const import CONF_CALLBACK_URL, DOMAIN, WEBHOOK_SUBSCRIPTION_URL
 from .coordinator import StravaDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _normalize_callback_url(url: str) -> str:
+    """Normalize callback URL for comparison (strip trailing slash, lowercase host)."""
+    if not url or not isinstance(url, str):
+        return ""
+    try:
+        parsed = urlparse(url.strip())
+        path = (parsed.path or "/").rstrip("/") or "/"
+        normalized = f"{parsed.scheme}://{parsed.netloc.lower()}{path}"
+        return normalized
+    except Exception:
+        return url.strip().rstrip("/")
 
 PLATFORMS = ["sensor", "camera", "button"]
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -98,9 +112,9 @@ async def renew_webhook_subscription(
         return
 
     callback_url = f"{ha_host}/api/strava/webhook"
+    normalized_callback_url = _normalize_callback_url(callback_url)
     websession = async_get_clientsession(hass, verify_ssl=False)
 
-    # Check home assistant callback URL is available
     try:
         async with websession.get(url=callback_url) as response:
             response.raise_for_status()
@@ -111,7 +125,33 @@ async def renew_webhook_subscription(
         )
         return
 
-    # Check for existing subscriptions
+    async def _delete_subscription_async(sub_id: int) -> bool:
+        try:
+            async with websession.delete(
+                f"{WEBHOOK_SUBSCRIPTION_URL}/{sub_id}",
+                data={
+                    "client_id": entry.data[CONF_CLIENT_ID],
+                    "client_secret": entry.data[CONF_CLIENT_SECRET],
+                },
+            ) as delete_response:
+                delete_response.raise_for_status()
+                return True
+        except aiohttp.ClientResponseError as err:
+            if err.status == 404:
+                _LOGGER.debug(
+                    "Webhook subscription %s already deleted or doesn't exist", sub_id
+                )
+            else:
+                _LOGGER.warning(
+                    "Failed to delete webhook subscription %s: %s", sub_id, err
+                )
+            return False
+        except aiohttp.ClientError as err:
+            _LOGGER.warning(
+                "Failed to delete webhook subscription %s: %s", sub_id, err
+            )
+            return False
+
     try:
         async with websession.get(
             WEBHOOK_SUBSCRIPTION_URL,
@@ -121,46 +161,65 @@ async def renew_webhook_subscription(
             },
         ) as response:
             response.raise_for_status()
-            subscriptions = await response.json()
+            raw_subscriptions = await response.json()
 
-        # Delete any existing subscriptions for this app that are not the current one
+        if not isinstance(raw_subscriptions, list):
+            _LOGGER.info(
+                "Webhook URL mismatch or unconfirmed; deleting and re-creating."
+            )
+            stored_id = entry.data.get(CONF_WEBHOOK_ID)
+            if stored_id is not None:
+                await _delete_subscription_async(int(stored_id))
+            raw_subscriptions = []
+
+        subscriptions = raw_subscriptions
+        matching_sub = None
+
         for sub in subscriptions:
-            if sub["callback_url"] != callback_url:
-                _LOGGER.debug(f"Deleting outdated webhook subscription: {sub['id']}")
-                try:
-                    async with websession.delete(
-                        f"{WEBHOOK_SUBSCRIPTION_URL}/{sub['id']}",
-                        data={
-                            "client_id": entry.data[CONF_CLIENT_ID],
-                            "client_secret": entry.data[CONF_CLIENT_SECRET],
-                        },
-                    ) as delete_response:
-                        delete_response.raise_for_status()
-                except aiohttp.ClientResponseError as err:
-                    if err.status == 404:
-                        _LOGGER.debug(
-                            f"Webhook subscription {sub['id']} already deleted or doesn't exist"
-                        )
-                    else:
-                        _LOGGER.warning(
-                            f"Failed to delete webhook subscription {sub['id']}: {err}"
-                        )
-                except aiohttp.ClientError as err:
-                    _LOGGER.warning(
-                        f"Failed to delete webhook subscription {sub['id']}: {err}"
-                    )
+            sub_url = sub.get("callback_url")
+            sub_id = sub.get("id")
+            if not sub_url:
+                _LOGGER.info(
+                    "Deleting webhook subscription %s (no callback_url to confirm).",
+                    sub_id,
+                )
+                if sub_id is not None:
+                    await _delete_subscription_async(int(sub_id))
+                continue
+            sub_normalized = _normalize_callback_url(sub_url)
+            if sub_normalized != normalized_callback_url:
+                _LOGGER.info(
+                    "Deleting outdated webhook subscription: %s", sub_id
+                )
+                if sub_id is not None:
+                    await _delete_subscription_async(int(sub_id))
+            else:
+                matching_sub = sub
 
-        if any(sub["callback_url"] == callback_url for sub in subscriptions):
-            _LOGGER.debug("Webhook subscription is already up to date.")
+        if matching_sub is not None:
+            _LOGGER.debug(
+                "Existing webhook URL confirmed for %s", callback_url
+            )
+            mutable_data = {**entry.data}
+            mutable_data[CONF_WEBHOOK_ID] = matching_sub["id"]
+            hass.config_entries.async_update_entry(entry, data=mutable_data)
             return
 
     except aiohttp.ClientError as err:
-        _LOGGER.error(f"Error managing webhook subscriptions: {err}")
-        return
+        _LOGGER.error("Error managing webhook subscriptions: %s", err)
+        _LOGGER.debug(
+            "Webhook URL mismatch or unconfirmed; deleting and re-creating."
+        )
+        stored_id = entry.data.get(CONF_WEBHOOK_ID)
+        if stored_id is not None:
+            await _delete_subscription_async(int(stored_id))
+    else:
+        _LOGGER.info(
+            "Webhook URL mismatch or unconfirmed; deleting and re-creating."
+        )
 
-    # Create a new subscription
     try:
-        _LOGGER.debug(f"Creating new webhook subscription for {callback_url}")
+        _LOGGER.debug("Creating new webhook subscription for %s", callback_url)
         async with websession.post(
             WEBHOOK_SUBSCRIPTION_URL,
             data={
@@ -178,7 +237,7 @@ async def renew_webhook_subscription(
             hass.config_entries.async_update_entry(entry, data=mutable_data)
 
     except aiohttp.ClientError as err:
-        _LOGGER.error(f"Error creating webhook subscription: {err}")
+        _LOGGER.error("Error creating webhook subscription: %s", err)
 
 
 async def async_setup(
