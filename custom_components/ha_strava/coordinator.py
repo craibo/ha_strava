@@ -174,19 +174,19 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             athlete_id = int(activities_json[0]["athlete"]["id"])
 
         for activity in activities_json:
-            sport_type = activity.get("type")
+            effective_type = activity.get("sport_type") or activity.get("type")
 
             # Filter activities based on selected activity types
             # If no activity types selected, skip all activities
-            if not selected_activity_types or sport_type not in selected_activity_types:
+            if not selected_activity_types or effective_type not in selected_activity_types:
                 continue
 
             activity_id = activity["id"]
             filtered_activity_count += 1
 
             # Track most recent per type
-            if sport_type not in activities_by_type:
-                activities_by_type[sport_type] = activity_id
+            if effective_type not in activities_by_type:
+                activities_by_type[effective_type] = activity_id
                 activities_needing_details.add(activity_id)
 
             # Track first N recent activities (by filtered count, not set size)
@@ -199,11 +199,11 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
         # Second pass: Fetch detailed info for activities that need it
         activities = []
         for activity in activities_json:
-            sport_type = activity.get("type")
+            effective_type = activity.get("sport_type") or activity.get("type")
 
             # Filter activities based on selected activity types
             # If no activity types selected, skip all activities
-            if not selected_activity_types or sport_type not in selected_activity_types:
+            if not selected_activity_types or effective_type not in selected_activity_types:
                 continue
 
             activity_id = int(activity["id"])
@@ -212,7 +212,7 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             # Fetch detailed info for activities that need it
             if activity_id in activities_needing_details:
                 _LOGGER.debug(
-                    f"Fetching detailed info for activity {activity_id} (type: {sport_type})"
+                    f"Fetching detailed info for activity {activity_id} (type: {effective_type})"
                 )
                 try:
                     activity_response = await self.oauth_session.async_request(
@@ -615,11 +615,14 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             or "Unknown Location"
         )
 
+        source = activity_dto if activity_dto else activity
+        effective_sport_type = source.get("sport_type") or source.get("type")
+
         return {
             CONF_SENSOR_ID: activity.get("id"),
             CONF_SENSOR_TITLE: activity.get("name", "Strava Activity"),
             CONF_SENSOR_CITY: location,
-            CONF_SENSOR_ACTIVITY_TYPE: activity.get("type"),
+            CONF_SENSOR_ACTIVITY_TYPE: effective_sport_type,
             CONF_SENSOR_DISTANCE: activity.get("distance"),
             CONF_SENSOR_DATE: dt.strptime(
                 activity.get("start_date_local", "2000-01-01T00:00:00Z"),
@@ -636,7 +639,7 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             CONF_SENSOR_CADENCE_AVG: activity.get("average_cadence"),
             CONF_ATTR_START_LATLONG: activity.get("start_latlng"),
             CONF_ATTR_END_LATLONG: activity.get("end_latlng"),
-            CONF_ATTR_SPORT_TYPE: activity.get("sport_type"),
+            CONF_ATTR_SPORT_TYPE: effective_sport_type,
             CONF_ATTR_COMMUTE: activity.get("commute", False),
             CONF_ATTR_PRIVATE: activity.get("private", False),
             CONF_ATTR_POLYLINE: activity.get("map", {}).get("summary_polyline", ""),
