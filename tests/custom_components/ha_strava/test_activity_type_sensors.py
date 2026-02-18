@@ -241,6 +241,39 @@ class TestStravaActivityTypeSensor:
         assert attributes[CONF_ATTR_ACTIVITY_ID] == str(ride_activity[CONF_SENSOR_ID])
         assert attributes[CONF_ATTR_SPORT_TYPE] == ride_activity[CONF_ATTR_SPORT_TYPE]
 
+    def test_mountain_bike_ride_sensor_available_with_sport_type(self):
+        """Test MountainBikeRide activity-type sensor is available when data has sport_type MountainBikeRide."""
+        from custom_components.ha_strava.const import (
+            CONF_ATTR_SPORT_TYPE,
+            CONF_SENSOR_ID,
+            CONF_SENSOR_TITLE,
+        )
+
+        processed_activities = [
+            {
+                CONF_SENSOR_ID: 42,
+                CONF_SENSOR_TITLE: "Trail MTB Loop",
+                CONF_ATTR_SPORT_TYPE: "MountainBikeRide",
+            }
+        ]
+        coordinator = MagicMock()
+        coordinator.data = {
+            "activities": processed_activities,
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+        coordinator.entry = MagicMock()
+        coordinator.entry.title = "Strava: Test User"
+
+        sensor = StravaActivityTypeSensor(
+            coordinator=coordinator,
+            activity_type="MountainBikeRide",
+            athlete_id="12345",
+        )
+
+        assert sensor.available is True
+        assert sensor.native_value == "Trail MTB Loop"
+        assert sensor.extra_state_attributes[CONF_ATTR_SPORT_TYPE] == "MountainBikeRide"
+
     def test_sensor_attributes_swimming_specific_metrics(self, mock_strava_activities):
         """Test sensor attributes for swimming activities with specific metrics."""
         # Setup - use processed data from coordinator
