@@ -11,6 +11,7 @@ from custom_components.ha_strava.const import (
     CONF_ACTIVITY_TYPES_TO_TRACK,
     CONF_ATTR_DEVICE_NAME,
     CONF_ATTR_DEVICE_TYPE,
+    CONF_ATTR_SPORT_TYPE,
     CONF_PHOTO_CACHE_HOURS,
     CONF_PHOTO_FETCH_DELAY_SECONDS,
     CONF_PHOTO_FETCH_INITIAL_LIMIT,
@@ -180,6 +181,68 @@ class TestStravaDataUpdateCoordinator:
         assert len(run_activities) > 0
         assert len(ride_activities) > 0
         assert len(other_activities) == 0
+
+    @pytest.mark.asyncio
+    async def test_fetch_activities_mountain_bike_ride_sport_type(
+        self, hass: HomeAssistant, aioresponses_mock
+    ):
+        """Test that list with type Ride and sport_type MountainBikeRide is included and stored correctly."""
+        list_activity = {
+            "id": 99,
+            "name": "Trail MTB",
+            "type": "Ride",
+            "sport_type": "MountainBikeRide",
+            "athlete": {"id": 12345},
+            "distance": 15000.0,
+            "moving_time": 3600,
+            "elapsed_time": 3700,
+            "total_elevation_gain": 400.0,
+            "start_date_local": "2024-06-15T10:00:00Z",
+            "kudos_count": 5,
+            "achievement_count": 2,
+        }
+        detail_activity = {
+            **list_activity,
+            "sport_type": "MountainBikeRide",
+            "calories": 600,
+        }
+        config_entry = MockConfigEntry(
+            domain="ha_strava",
+            unique_id="12345",
+            data={
+                "client_id": "test_client_id",
+                "client_secret": "test_client_secret",
+                "token": {
+                    "access_token": "test_access_token",
+                    "refresh_token": "test_refresh_token",
+                    "expires_at": 4102444800,
+                    "token_type": "Bearer",
+                },
+            },
+            options={CONF_ACTIVITY_TYPES_TO_TRACK: ["MountainBikeRide"]},
+            title="Test Strava User",
+        )
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=config_entry)
+
+        aioresponses_mock.get(
+            "https://www.strava.com/api/v3/athlete/activities?per_page=200",
+            payload=[list_activity],
+            status=200,
+        )
+        aioresponses_mock.get(
+            "https://www.strava.com/api/v3/activities/99",
+            payload=detail_activity,
+            status=200,
+        )
+
+        athlete_id, activities = await coordinator._fetch_activities()
+
+        assert athlete_id == 12345
+        assert len(activities) == 1
+        assert activities[0][CONF_ATTR_SPORT_TYPE] == "MountainBikeRide"
+        assert activities[0][CONF_SENSOR_ACTIVITY_TYPE] == "MountainBikeRide"
+        assert activities[0][CONF_SENSOR_TITLE] == "Trail MTB"
 
     @pytest.mark.asyncio
     async def test_detect_device_type_garmin(
