@@ -107,6 +107,7 @@ SUPPORTED_ACTIVITY_TYPES = [
     "Kitesurf",
     "MountainBikeRide",
     "NordicSki",
+    "Padel"
     "Pickleball",
     "Pilates",
     "Racquetball",
@@ -425,6 +426,7 @@ ACTIVITY_TYPE_ICONS = {
     "Kitesurf": "mdi:kitesurfing",
     "MountainBikeRide": "mdi:bike",
     "NordicSki": "mdi:ski",
+    "Padel": "mdi:tennis",
     "Pickleball": "mdi:tennis",
     "Pilates": "mdi:yoga",
     "Racquetball": "mdi:tennis",
