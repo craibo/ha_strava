@@ -14,7 +14,9 @@ from homeassistant.helpers import config_entry_oauth2_flow
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
+    CONF_ACTIVITY_TYPE_OTHER,
     CONF_ACTIVITY_TYPES_TO_TRACK,
+    SUPPORTED_ACTIVITY_TYPES,
     CONF_API_RETRY_BASE_DELAY_SECONDS,
     CONF_API_RETRY_MAX_ATTEMPTS,
     CONF_ATTR_COMMUTE,
@@ -178,7 +180,15 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
 
             # Filter activities based on selected activity types
             # If no activity types selected, skip all activities
-            if not selected_activity_types or effective_type not in selected_activity_types:
+            if not selected_activity_types:
+                continue
+            if effective_type not in SUPPORTED_ACTIVITY_TYPES:
+                # Unknown type: bucket as Other if user selected it, otherwise drop
+                if CONF_ACTIVITY_TYPE_OTHER in selected_activity_types:
+                    effective_type = CONF_ACTIVITY_TYPE_OTHER
+                else:
+                    continue
+            elif effective_type not in selected_activity_types:
                 continue
 
             activity_id = activity["id"]
@@ -203,7 +213,15 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
 
             # Filter activities based on selected activity types
             # If no activity types selected, skip all activities
-            if not selected_activity_types or effective_type not in selected_activity_types:
+            if not selected_activity_types:
+                continue
+            if effective_type not in SUPPORTED_ACTIVITY_TYPES:
+                # Unknown type: bucket as Other if user selected it, otherwise drop
+                if CONF_ACTIVITY_TYPE_OTHER in selected_activity_types:
+                    effective_type = CONF_ACTIVITY_TYPE_OTHER
+                else:
+                    continue
+            elif effective_type not in selected_activity_types:
                 continue
 
             activity_id = int(activity["id"])
@@ -236,6 +254,7 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
                 self._sensor_activity(
                     activity,
                     activity_dto,
+                    effective_type,
                 )
             )
 
@@ -566,7 +585,7 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
 
         self.async_set_updated_data(new_data)
 
-    def _sensor_activity(self, activity: dict, activity_dto: dict) -> dict:
+    def _sensor_activity(self, activity: dict, activity_dto: dict, sport_type: str = None) -> dict:
         # Extract device information
         device_name = "Unknown"
         device_type = "Unknown"
@@ -616,7 +635,7 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
         )
 
         source = activity_dto if activity_dto else activity
-        effective_sport_type = source.get("sport_type") or source.get("type")
+        effective_sport_type = sport_type or (source.get("sport_type") or source.get("type"))
 
         return {
             CONF_SENSOR_ID: activity.get("id"),

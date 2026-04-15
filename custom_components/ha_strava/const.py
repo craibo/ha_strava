@@ -86,13 +86,16 @@ CONF_SENSOR_HEART_RATE_MAX = "max_heartrate"
 CONF_SENSOR_BIGGEST_RIDE_DISTANCE = "biggest_ride_distance"
 CONF_SENSOR_BIGGEST_ELEVATION_GAIN = "biggest_climb_elevation_gain"
 
-# All 50 Supported Activity Types
+# All 56 Supported Activity Types
 SUPPORTED_ACTIVITY_TYPES = [
     "AlpineSki",
     "BackcountrySki",
     "Badminton",
+    "Basketball",
     "Canoeing",
+    "Cricket",
     "Crossfit",
+    "Dance",
     "EBikeRide",
     "Elliptical",
     "EMountainBikeRide",
@@ -107,6 +110,8 @@ SUPPORTED_ACTIVITY_TYPES = [
     "Kitesurf",
     "MountainBikeRide",
     "NordicSki",
+    "Other",
+    "Padel",
     "Pickleball",
     "Pilates",
     "Racquetball",
@@ -132,6 +137,7 @@ SUPPORTED_ACTIVITY_TYPES = [
     "VirtualRide",
     "VirtualRow",
     "VirtualRun",
+    "Volleyball",
     "Walk",
     "WeightTraining",
     "Wheelchair",
@@ -409,8 +415,11 @@ ACTIVITY_TYPE_ICONS = {
     "AlpineSki": "mdi:ski",
     "BackcountrySki": "mdi:ski",
     "Badminton": "mdi:badminton",
+    "Basketball": "mdi:basketball",
     "Canoeing": "mdi:kayaking",
+    "Cricket": "mdi:cricket",
     "Crossfit": "mdi:weight-lifter",
+    "Dance": "mdi:dance-ballroom",
     "EBikeRide": "mdi:bike",
     "Elliptical": "mdi:elliptical",
     "EMountainBikeRide": "mdi:bike",
@@ -425,6 +434,8 @@ ACTIVITY_TYPE_ICONS = {
     "Kitesurf": "mdi:kitesurfing",
     "MountainBikeRide": "mdi:bike",
     "NordicSki": "mdi:ski",
+    "Other": "mdi:help-circle",
+    "Padel": "mdi:tennis",
     "Pickleball": "mdi:tennis",
     "Pilates": "mdi:yoga",
     "Racquetball": "mdi:tennis",
@@ -450,6 +461,7 @@ ACTIVITY_TYPE_ICONS = {
     "VirtualRide": "mdi:bike",
     "VirtualRow": "mdi:rowing",
     "VirtualRun": "mdi:run",
+    "Volleyball": "mdi:volleyball",
     "Walk": "mdi:walk",
     "WeightTraining": "mdi:weight-lifter",
     "Wheelchair": "mdi:wheelchair",
