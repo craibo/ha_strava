@@ -115,7 +115,10 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         CONF_DISTANCE_UNIT_OVERRIDE,
                         default=self.config_entry.options.get(
                             CONF_DISTANCE_UNIT_OVERRIDE,
-                            CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT,
+                            self.config_entry.data.get(
+                                CONF_DISTANCE_UNIT_OVERRIDE,
+                                CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT,
+                            ),
                         ),
                     ): vol.In(DISTANCE_UNIT_OVERRIDE_OPTIONS),
                     vol.Required(
