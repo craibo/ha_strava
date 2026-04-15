@@ -390,6 +390,7 @@ class TestStravaActivityTypeSensor:
             ("Kitesurf", "mdi:kitesurfing"),
             ("MountainBikeRide", "mdi:bike"),
             ("NordicSki", "mdi:ski"),
+            ("Other", "mdi:help-circle"),
             ("Padel", "mdi:tennis"),
             ("Pickleball", "mdi:tennis"),
             ("Pilates", "mdi:yoga"),

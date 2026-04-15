@@ -86,7 +86,7 @@ CONF_SENSOR_HEART_RATE_MAX = "max_heartrate"
 CONF_SENSOR_BIGGEST_RIDE_DISTANCE = "biggest_ride_distance"
 CONF_SENSOR_BIGGEST_ELEVATION_GAIN = "biggest_climb_elevation_gain"
 
-# All 55 Supported Activity Types
+# All 56 Supported Activity Types
 SUPPORTED_ACTIVITY_TYPES = [
     "AlpineSki",
     "BackcountrySki",
@@ -110,6 +110,7 @@ SUPPORTED_ACTIVITY_TYPES = [
     "Kitesurf",
     "MountainBikeRide",
     "NordicSki",
+    "Other",
     "Padel",
     "Pickleball",
     "Pilates",
@@ -433,6 +434,7 @@ ACTIVITY_TYPE_ICONS = {
     "Kitesurf": "mdi:kitesurfing",
     "MountainBikeRide": "mdi:bike",
     "NordicSki": "mdi:ski",
+    "Other": "mdi:help-circle",
     "Padel": "mdi:tennis",
     "Pickleball": "mdi:tennis",
     "Pilates": "mdi:yoga",

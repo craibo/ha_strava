@@ -178,7 +178,7 @@ def mock_strava_activities():
 
 @pytest.fixture
 def mock_strava_activities_all_types():
-    """Mock Strava activities data for all 55 activity types."""
+    """Mock Strava activities data for all 56 activity types."""
     activities = []
     for i, activity_type in enumerate(SUPPORTED_ACTIVITY_TYPES):
         activities.append(
