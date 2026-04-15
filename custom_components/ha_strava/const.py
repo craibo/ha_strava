@@ -581,9 +581,9 @@ def generate_recent_activity_sensor_name(
     )
 
 
-def generate_gear_device_id(athlete_id: str, gear_index: int) -> str:
+def generate_gear_device_id(athlete_id: str, gear_id: str) -> str:
     """Generate standardized gear device ID."""
-    return f"strava_{athlete_id}_gear_{gear_index}"
+    return f"strava_{athlete_id}_gear_{gear_id}"
 
 
 def generate_gear_device_name(athlete_name: str, gear_name: str) -> str:
@@ -591,9 +591,9 @@ def generate_gear_device_name(athlete_name: str, gear_name: str) -> str:
     return f"Strava {athlete_name} {gear_name}"
 
 
-def generate_gear_sensor_id(athlete_id: str, gear_index: int, sensor_type: str) -> str:
+def generate_gear_sensor_id(athlete_id: str, gear_id: str, sensor_type: str) -> str:
     """Generate standardized gear sensor ID."""
-    return f"strava_{athlete_id}_gear_{gear_index}_{sensor_type}"
+    return f"strava_{athlete_id}_gear_{gear_id}_{sensor_type}"
 
 
 def generate_gear_sensor_name(
