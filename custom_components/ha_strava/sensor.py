@@ -280,18 +280,21 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     # Create gear sensors if enabled
     if gear_enabled:
         gear_data = coordinator.data.get("gear") if coordinator.data else []
-        for gear_index, _gear_item in enumerate(gear_data):
+        for gear_item in gear_data:
+            gear_id = str(gear_item.get("id", ""))
+            if not gear_id:
+                continue
             entries.append(
                 StravaGearNameSensor(
                     coordinator,
-                    gear_index=gear_index,
+                    gear_id=gear_id,
                     athlete_id=athlete_id,
                 )
             )
             entries.append(
                 StravaGearDistanceSensor(
                     coordinator,
-                    gear_index=gear_index,
+                    gear_id=gear_id,
                     athlete_id=athlete_id,
                 )
             )
@@ -1715,28 +1718,28 @@ class StravaGearNameSensor(CoordinatorEntity, SensorEntity):
     def __init__(
         self,
         coordinator: StravaDataUpdateCoordinator,
-        gear_index: int,
+        gear_id: str,
         athlete_id: str,
     ):
         """Initialize the sensor."""
         super().__init__(coordinator)
-        self._gear_index = gear_index
+        self._gear_id = gear_id
         self._athlete_id = athlete_id
         self._athlete_name = get_athlete_name_from_title(self.coordinator.entry.title)
-        self._attr_unique_id = generate_gear_sensor_id(athlete_id, gear_index, "name")
+        self._attr_unique_id = generate_gear_sensor_id(athlete_id, gear_id, "name")
 
     @property
     def device_info(self):
         """Return device information."""
         gear_data = self._gear_data
         gear_name = (
-            gear_data.get("name", f"Gear {self._gear_index + 1}")
+            gear_data.get("name", f"Gear {self._gear_id}")
             if gear_data
-            else f"Gear {self._gear_index + 1}"
+            else f"Gear {self._gear_id}"
         )
         return {
             "identifiers": {
-                (DOMAIN, generate_gear_device_id(self._athlete_id, self._gear_index))
+                (DOMAIN, generate_gear_device_id(self._athlete_id, self._gear_id))
             },
             "name": generate_gear_device_name(self._athlete_name, gear_name),
             "manufacturer": "Powered by Strava",
@@ -1749,9 +1752,9 @@ class StravaGearNameSensor(CoordinatorEntity, SensorEntity):
         """Get the gear data for this sensor."""
         if not self.coordinator.data or not self.coordinator.data.get("gear"):
             return None
-        gear_list = self.coordinator.data["gear"]
-        if self._gear_index < len(gear_list):
-            return gear_list[self._gear_index]
+        for gear_item in self.coordinator.data["gear"]:
+            if str(gear_item.get("id", "")) == self._gear_id:
+                return gear_item
         return None
 
     @property
@@ -1770,16 +1773,16 @@ class StravaGearNameSensor(CoordinatorEntity, SensorEntity):
         if not self.available:
             return None
         gear_data = self._gear_data
-        return gear_data.get("name", f"Gear {self._gear_index + 1}")
+        return gear_data.get("name", f"Gear {self._gear_id}")
 
     @property
     def name(self):
         """Return the name of the sensor."""
         gear_data = self._gear_data
         gear_name = (
-            gear_data.get("name", f"Gear {self._gear_index + 1}")
+            gear_data.get("name", f"Gear {self._gear_id}")
             if gear_data
-            else f"Gear {self._gear_index + 1}"
+            else f"Gear {self._gear_id}"
         )
         return generate_gear_sensor_name(self._athlete_name, gear_name, "name")
 
@@ -1812,30 +1815,28 @@ class StravaGearDistanceSensor(CoordinatorEntity, SensorEntity):
     def __init__(
         self,
         coordinator: StravaDataUpdateCoordinator,
-        gear_index: int,
+        gear_id: str,
         athlete_id: str,
     ):
         """Initialize the sensor."""
         super().__init__(coordinator)
-        self._gear_index = gear_index
+        self._gear_id = gear_id
         self._athlete_id = athlete_id
         self._athlete_name = get_athlete_name_from_title(self.coordinator.entry.title)
-        self._attr_unique_id = generate_gear_sensor_id(
-            athlete_id, gear_index, "distance"
-        )
+        self._attr_unique_id = generate_gear_sensor_id(athlete_id, gear_id, "distance")
 
     @property
     def device_info(self):
         """Return device information."""
         gear_data = self._gear_data
         gear_name = (
-            gear_data.get("name", f"Gear {self._gear_index + 1}")
+            gear_data.get("name", f"Gear {self._gear_id}")
             if gear_data
-            else f"Gear {self._gear_index + 1}"
+            else f"Gear {self._gear_id}"
         )
         return {
             "identifiers": {
-                (DOMAIN, generate_gear_device_id(self._athlete_id, self._gear_index))
+                (DOMAIN, generate_gear_device_id(self._athlete_id, self._gear_id))
             },
             "name": generate_gear_device_name(self._athlete_name, gear_name),
             "manufacturer": "Powered by Strava",
@@ -1848,9 +1849,9 @@ class StravaGearDistanceSensor(CoordinatorEntity, SensorEntity):
         """Get the gear data for this sensor."""
         if not self.coordinator.data or not self.coordinator.data.get("gear"):
             return None
-        gear_list = self.coordinator.data["gear"]
-        if self._gear_index < len(gear_list):
-            return gear_list[self._gear_index]
+        for gear_item in self.coordinator.data["gear"]:
+            if str(gear_item.get("id", "")) == self._gear_id:
+                return gear_item
         return None
 
     @property
@@ -1895,9 +1896,9 @@ class StravaGearDistanceSensor(CoordinatorEntity, SensorEntity):
         """Return the name of the sensor."""
         gear_data = self._gear_data
         gear_name = (
-            gear_data.get("name", f"Gear {self._gear_index + 1}")
+            gear_data.get("name", f"Gear {self._gear_id}")
             if gear_data
-            else f"Gear {self._gear_index + 1}"
+            else f"Gear {self._gear_id}"
         )
         return generate_gear_sensor_name(self._athlete_name, gear_name, "distance")
 
