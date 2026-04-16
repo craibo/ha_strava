@@ -1,6 +1,6 @@
 """Test config flow entity cleanup for multiple recent activity devices."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
@@ -10,6 +10,8 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.ha_strava.config_flow import OptionsFlowHandler
 from custom_components.ha_strava.const import (
     CONF_ACTIVITY_TYPES_TO_TRACK,
+    CONF_GEAR_ENABLED,
+    CONF_NUM_GEAR_SENSORS,
     CONF_NUM_RECENT_ACTIVITIES,
     DOMAIN,
 )
@@ -497,3 +499,269 @@ class TestEntityCleanupInOptionsFlow:
                     for call in call_args_list
                 )
                 assert valid_entity_processed, "Valid entity should have been processed"
+
+
+_BASE_USER_INPUT = {
+    CONF_ACTIVITY_TYPES_TO_TRACK: ["Run"],
+    CONF_NUM_RECENT_ACTIVITIES: 1,
+    "conf_photos": False,
+    "img_update_interval_seconds": 300,
+    CONF_NUM_GEAR_SENSORS: 3,
+}
+
+
+def _make_config_entry(gear_enabled: bool = True):
+    return MockConfigEntry(
+        domain=DOMAIN,
+        unique_id="12345",
+        data={
+            CONF_CLIENT_ID: "test_client_id",
+            CONF_CLIENT_SECRET: "test_client_secret",
+        },
+        options={
+            CONF_ACTIVITY_TYPES_TO_TRACK: ["Run"],
+            CONF_NUM_RECENT_ACTIVITIES: 1,
+            CONF_GEAR_ENABLED: gear_enabled,
+            CONF_NUM_GEAR_SENSORS: 3,
+        },
+        title="Strava: Test User",
+    )
+
+
+async def _run_gear_options_save(hass, config_entry, entities, devices, gear_enabled):
+    """Helper: invoke async_step_init with mocked registries and return the mocks."""
+    entity_registry = MagicMock()
+    device_registry = MagicMock()
+    user_input = {**_BASE_USER_INPUT, CONF_GEAR_ENABLED: gear_enabled}
+
+    flow = OptionsFlowHandler()
+    flow.hass = hass
+
+    with patch.object(
+        OptionsFlowHandler,
+        "config_entry",
+        new_callable=PropertyMock,
+        return_value=config_entry,
+    ), patch(
+        "custom_components.ha_strava.config_flow.async_get",
+        return_value=entity_registry,
+    ), patch(
+        "custom_components.ha_strava.config_flow.async_entries_for_config_entry",
+        return_value=entities,
+    ), patch(
+        "custom_components.ha_strava.config_flow.dr.async_get",
+        return_value=device_registry,
+    ), patch(
+        "custom_components.ha_strava.config_flow.dr.async_entries_for_config_entry",
+        return_value=devices,
+    ), patch.object(
+        flow, "async_create_entry"
+    ):
+        await flow.async_step_init(user_input)
+
+    return entity_registry, device_registry
+
+
+class TestGearEntityCleanupInOptionsFlow:
+    """Test gear entity/device cleanup in options flow after the unique_id migration."""
+
+    @pytest.mark.asyncio
+    async def test_legacy_gear_entity_removed_on_options_save(
+        self, hass: HomeAssistant
+    ):
+        """Old index-based gear entities are removed when options are saved with gear enabled."""
+        legacy_name = MagicMock()
+        legacy_name.entity_id = "sensor.strava_12345_gear_0_name"
+        legacy_name.unique_id = "strava_12345_gear_0_name"
+
+        legacy_distance = MagicMock()
+        legacy_distance.entity_id = "sensor.strava_12345_gear_0_distance"
+        legacy_distance.unique_id = "strava_12345_gear_0_distance"
+
+        entity_registry, _ = await _run_gear_options_save(
+            hass, _make_config_entry(), [legacy_name, legacy_distance], [], True
+        )
+
+        removed = [call[0][0] for call in entity_registry.async_remove.call_args_list]
+        assert "sensor.strava_12345_gear_0_name" in removed
+        assert "sensor.strava_12345_gear_0_distance" in removed
+
+        # Should NOT have been enabled
+        enabled = [
+            call[0][0] for call in entity_registry.async_update_entity.call_args_list
+        ]
+        assert "sensor.strava_12345_gear_0_name" not in enabled
+
+    @pytest.mark.asyncio
+    async def test_new_format_gear_entity_preserved_on_options_save(
+        self, hass: HomeAssistant
+    ):
+        """New gear_id-based entities are kept and enabled when options are saved with gear enabled."""
+        new_name = MagicMock()
+        new_name.entity_id = "sensor.strava_12345_gear_b111111_name"
+        new_name.unique_id = "strava_12345_gear_b111111_name"
+
+        new_distance = MagicMock()
+        new_distance.entity_id = "sensor.strava_12345_gear_b111111_distance"
+        new_distance.unique_id = "strava_12345_gear_b111111_distance"
+
+        entity_registry, _ = await _run_gear_options_save(
+            hass, _make_config_entry(), [new_name, new_distance], [], True
+        )
+
+        removed = [call[0][0] for call in entity_registry.async_remove.call_args_list]
+        assert "sensor.strava_12345_gear_b111111_name" not in removed
+        assert "sensor.strava_12345_gear_b111111_distance" not in removed
+
+        enabled = [
+            call[0][0] for call in entity_registry.async_update_entity.call_args_list
+        ]
+        assert "sensor.strava_12345_gear_b111111_name" in enabled
+        assert "sensor.strava_12345_gear_b111111_distance" in enabled
+
+    @pytest.mark.asyncio
+    async def test_gear_entity_removed_when_gear_disabled(self, hass: HomeAssistant):
+        """New-format gear entities are removed when gear_enabled is False."""
+        new_name = MagicMock()
+        new_name.entity_id = "sensor.strava_12345_gear_b111111_name"
+        new_name.unique_id = "strava_12345_gear_b111111_name"
+
+        entity_registry, _ = await _run_gear_options_save(
+            hass, _make_config_entry(gear_enabled=False), [new_name], [], False
+        )
+
+        removed = [call[0][0] for call in entity_registry.async_remove.call_args_list]
+        assert "sensor.strava_12345_gear_b111111_name" in removed
+
+    @pytest.mark.asyncio
+    async def test_legacy_gear_device_removed_and_new_format_kept(
+        self, hass: HomeAssistant
+    ):
+        """Old index-based gear devices are removed; new gear_id devices are kept and enabled."""
+        legacy_device = MagicMock()
+        legacy_device.identifiers = {(DOMAIN, "strava_12345_gear_0")}
+        legacy_device.id = "legacy_gear_device"
+
+        new_device = MagicMock()
+        new_device.identifiers = {(DOMAIN, "strava_12345_gear_b111111")}
+        new_device.id = "new_gear_device"
+
+        _, device_registry = await _run_gear_options_save(
+            hass, _make_config_entry(), [], [legacy_device, new_device], True
+        )
+
+        removed_device_ids = [
+            call[0][0] for call in device_registry.async_remove_device.call_args_list
+        ]
+        assert "legacy_gear_device" in removed_device_ids
+        assert "new_gear_device" not in removed_device_ids
+
+        enabled_device_ids = [
+            call[0][0]
+            for call in device_registry.async_update_device.call_args_list
+            if call[1].get("disabled_by") is None
+        ]
+        assert "new_gear_device" in enabled_device_ids
+
+
+class TestRemoveLegacyGearEntries:
+    """Test the _remove_legacy_gear_entries helper called during async_setup_entry."""
+
+    @pytest.mark.asyncio
+    async def test_removes_legacy_entity_and_device(self, hass: HomeAssistant):
+        """Legacy index-based gear entities and devices are removed on integration setup."""
+        from custom_components.ha_strava import _remove_legacy_gear_entries
+        from custom_components.ha_strava.const import DOMAIN
+
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            unique_id="12345",
+            data={CONF_CLIENT_ID: "cid", CONF_CLIENT_SECRET: "csec"},
+            title="Strava: Test User",
+        )
+
+        legacy_entity = MagicMock()
+        legacy_entity.entity_id = "sensor.strava_12345_gear_0_name"
+        legacy_entity.unique_id = "strava_12345_gear_0_name"
+
+        keep_entity = MagicMock()
+        keep_entity.entity_id = "sensor.strava_12345_gear_b111111_name"
+        keep_entity.unique_id = "strava_12345_gear_b111111_name"
+
+        legacy_device = MagicMock()
+        legacy_device.identifiers = {(DOMAIN, "strava_12345_gear_0")}
+        legacy_device.id = "legacy_gear_device"
+
+        keep_device = MagicMock()
+        keep_device.identifiers = {(DOMAIN, "strava_12345_gear_b111111")}
+        keep_device.id = "new_gear_device"
+
+        mock_er = MagicMock()
+        mock_dr = MagicMock()
+
+        with patch(
+            "custom_components.ha_strava.er_async_get",
+            return_value=mock_er,
+        ), patch(
+            "custom_components.ha_strava.async_entries_for_config_entry",
+            return_value=[legacy_entity, keep_entity],
+        ), patch(
+            "custom_components.ha_strava.dr.async_get",
+            return_value=mock_dr,
+        ), patch(
+            "custom_components.ha_strava.dr.async_entries_for_config_entry",
+            return_value=[legacy_device, keep_device],
+        ):
+            _remove_legacy_gear_entries(hass, config_entry)
+
+        removed_entities = [call[0][0] for call in mock_er.async_remove.call_args_list]
+        assert "sensor.strava_12345_gear_0_name" in removed_entities
+        assert "sensor.strava_12345_gear_b111111_name" not in removed_entities
+
+        removed_devices = [
+            call[0][0] for call in mock_dr.async_remove_device.call_args_list
+        ]
+        assert "legacy_gear_device" in removed_devices
+        assert "new_gear_device" not in removed_devices
+
+    @pytest.mark.asyncio
+    async def test_no_op_when_no_legacy_entries(self, hass: HomeAssistant):
+        """No removals occur when only new-format gear entities/devices exist."""
+        from custom_components.ha_strava import _remove_legacy_gear_entries
+        from custom_components.ha_strava.const import DOMAIN
+
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            unique_id="12345",
+            data={CONF_CLIENT_ID: "cid", CONF_CLIENT_SECRET: "csec"},
+            title="Strava: Test User",
+        )
+
+        new_entity = MagicMock()
+        new_entity.entity_id = "sensor.strava_12345_gear_b111111_name"
+        new_entity.unique_id = "strava_12345_gear_b111111_name"
+
+        new_device = MagicMock()
+        new_device.identifiers = {(DOMAIN, "strava_12345_gear_b111111")}
+        new_device.id = "new_gear_device"
+
+        mock_er = MagicMock()
+        mock_dr = MagicMock()
+
+        with patch(
+            "custom_components.ha_strava.er_async_get",
+            return_value=mock_er,
+        ), patch(
+            "custom_components.ha_strava.async_entries_for_config_entry",
+            return_value=[new_entity],
+        ), patch(
+            "custom_components.ha_strava.dr.async_get",
+            return_value=mock_dr,
+        ), patch(
+            "custom_components.ha_strava.dr.async_entries_for_config_entry",
+            return_value=[new_device],
+        ):
+            _remove_legacy_gear_entries(hass, config_entry)
+
+        mock_er.async_remove.assert_not_called()
+        mock_dr.async_remove_device.assert_not_called()
