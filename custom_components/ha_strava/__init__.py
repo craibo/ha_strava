@@ -7,12 +7,15 @@ from urllib.parse import urlparse
 
 import aiohttp
 import homeassistant.helpers.config_validation as cv
+import homeassistant.helpers.device_registry as dr
 from aiohttp.web import Request, Response, json_response
 from homeassistant.components.http.view import HomeAssistantView
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_WEBHOOK_ID
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.entity_registry import async_entries_for_config_entry
+from homeassistant.helpers.entity_registry import async_get as er_async_get
 from homeassistant.helpers.network import NoURLAvailableError, get_url
 
 from .const import CONF_CALLBACK_URL, DOMAIN, WEBHOOK_SUBSCRIPTION_URL
@@ -32,6 +35,7 @@ def _normalize_callback_url(url: str) -> str:
         return normalized
     except Exception:
         return url.strip().rstrip("/")
+
 
 PLATFORMS = ["sensor", "camera", "button"]
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -147,9 +151,7 @@ async def renew_webhook_subscription(
                 )
             return False
         except aiohttp.ClientError as err:
-            _LOGGER.warning(
-                "Failed to delete webhook subscription %s: %s", sub_id, err
-            )
+            _LOGGER.warning("Failed to delete webhook subscription %s: %s", sub_id, err)
             return False
 
     try:
@@ -188,18 +190,14 @@ async def renew_webhook_subscription(
                 continue
             sub_normalized = _normalize_callback_url(sub_url)
             if sub_normalized != normalized_callback_url:
-                _LOGGER.info(
-                    "Deleting outdated webhook subscription: %s", sub_id
-                )
+                _LOGGER.info("Deleting outdated webhook subscription: %s", sub_id)
                 if sub_id is not None:
                     await _delete_subscription_async(int(sub_id))
             else:
                 matching_sub = sub
 
         if matching_sub is not None:
-            _LOGGER.debug(
-                "Existing webhook URL confirmed for %s", callback_url
-            )
+            _LOGGER.debug("Existing webhook URL confirmed for %s", callback_url)
             mutable_data = {**entry.data}
             mutable_data[CONF_WEBHOOK_ID] = matching_sub["id"]
             hass.config_entries.async_update_entry(entry, data=mutable_data)
@@ -207,16 +205,12 @@ async def renew_webhook_subscription(
 
     except aiohttp.ClientError as err:
         _LOGGER.error("Error managing webhook subscriptions: %s", err)
-        _LOGGER.debug(
-            "Webhook URL mismatch or unconfirmed; deleting and re-creating."
-        )
+        _LOGGER.debug("Webhook URL mismatch or unconfirmed; deleting and re-creating.")
         stored_id = entry.data.get(CONF_WEBHOOK_ID)
         if stored_id is not None:
             await _delete_subscription_async(int(stored_id))
     else:
-        _LOGGER.info(
-            "Webhook URL mismatch or unconfirmed; deleting and re-creating."
-        )
+        _LOGGER.info("Webhook URL mismatch or unconfirmed; deleting and re-creating.")
 
     try:
         _LOGGER.debug("Creating new webhook subscription for %s", callback_url)
@@ -240,6 +234,56 @@ async def renew_webhook_subscription(
         _LOGGER.error("Error creating webhook subscription: %s", err)
 
 
+def _remove_legacy_gear_entries(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Remove gear entities/devices that use the old index-based unique_id format.
+
+    Before commit 37cf521 gear sensors used a positional index (0, 1, 2 …) in
+    their unique_id.  The fix switched to the stable Strava gear ID (e.g. b111111).
+    Old registry entries must be explicitly removed so they are not left as
+    orphaned/unavailable sensors alongside the new ones.
+    """
+    athlete_id = entry.unique_id
+    if not athlete_id:
+        return
+
+    entity_registry = er_async_get(hass)
+    for entity in async_entries_for_config_entry(entity_registry, entry.entry_id):
+        uid = entity.unique_id or ""
+        uid_parts = uid.split("_")
+        # Old format: strava_{athlete_id}_gear_{numeric_index}_{sensor_type}
+        if (
+            len(uid_parts) >= 4
+            and uid_parts[0] == "strava"
+            and uid_parts[1] == athlete_id
+            and uid_parts[2] == "gear"
+            and uid_parts[3].isdigit()
+        ):
+            _LOGGER.info(
+                "Removing legacy index-based gear entity: %s", entity.entity_id
+            )
+            entity_registry.async_remove(entity.entity_id)
+
+    device_registry = dr.async_get(hass)
+    for device in dr.async_entries_for_config_entry(device_registry, entry.entry_id):
+        for identifier in device.identifiers:
+            if identifier[0] != DOMAIN:
+                continue
+            did_parts = identifier[1].split("_")
+            # Old format: strava_{athlete_id}_gear_{numeric_index}
+            if (
+                len(did_parts) >= 4
+                and did_parts[0] == "strava"
+                and did_parts[1] == athlete_id
+                and did_parts[2] == "gear"
+                and did_parts[3].isdigit()
+            ):
+                _LOGGER.info(
+                    "Removing legacy index-based gear device: %s", identifier[1]
+                )
+                device_registry.async_remove_device(device.id)
+            break
+
+
 async def async_setup(
     hass: HomeAssistant, config: dict
 ):  # pylint: disable=unused-argument
@@ -255,6 +299,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     await coordinator.async_config_entry_first_refresh()
 
     hass.data[DOMAIN][entry.entry_id] = coordinator
+
+    # Remove any gear entities/devices left over from the old index-based unique_id format
+    _remove_legacy_gear_entries(hass, entry)
 
     # Set up webhook
     hass.http.register_view(StravaWebhookView(hass))
