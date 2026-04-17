@@ -29,6 +29,7 @@ When configuring the Strava API, the **Authorization Callback Domain** must be s
 - **Gear Sensors**: Track your bikes and shoes with distance and detailed information (brand, model, etc.)
 - **Multi-User Support**: Add multiple Strava accounts, each with their own unique Strava app credentials
 - **Webhook-First Architecture**: Uses Strava webhooks for real-time updates, respecting API rate limits
+- **Update Activities**: Modify activity name, sport type, and other fields directly from Home Assistant via the `ha_strava.update_activity` service action
 - **Easy set-up**: only enter your Strava Client-ID and Client-Secret and you're ready to go
 
 ## How It Works
@@ -172,6 +173,59 @@ You can enable gear sensors to track your bikes and shoes from Strava. When enab
 - **Number of Gear Sensors**: Slider to select how many gear items to track (1-20, default: 3)
 
 The gear items are sorted by distance (most used first), and the integration respects API rate limits by caching gear details.
+
+### 5. Update Activity Service
+
+The integration provides a `ha_strava.update_activity` service action that allows you to modify activities on Strava directly from Home Assistant. This is useful for automations that reclassify, rename, or adjust activities when they sync.
+
+**Requirements:**
+
+- The `activity:write` OAuth scope is required. **Existing users must re-authenticate** to grant this permission (go to `Configuration` > `Integrations` > Strava > `RECONFIGURE`).
+
+**Available Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `activity_id` | string (required) | The Strava activity ID. Available as the `activity_id` attribute on all activity sensors. |
+| `sport_type` | string | One of the supported Strava sport types (e.g. `Run`, `Ride`, `Squash`). |
+| `name` | string | The activity name. |
+| `description` | string | The activity description. |
+| `gear_id` | string | Strava gear ID to associate with the activity. |
+| `trainer` | boolean | Whether the activity was on a trainer. |
+| `commute` | boolean | Whether the activity is a commute. |
+| `hide_from_home` | boolean | Whether to hide the activity from the Strava home feed. |
+
+**Automation Example:**
+
+This automation reclassifies Tennis activities as Squash, renames them, and makes them visible on the Strava home feed whenever a new activity syncs:
+
+```yaml
+description: "Reclassify Tennis as Squash"
+mode: single
+triggers:
+  - trigger: state
+    entity_id:
+      - sensor.strava_your_name_tennis
+  - trigger: state
+    entity_id:
+      - sensor.strava_your_name_recent_activity_device_info
+    attribute: activity_id
+conditions:
+  - condition: template
+    value_template: >
+      {{ state_attr('sensor.strava_your_name_recent_activity_device_info', 'sport_type') == 'Tennis' }}
+actions:
+  - action: ha_strava.update_activity
+    data:
+      activity_id: >
+        {{ state_attr('sensor.strava_your_name_recent_activity_device_info', 'activity_id') }}
+      sport_type: "Squash"
+      name: >
+        {{ states('sensor.strava_your_name_recent_activity') | replace('Tennis', 'Squash') }}
+      hide_from_home: false
+```
+
+Replace `your_name` with your actual sensor entity names. The `activity_id` and `sport_type` attributes are available on all activity and recent activity sensors.
 
 **_NOTES_**
 

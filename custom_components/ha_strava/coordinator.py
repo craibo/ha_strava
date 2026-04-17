@@ -518,6 +518,116 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.error(f"Error fetching gear {gear_id}: {e}")
             return {}
 
+    async def async_update_activity(
+        self, activity_id: int | str, **fields: dict
+    ) -> None:
+        """Update an activity via the Strava API and refresh local state."""
+        try:
+            await self.oauth_session.async_ensure_token_valid()
+        except aiohttp.ClientError as err:
+            _LOGGER.error(f"Error ensuring token is valid: {err}")
+            raise UpdateFailed(f"Authentication error: {err}") from err
+
+        url = f"https://www.strava.com/api/v3/activities/{activity_id}"
+        payload = {k: v for k, v in fields.items() if v is not None}
+        updated_activity = None
+        last_exception = None
+
+        for attempt in range(CONF_API_RETRY_MAX_ATTEMPTS):
+            try:
+                response = await self.oauth_session.async_request(
+                    method="PUT",
+                    url=url,
+                    json=payload,
+                )
+
+                if response.status == 429:
+                    retry_after = int(
+                        response.headers.get(
+                            "Retry-After",
+                            CONF_API_RETRY_BASE_DELAY_SECONDS * (2**attempt),
+                        )
+                    )
+                    if attempt < CONF_API_RETRY_MAX_ATTEMPTS - 1:
+                        _LOGGER.warning(
+                            f"Rate limit hit updating activity {activity_id}, "
+                            f"retrying after {retry_after} seconds "
+                            f"(attempt {attempt + 1}/{CONF_API_RETRY_MAX_ATTEMPTS})"
+                        )
+                        await asyncio.sleep(retry_after)
+                        continue
+                    raise UpdateFailed(
+                        f"Rate limit exceeded updating activity {activity_id} "
+                        f"after {CONF_API_RETRY_MAX_ATTEMPTS} attempts"
+                    )
+
+                response.raise_for_status()
+                updated_activity = await response.json()
+                break
+
+            except aiohttp.ClientResponseError as err:
+                if err.status == 429 and attempt < CONF_API_RETRY_MAX_ATTEMPTS - 1:
+                    retry_after = int(
+                        err.headers.get(
+                            "Retry-After",
+                            CONF_API_RETRY_BASE_DELAY_SECONDS * (2**attempt),
+                        )
+                    )
+                    _LOGGER.warning(
+                        f"Rate limit hit updating activity {activity_id}, "
+                        f"retrying after {retry_after} seconds "
+                        f"(attempt {attempt + 1}/{CONF_API_RETRY_MAX_ATTEMPTS})"
+                    )
+                    await asyncio.sleep(retry_after)
+                    last_exception = err
+                    continue
+                raise UpdateFailed(
+                    f"Error updating activity {activity_id}: {err}"
+                ) from err
+            except aiohttp.ClientError as err:
+                if attempt < CONF_API_RETRY_MAX_ATTEMPTS - 1:
+                    delay = CONF_API_RETRY_BASE_DELAY_SECONDS * (2**attempt)
+                    _LOGGER.warning(
+                        f"Error updating activity {activity_id}: {err}, "
+                        f"retrying after {delay} seconds "
+                        f"(attempt {attempt + 1}/{CONF_API_RETRY_MAX_ATTEMPTS})"
+                    )
+                    await asyncio.sleep(delay)
+                    last_exception = err
+                    continue
+                raise UpdateFailed(
+                    f"Error updating activity {activity_id}: {err}"
+                ) from err
+
+        if updated_activity is None:
+            if last_exception:
+                raise last_exception
+            raise UpdateFailed(
+                f"Failed to update activity {activity_id} "
+                f"after {CONF_API_RETRY_MAX_ATTEMPTS} attempts"
+            )
+
+        _LOGGER.info(f"Successfully updated activity {activity_id}: {payload}")
+
+        # Update local state immediately
+        processed = self._sensor_activity(updated_activity, updated_activity)
+        current_data = self.data or {}
+        current_activities = current_data.get("activities") or []
+        new_activities = []
+        updated = False
+
+        for existing in current_activities:
+            if existing.get(CONF_SENSOR_ID) == processed.get(CONF_SENSOR_ID):
+                new_activities.append(processed)
+                updated = True
+            else:
+                new_activities.append(existing)
+
+        if not updated:
+            new_activities.append(processed)
+
+        self.async_set_updated_data({**current_data, "activities": new_activities})
+
     async def async_refresh_activity(self, activity_id: int) -> None:
         if not activity_id:
             return

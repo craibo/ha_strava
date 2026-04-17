@@ -8,17 +8,24 @@ from urllib.parse import urlparse
 import aiohttp
 import homeassistant.helpers.config_validation as cv
 import homeassistant.helpers.device_registry as dr
+import voluptuous as vol
 from aiohttp.web import Request, Response, json_response
 from homeassistant.components.http.view import HomeAssistantView
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_WEBHOOK_ID
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.entity_registry import async_entries_for_config_entry
 from homeassistant.helpers.entity_registry import async_get as er_async_get
 from homeassistant.helpers.network import NoURLAvailableError, get_url
 
-from .const import CONF_CALLBACK_URL, DOMAIN, WEBHOOK_SUBSCRIPTION_URL
+from .const import (
+    CONF_CALLBACK_URL,
+    DOMAIN,
+    SERVICE_UPDATE_ACTIVITY,
+    SUPPORTED_ACTIVITY_TYPES,
+    WEBHOOK_SUBSCRIPTION_URL,
+)
 from .coordinator import StravaDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -309,6 +316,69 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
+    # Register the update_activity service (once per domain, not per entry)
+    if not hass.services.has_service(DOMAIN, SERVICE_UPDATE_ACTIVITY):
+
+        async def async_handle_update_activity(call: ServiceCall) -> None:
+            """Handle the update_activity service call."""
+            activity_id = call.data["activity_id"]
+
+            # Build the UpdatableActivity payload from optional fields
+            fields = {}
+            for key in (
+                "sport_type",
+                "name",
+                "description",
+                "gear_id",
+                "trainer",
+                "commute",
+                "hide_from_home",
+            ):
+                if key in call.data:
+                    fields[key] = call.data[key]
+
+            # Find the coordinator that owns this activity
+            target_coordinator = None
+            for entry_id, coord in hass.data[DOMAIN].items():
+                current_data = coord.data or {}
+                for activity in current_data.get("activities") or []:
+                    if str(activity.get("id")) == str(activity_id):
+                        target_coordinator = coord
+                        break
+                if target_coordinator:
+                    break
+
+            # If not found in cached data, use the first available coordinator
+            if target_coordinator is None:
+                coordinators = list(hass.data[DOMAIN].values())
+                if coordinators:
+                    target_coordinator = coordinators[0]
+
+            if target_coordinator is None:
+                raise ValueError("No Strava coordinator available")
+
+            await target_coordinator.async_update_activity(
+                activity_id, **fields
+            )
+
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_UPDATE_ACTIVITY,
+            async_handle_update_activity,
+            schema=vol.Schema(
+                {
+                    vol.Required("activity_id"): vol.Coerce(str),
+                    vol.Optional("sport_type"): vol.In(SUPPORTED_ACTIVITY_TYPES),
+                    vol.Optional("name"): str,
+                    vol.Optional("description"): str,
+                    vol.Optional("gear_id"): str,
+                    vol.Optional("trainer"): bool,
+                    vol.Optional("commute"): bool,
+                    vol.Optional("hide_from_home"): bool,
+                }
+            ),
+        )
+
     # Register update listener for options changes
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
@@ -337,6 +407,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
                 _LOGGER.error(f"Failed to delete webhook subscription: {err}")
 
         hass.data[DOMAIN].pop(entry.entry_id)
+
+        # Remove the service if no more entries remain
+        if not hass.data[DOMAIN]:
+            hass.services.async_remove(DOMAIN, SERVICE_UPDATE_ACTIVITY)
 
     return unload_ok
 

@@ -42,6 +42,7 @@ from .const import (
     DEFAULT_ACTIVITY_TYPES,
     DOMAIN,
     OAUTH2_AUTHORIZE,
+    OAUTH2_SCOPES,
     OAUTH2_TOKEN,
     SUPPORTED_ACTIVITY_TYPES,
     normalize_activity_type,
@@ -526,7 +527,7 @@ class OAuth2FlowHandler(
     def extra_authorize_data(self) -> dict:
         """Extra data that needs to be appended to the authorize url."""
         return {
-            "scope": "activity:read_all,profile:read_all",
+            "scope": OAUTH2_SCOPES,
             "approval_prompt": "force",
             "response_type": "code",
         }

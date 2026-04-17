@@ -39,7 +39,7 @@ This is a Home Assistant custom component integrating Strava athlete data. One c
 
 **Entry point flow:**
 
-1. `async_setup_entry()` in `__init__.py` — sets up coordinator, registers `StravaWebhookView` at `/api/strava/webhook`, loads platforms (sensor, camera, button)
+1. `async_setup_entry()` in `__init__.py` — sets up coordinator, registers `StravaWebhookView` at `/api/strava/webhook`, registers `ha_strava.update_activity` service, loads platforms (sensor, camera, button)
 2. `StravaDataUpdateCoordinator` (`coordinator.py`) — fetches activities, stats, gear, and photos via OAuth2 session; updates are triggered by webhooks, not a polling loop
 3. Webhook POST routes incoming events by `owner_id` to the correct coordinator (enabling multi-user)
 
@@ -47,19 +47,23 @@ This is a Home Assistant custom component integrating Strava athlete data. One c
 
 | File             | Role                                                                               |
 | ---------------- | ---------------------------------------------------------------------------------- |
-| `__init__.py`    | Setup/teardown, webhook endpoint, webhook subscription                             |
+| `__init__.py`    | Setup/teardown, webhook endpoint, webhook subscription, update_activity service    |
 | `config_flow.py` | OAuth2 auth flow + options flow (activity types, gear, photos, units)              |
 | `coordinator.py` | Strava API calls, data caching, exponential backoff                                |
 | `sensor.py`      | All sensor entities: per-activity-type metrics, recent activities, summaries, gear |
 | `camera.py`      | Photo carousel (up to 30 images, 24h cache)                                        |
 | `button.py`      | Manual refresh buttons per activity type                                           |
-| `const.py`       | All constants: OAuth URLs, 50+ activity types, config keys, sensor attributes      |
+| `const.py`       | All constants: OAuth URLs/scopes, 50+ activity types, config keys, sensor attrs    |
+| `services.yaml`  | Service definitions for `ha_strava.update_activity`                                |
 
 **Multi-user:**
 Each Strava account requires its own Strava API app (Strava limits one athlete per app). `unique_id` for each config entry = athlete ID. Webhook handler matches `owner_id` to route to the correct entry's coordinator.
 
 **OAuth2:**
-Uses `config_entry_oauth2_flow.OAuth2Session` with `LocalOAuth2Implementation`. Authorization callback domain must be `my.home-assistant.io`.
+Uses `config_entry_oauth2_flow.OAuth2Session` with `LocalOAuth2Implementation`. Authorization callback domain must be `my.home-assistant.io`. Scopes: `activity:read_all,profile:read_all,activity:write`.
+
+**Services:**
+`ha_strava.update_activity` — calls `PUT /api/v3/activities/{id}` with Strava's `UpdatableActivity` fields (sport_type, name, description, gear_id, trainer, commute, hide_from_home). Registered once per domain in `async_setup_entry`, removed on last entry unload. Uses coordinator's `async_update_activity()` with retry logic and immediate local state refresh via `async_set_updated_data`.
 
 **Webhook lifecycle:**
 `renew_webhook_subscription()` in `__init__.py` calls Strava's webhook API to (re)register. Subscription ID persists in the config entry. On unload, the subscription is deleted.
