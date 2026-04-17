@@ -3,7 +3,7 @@ update_activity:
   description: >-
     Update an existing Strava activity. Supports all fields from the Strava
     UpdatableActivity model. Requires the activity:write OAuth scope.
-    Existing users may need to re-authenticate to grant this permission.
+    Existing users must remove and re-add the integration to grant this permission.
   fields:
     activity_id:
       name: Activity ID

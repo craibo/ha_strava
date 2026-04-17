@@ -177,7 +177,7 @@ The integration provides a `ha_strava.update_activity` service action that allow
 
 **Requirements:**
 
-- The `activity:write` OAuth scope is required. **Existing users must re-authenticate** to grant this permission (go to `Configuration` > `Integrations` > Strava > `RECONFIGURE`).
+- The `activity:write` OAuth scope is required. **Existing users must remove and re-add the integration** to grant this permission.
 
 **Available Fields:**
 
