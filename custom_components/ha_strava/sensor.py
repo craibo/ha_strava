@@ -685,8 +685,9 @@ class StravaActivityTypeSensor(CoordinatorEntity, SensorEntity):
         is_metric = self._is_metric()
 
         if not is_metric:
-            pace = DistanceConverter.convert(
-                pace, UnitOfLength.KILOMETERS, UnitOfLength.MILES
+            # pace is s/km; multiply by km-per-mile to get s/mile
+            pace = pace * DistanceConverter.convert(
+                1, UnitOfLength.MILES, UnitOfLength.KILOMETERS
             )
 
         minutes = int(pace // 60)
@@ -1133,8 +1134,9 @@ class StravaActivityMetricSensor(StravaActivityAttributeSensor):
         is_metric = self._is_metric()
 
         if not is_metric:
-            pace = DistanceConverter.convert(
-                pace, UnitOfLength.KILOMETERS, UnitOfLength.MILES
+            # pace is s/km; multiply by km-per-mile to get s/mile
+            pace = pace * DistanceConverter.convert(
+                1, UnitOfLength.MILES, UnitOfLength.KILOMETERS
             )
 
         minutes = int(pace // 60)
@@ -1657,8 +1659,9 @@ class StravaRecentActivityMetricSensor(StravaRecentActivityAttributeSensor):
         is_metric = self._is_metric()
 
         if not is_metric:
-            pace = DistanceConverter.convert(
-                pace, UnitOfLength.KILOMETERS, UnitOfLength.MILES
+            # pace is s/km; multiply by km-per-mile to get s/mile
+            pace = pace * DistanceConverter.convert(
+                1, UnitOfLength.MILES, UnitOfLength.KILOMETERS
             )
 
         minutes = int(pace // 60)
