@@ -1,0 +1,117 @@
+update_activity:
+  name: Update Activity
+  description: >-
+    Update an existing Strava activity. Supports all fields from the Strava
+    UpdatableActivity model. Requires the activity:write OAuth scope.
+    Existing users must remove and re-add the integration to grant this permission.
+  fields:
+    activity_id:
+      name: Activity ID
+      description: The numeric Strava activity ID to update.
+      required: true
+      example: "1234567890"
+      selector:
+        text:
+    sport_type:
+      name: Sport Type
+      description: The sport type for the activity.
+      required: false
+      example: Run
+      selector:
+        select:
+          options:
+            - AlpineSki
+            - BackcountrySki
+            - Badminton
+            - Basketball
+            - Canoeing
+            - Cricket
+            - Crossfit
+            - Dance
+            - EBikeRide
+            - Elliptical
+            - EMountainBikeRide
+            - Golf
+            - GravelRide
+            - Handcycle
+            - HighIntensityIntervalTraining
+            - Hike
+            - IceSkate
+            - InlineSkate
+            - Kayaking
+            - Kitesurf
+            - MountainBikeRide
+            - NordicSki
+            - Other
+            - Padel
+            - Pickleball
+            - Pilates
+            - Racquetball
+            - Ride
+            - RockClimbing
+            - RollerSki
+            - Rowing
+            - Run
+            - Sail
+            - Skateboard
+            - Snowboard
+            - Snowshoe
+            - Soccer
+            - Squash
+            - StairStepper
+            - StandUpPaddling
+            - Surfing
+            - Swim
+            - TableTennis
+            - Tennis
+            - TrailRun
+            - Velomobile
+            - VirtualRide
+            - VirtualRow
+            - VirtualRun
+            - Volleyball
+            - Walk
+            - WeightTraining
+            - Wheelchair
+            - Windsurf
+            - Workout
+            - Yoga
+    name:
+      name: Name
+      description: The name of the activity.
+      required: false
+      example: "Morning Run"
+      selector:
+        text:
+    description:
+      name: Description
+      description: The description of the activity.
+      required: false
+      selector:
+        text:
+          multiline: true
+    gear_id:
+      name: Gear ID
+      description: The Strava gear ID to associate with the activity.
+      required: false
+      example: "b1234567"
+      selector:
+        text:
+    trainer:
+      name: Trainer
+      description: Whether the activity was performed on a trainer.
+      required: false
+      selector:
+        boolean:
+    commute:
+      name: Commute
+      description: Whether the activity is a commute.
+      required: false
+      selector:
+        boolean:
+    hide_from_home:
+      name: Hide from Home
+      description: Whether to hide the activity from the Strava home feed.
+      required: false
+      selector:
+        boolean:
