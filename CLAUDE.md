@@ -14,6 +14,8 @@ pip install -r requirements_test.txt
 pre-commit install
 ```
 
+A devcontainer is available (`.devcontainer/`) for VS Code / Codespaces — it pre-installs all dependencies and wires up the HA test environment.
+
 ## Commands
 
 ```bash
@@ -25,6 +27,9 @@ pytest tests/custom_components/ha_strava/test_coordinator.py -v
 
 # Run a specific test
 pytest tests/custom_components/ha_strava/test_sensor.py::test_name -v
+
+# Coverage report
+pytest --cov=custom_components/ha_strava --cov-report=term-missing
 
 # Linting (also runs via pre-commit)
 black custom_components/ tests/
@@ -54,6 +59,14 @@ This is a Home Assistant custom component integrating Strava athlete data. One c
 | `camera.py`      | Photo carousel (up to 30 images, 24h cache)                                        |
 | `button.py`      | Manual refresh buttons per activity type                                           |
 | `const.py`       | All constants: OAuth URLs, 50+ activity types, config keys, sensor attributes      |
+
+**Sensor entity classes in `sensor.py`:**
+
+- `StravaStatsSensor` — per-activity attribute sensors (distance, time, elevation, HR, power, etc.)
+- `StravaSummaryStatsSensor` — recent/YTD/all-time aggregate stats per activity type
+- `StravaGearSensor` — gear name and distance per bike/shoe item
+
+Entity `unique_id` pattern: `strava_{athlete_id}_{activity_index}_{sensor_index}` (athlete ID ensures namespace isolation across multi-user setups).
 
 **Multi-user:**
 Each Strava account requires its own Strava API app (Strava limits one athlete per app). `unique_id` for each config entry = athlete ID. Webhook handler matches `owner_id` to route to the correct entry's coordinator.
