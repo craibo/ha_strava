@@ -8,6 +8,7 @@ from homeassistant.util.unit_system import METRIC_SYSTEM
 
 from custom_components.ha_strava.const import (
     CONF_DISTANCE_UNIT_OVERRIDE,
+    CONF_DISTANCE_UNIT_OVERRIDE_IMPERIAL,
     CONF_DISTANCE_UNIT_OVERRIDE_METRIC,
     CONF_SENSOR_CALORIES,
     CONF_SENSOR_DATE,
@@ -417,14 +418,21 @@ class TestStravaActivityMetricSensor:
         value = sensor.native_value
         assert value is None
 
-    def test_pace_calculation(self, mock_strava_activities):
-        """Test pace calculation."""
+    def test_pace_calculation_metric(self, mock_strava_activities):
+        """Test pace calculation in metric units.
+
+        Run fixture: distance=5000m, moving_time=1800s → 360 s/km = 6:00 min/km.
+        """
         coordinator = MagicMock()
         coordinator.data = {
             "activities": mock_strava_activities,
             "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
         }
         coordinator.entry = MagicMock()
+        coordinator.entry.options = {
+            CONF_DISTANCE_UNIT_OVERRIDE: CONF_DISTANCE_UNIT_OVERRIDE_METRIC
+        }
+        coordinator.entry.data = {}
         mock_hass = MagicMock()
         mock_hass.config.units = METRIC_SYSTEM
         coordinator.hass = mock_hass
@@ -438,8 +446,39 @@ class TestStravaActivityMetricSensor:
         sensor.hass = mock_hass
 
         value = sensor.native_value
-        assert value is not None
-        assert ":" in value  # Should be in MM:SS format
+        assert value == "6:00 min/km"
+
+    def test_pace_calculation_imperial(self, mock_strava_activities):
+        """Test pace calculation in imperial units.
+
+        Run fixture: distance=5000m, moving_time=1800s → 360 s/km → 579 s/mi = 9:39 min/mi.
+        Previously bugged: multiplied by 0.621371 giving ~3:43 min/mi instead of ~9:39 min/mi.
+        """
+        coordinator = MagicMock()
+        coordinator.data = {
+            "activities": mock_strava_activities,
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+        coordinator.entry = MagicMock()
+        coordinator.entry.options = {
+            CONF_DISTANCE_UNIT_OVERRIDE: CONF_DISTANCE_UNIT_OVERRIDE_IMPERIAL
+        }
+        coordinator.entry.data = {}
+        mock_hass = MagicMock()
+        mock_hass.config.units = METRIC_SYSTEM
+        coordinator.hass = mock_hass
+
+        sensor = StravaActivityMetricSensor(
+            coordinator=coordinator,
+            activity_type="Run",
+            metric_type=CONF_SENSOR_PACE,
+            athlete_id="12345",
+        )
+        sensor.hass = mock_hass
+
+        value = sensor.native_value
+        # 360 s/km * 1.60934 km/mi = 579.36 s/mi = 9:39 min/mi
+        assert value == "9:39 min/mi"
 
     def test_speed_calculation(self, mock_strava_activities):
         """Test speed calculation."""
