@@ -77,6 +77,13 @@ Uses `config_entry_oauth2_flow.OAuth2Session` with `LocalOAuth2Implementation`. 
 **Webhook lifecycle:**
 `renew_webhook_subscription()` in `__init__.py` calls Strava's webhook API to (re)register. Subscription ID persists in the config entry. On unload, the subscription is deleted.
 
+## Branching & PR Workflow
+
+- **Never commit directly to `main` or `develop`**
+- All changes must be on a dedicated feature/fix branch (`feat/`, `fix/`, `chore/`, `refactor/`, `docs/`)
+- PRs must target `develop` (not `main`) — `main` is only updated via release merges from `develop`
+- Branch naming: short, lowercase, hyphen-separated (e.g. `feat/pace-numeric-sensor`, `fix/gear-entity-id`)
+
 ## Code Standards
 
 - Max line length: 120 characters (Black, flake8, pylint all configured to this)

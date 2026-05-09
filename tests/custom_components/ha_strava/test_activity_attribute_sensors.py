@@ -2,6 +2,7 @@
 
 from unittest.mock import MagicMock
 
+import pytest
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.const import UnitOfLength, UnitOfTime
 from homeassistant.util.unit_system import METRIC_SYSTEM
@@ -421,7 +422,7 @@ class TestStravaActivityMetricSensor:
     def test_pace_calculation_metric(self, mock_strava_activities):
         """Test pace calculation in metric units.
 
-        Run fixture: distance=5000m, moving_time=1800s → 360 s/km = 6:00 min/km.
+        Run fixture: distance=5000m, moving_time=1800s → 360 s/km = 6.0 min/km.
         """
         coordinator = MagicMock()
         coordinator.data = {
@@ -446,12 +447,16 @@ class TestStravaActivityMetricSensor:
         sensor.hass = mock_hass
 
         value = sensor.native_value
-        assert value == "6:00 min/km"
+        assert value == 6.0
+        assert sensor.native_unit_of_measurement == "min/km"
+        attrs = sensor.extra_state_attributes
+        assert attrs["formatted_pace"] == "6:00 min/km"
+        assert attrs["pace"] == "6:00"
 
     def test_pace_calculation_imperial(self, mock_strava_activities):
         """Test pace calculation in imperial units.
 
-        Run fixture: distance=5000m, moving_time=1800s → 360 s/km → 579 s/mi = 9:39 min/mi.
+        Run fixture: distance=5000m, moving_time=1800s → 360 s/km → 579.36 s/mi = 9.656 min/mi.
         Previously bugged: multiplied by 0.621371 giving ~3:43 min/mi instead of ~9:39 min/mi.
         """
         coordinator = MagicMock()
@@ -477,8 +482,12 @@ class TestStravaActivityMetricSensor:
         sensor.hass = mock_hass
 
         value = sensor.native_value
-        # 360 s/km * 1.60934 km/mi = 579.36 s/mi = 9:39 min/mi
-        assert value == "9:39 min/mi"
+        # 360 s/km * 1.60934 km/mi = 579.36 s/mi = 9.656 min/mi
+        assert value == pytest.approx(9.656, abs=0.01)
+        assert sensor.native_unit_of_measurement == "min/mi"
+        attrs = sensor.extra_state_attributes
+        assert attrs["formatted_pace"] == "9:39 min/mi"
+        assert attrs["pace"] == "9:39"
 
     def test_speed_calculation(self, mock_strava_activities):
         """Test speed calculation."""
