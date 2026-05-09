@@ -674,28 +674,21 @@ class StravaActivityTypeSensor(CoordinatorEntity, SensorEntity):
         return attrs
 
     def _calculate_pace(self, activity):
-        """Calculate pace for the activity."""
+        """Calculate pace for the activity, returning decimal minutes."""
         distance = activity.get(CONF_SENSOR_DISTANCE, 0)
         moving_time = activity.get(CONF_SENSOR_MOVING_TIME, 0)
 
         if distance == 0 or moving_time == 0:
-            return "0:00"
+            return 0.0
 
         pace = moving_time / (distance / 1000)  # seconds per km
-        is_metric = self._is_metric()
-
-        if not is_metric:
+        if not self._is_metric():
             # pace is s/km; multiply by km-per-mile to get s/mile
             pace = pace * DistanceConverter.convert(
                 1, UnitOfLength.MILES, UnitOfLength.KILOMETERS
             )
 
-        minutes = int(pace // 60)
-        seconds = int(pace % 60)
-        unit = (
-            UNIT_PACE_MINUTES_PER_KILOMETER if is_metric else UNIT_PACE_MINUTES_PER_MILE
-        )
-        return f"{minutes}:{seconds:02} {unit}"
+        return round(pace / 60, 3)  # decimal minutes
 
     def _calculate_speed(self, activity):
         """Calculate speed for the activity."""
@@ -1086,6 +1079,13 @@ class StravaActivityMetricSensor(StravaActivityAttributeSensor):
     @property
     def native_unit_of_measurement(self):
         """Return the unit of measurement."""
+        if self._metric_type == CONF_SENSOR_PACE:
+            return (
+                UNIT_PACE_MINUTES_PER_KILOMETER
+                if self._is_metric()
+                else UNIT_PACE_MINUTES_PER_MILE
+            )
+
         config = CONF_ATTRIBUTE_SENSORS.get(self._metric_type, {})
         unit = config.get("unit")
 
@@ -1123,28 +1123,21 @@ class StravaActivityMetricSensor(StravaActivityAttributeSensor):
         return unit
 
     def _calculate_pace(self, activity):
-        """Calculate pace for the activity."""
+        """Calculate pace for the activity, returning decimal minutes."""
         distance = activity.get(CONF_SENSOR_DISTANCE, 0)
         moving_time = activity.get(CONF_SENSOR_MOVING_TIME, 0)
 
         if distance == 0 or moving_time == 0:
-            return "0:00"
+            return 0.0
 
         pace = moving_time / (distance / 1000)  # seconds per km
-        is_metric = self._is_metric()
-
-        if not is_metric:
+        if not self._is_metric():
             # pace is s/km; multiply by km-per-mile to get s/mile
             pace = pace * DistanceConverter.convert(
                 1, UnitOfLength.MILES, UnitOfLength.KILOMETERS
             )
 
-        minutes = int(pace // 60)
-        seconds = int(pace % 60)
-        unit = (
-            UNIT_PACE_MINUTES_PER_KILOMETER if is_metric else UNIT_PACE_MINUTES_PER_MILE
-        )
-        return f"{minutes}:{seconds:02} {unit}"
+        return round(pace / 60, 3)  # decimal minutes
 
     def _calculate_speed(self, activity):
         """Calculate speed for the activity."""
@@ -1183,6 +1176,20 @@ class StravaActivityMetricSensor(StravaActivityAttributeSensor):
                 attributes["formatted_time"] = format_seconds_to_human_readable(
                     time_value
                 )
+
+        # Add formatted pace string for pace sensors
+        if self._metric_type == CONF_SENSOR_PACE:
+            pace_val = self.native_value
+            if pace_val:
+                mins = int(pace_val)
+                secs = int(round((pace_val - mins) * 60))
+                unit = (
+                    UNIT_PACE_MINUTES_PER_KILOMETER
+                    if self._is_metric()
+                    else UNIT_PACE_MINUTES_PER_MILE
+                )
+                attributes["formatted_pace"] = f"{mins}:{secs:02d} {unit}"
+                attributes["pace"] = f"{mins}:{secs:02d}"
 
         return attributes
 
@@ -1612,6 +1619,13 @@ class StravaRecentActivityMetricSensor(StravaRecentActivityAttributeSensor):
     @property
     def native_unit_of_measurement(self):
         """Return the unit of measurement."""
+        if self._metric_type == CONF_SENSOR_PACE:
+            return (
+                UNIT_PACE_MINUTES_PER_KILOMETER
+                if self._is_metric()
+                else UNIT_PACE_MINUTES_PER_MILE
+            )
+
         config = CONF_ATTRIBUTE_SENSORS.get(self._metric_type, {})
         unit = config.get("unit")
 
@@ -1648,28 +1662,21 @@ class StravaRecentActivityMetricSensor(StravaRecentActivityAttributeSensor):
         return unit
 
     def _calculate_pace(self, activity):
-        """Calculate pace for the activity."""
+        """Calculate pace for the activity, returning decimal minutes."""
         distance = activity.get(CONF_SENSOR_DISTANCE, 0)
         moving_time = activity.get(CONF_SENSOR_MOVING_TIME, 0)
 
         if distance == 0 or moving_time == 0:
-            return "0:00"
+            return 0.0
 
-        pace = moving_time / (distance / 1000)
-        is_metric = self._is_metric()
-
-        if not is_metric:
+        pace = moving_time / (distance / 1000)  # seconds per km
+        if not self._is_metric():
             # pace is s/km; multiply by km-per-mile to get s/mile
             pace = pace * DistanceConverter.convert(
                 1, UnitOfLength.MILES, UnitOfLength.KILOMETERS
             )
 
-        minutes = int(pace // 60)
-        seconds = int(pace % 60)
-        unit = (
-            UNIT_PACE_MINUTES_PER_KILOMETER if is_metric else UNIT_PACE_MINUTES_PER_MILE
-        )
-        return f"{minutes}:{seconds:02} {unit}"
+        return round(pace / 60, 3)  # decimal minutes
 
     def _calculate_speed(self, activity):
         """Calculate speed for the activity."""
@@ -1708,6 +1715,20 @@ class StravaRecentActivityMetricSensor(StravaRecentActivityAttributeSensor):
                 attributes["formatted_time"] = format_seconds_to_human_readable(
                     time_value
                 )
+
+        # Add formatted pace string for pace sensors
+        if self._metric_type == CONF_SENSOR_PACE:
+            pace_val = self.native_value
+            if pace_val:
+                mins = int(pace_val)
+                secs = int(round((pace_val - mins) * 60))
+                unit = (
+                    UNIT_PACE_MINUTES_PER_KILOMETER
+                    if self._is_metric()
+                    else UNIT_PACE_MINUTES_PER_MILE
+                )
+                attributes["formatted_pace"] = f"{mins}:{secs:02d} {unit}"
+                attributes["pace"] = f"{mins}:{secs:02d}"
 
         return attributes
 

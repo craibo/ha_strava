@@ -9,6 +9,10 @@ CONFIG_ENTRY_TITLE = "Strava"
 AUTH_CALLBACK_PATH = "/auth/external/callback"
 OAUTH2_AUTHORIZE = "https://www.strava.com/oauth/authorize"
 OAUTH2_TOKEN = "https://www.strava.com/oauth/token"
+OAUTH2_SCOPES = "activity:read_all,profile:read_all,activity:write"
+
+# Services
+SERVICE_UPDATE_ACTIVITY = "update_activity"
 
 # Camera Config
 CONF_PHOTOS = "conf_photos"

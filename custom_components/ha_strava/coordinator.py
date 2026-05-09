@@ -16,7 +16,6 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .const import (
     CONF_ACTIVITY_TYPE_OTHER,
     CONF_ACTIVITY_TYPES_TO_TRACK,
-    SUPPORTED_ACTIVITY_TYPES,
     CONF_API_RETRY_BASE_DELAY_SECONDS,
     CONF_API_RETRY_MAX_ATTEMPTS,
     CONF_ATTR_COMMUTE,
@@ -65,6 +64,7 @@ from .const import (
     DOMAIN,
     OAUTH2_AUTHORIZE,
     OAUTH2_TOKEN,
+    SUPPORTED_ACTIVITY_TYPES,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -518,6 +518,130 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.error(f"Error fetching gear {gear_id}: {e}")
             return {}
 
+    async def async_update_activity(
+        self, activity_id: int | str, **fields: dict
+    ) -> None:
+        """Update an activity via the Strava API and refresh local state."""
+        try:
+            await self.oauth_session.async_ensure_token_valid()
+        except aiohttp.ClientError as err:
+            _LOGGER.error(f"Error ensuring token is valid: {err}")
+            raise UpdateFailed(f"Authentication error: {err}") from err
+
+        url = f"https://www.strava.com/api/v3/activities/{activity_id}"
+        payload = {k: v for k, v in fields.items() if v is not None}
+        updated_activity = None
+        last_exception = None
+
+        for attempt in range(CONF_API_RETRY_MAX_ATTEMPTS):
+            try:
+                response = await self.oauth_session.async_request(
+                    method="PUT",
+                    url=url,
+                    json=payload,
+                )
+
+                if response.status == 429:
+                    retry_after = int(
+                        response.headers.get(
+                            "Retry-After",
+                            CONF_API_RETRY_BASE_DELAY_SECONDS * (2**attempt),
+                        )
+                    )
+                    if attempt < CONF_API_RETRY_MAX_ATTEMPTS - 1:
+                        _LOGGER.warning(
+                            f"Rate limit hit updating activity {activity_id}, "
+                            f"retrying after {retry_after} seconds "
+                            f"(attempt {attempt + 1}/{CONF_API_RETRY_MAX_ATTEMPTS})"
+                        )
+                        await asyncio.sleep(retry_after)
+                        continue
+                    raise UpdateFailed(
+                        f"Rate limit exceeded updating activity {activity_id} "
+                        f"after {CONF_API_RETRY_MAX_ATTEMPTS} attempts"
+                    )
+
+                response.raise_for_status()
+                updated_activity = await response.json()
+                break
+
+            except aiohttp.ClientResponseError as err:
+                if err.status in (401, 403):
+                    raise ConfigEntryAuthFailed(
+                        f"Insufficient permissions to update activity {activity_id}. "
+                        "Please re-authenticate the integration."
+                    ) from err
+                if err.status == 429 and attempt < CONF_API_RETRY_MAX_ATTEMPTS - 1:
+                    retry_after = int(
+                        err.headers.get(
+                            "Retry-After",
+                            CONF_API_RETRY_BASE_DELAY_SECONDS * (2**attempt),
+                        )
+                    )
+                    _LOGGER.warning(
+                        f"Rate limit hit updating activity {activity_id}, "
+                        f"retrying after {retry_after} seconds "
+                        f"(attempt {attempt + 1}/{CONF_API_RETRY_MAX_ATTEMPTS})"
+                    )
+                    await asyncio.sleep(retry_after)
+                    last_exception = err
+                    continue
+                raise UpdateFailed(
+                    f"Error updating activity {activity_id}: {err}"
+                ) from err
+            except aiohttp.ClientError as err:
+                last_exception = err
+                if attempt < CONF_API_RETRY_MAX_ATTEMPTS - 1:
+                    await asyncio.sleep(
+                        CONF_API_RETRY_BASE_DELAY_SECONDS * (2**attempt)
+                    )
+                    continue
+                raise UpdateFailed(
+                    f"Network error updating activity {activity_id}: {err}"
+                ) from err
+
+        if updated_activity is None:
+            if last_exception:
+                raise last_exception
+            raise UpdateFailed(
+                f"Failed to update activity {activity_id} "
+                f"after {CONF_API_RETRY_MAX_ATTEMPTS} attempts"
+            )
+
+        _LOGGER.info(f"Successfully updated activity {activity_id}: {payload}")
+
+        processed = self._sensor_activity(
+            updated_activity,
+            updated_activity,
+            sport_type=updated_activity.get("sport_type"),
+        )
+        current_data = self.data or {}
+        current_activities = current_data.get("activities") or []
+        new_activities = []
+        updated = False
+
+        for existing in current_activities:
+            if existing.get(CONF_SENSOR_ID) == processed.get(CONF_SENSOR_ID):
+                new_activities.append(processed)
+                updated = True
+            else:
+                new_activities.append(existing)
+
+        if not updated:
+            new_activities.append(processed)
+
+        num_recent_activities = self.entry.options.get(
+            CONF_NUM_RECENT_ACTIVITIES, CONF_NUM_RECENT_ACTIVITIES_DEFAULT
+        )
+        sorted_activities = sorted(
+            new_activities,
+            key=lambda a: a[CONF_SENSOR_DATE],
+            reverse=True,
+        )
+        limited_activities = sorted_activities[:num_recent_activities]
+
+        self.async_set_updated_data({**current_data, "activities": limited_activities})
+
     async def async_refresh_activity(self, activity_id: int) -> None:
         if not activity_id:
             return
@@ -585,7 +709,9 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
 
         self.async_set_updated_data(new_data)
 
-    def _sensor_activity(self, activity: dict, activity_dto: dict, sport_type: str = None) -> dict:
+    def _sensor_activity(
+        self, activity: dict, activity_dto: dict, sport_type: str = None
+    ) -> dict:
         # Extract device information
         device_name = "Unknown"
         device_type = "Unknown"
@@ -635,7 +761,9 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
         )
 
         source = activity_dto if activity_dto else activity
-        effective_sport_type = sport_type or (source.get("sport_type") or source.get("type"))
+        effective_sport_type = sport_type or (
+            source.get("sport_type") or source.get("type")
+        )
 
         return {
             CONF_SENSOR_ID: activity.get("id"),
