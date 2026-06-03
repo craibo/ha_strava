@@ -45,6 +45,18 @@ def _normalize_callback_url(url: str) -> str:
         return url.strip().rstrip("/")
 
 
+def _peer_entry_for_client_id(
+    hass: HomeAssistant, client_id: str, exclude_entry_id: str
+) -> ConfigEntry | None:
+    """Return the first other loaded entry that shares client_id and already has a webhook_id."""
+    for e in hass.config_entries.async_entries(DOMAIN):
+        if e.entry_id == exclude_entry_id:
+            continue
+        if e.data.get(CONF_CLIENT_ID) == client_id and e.data.get(CONF_WEBHOOK_ID):
+            return e
+    return None
+
+
 PLATFORMS = ["sensor", "camera", "button"]
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -120,6 +132,20 @@ async def renew_webhook_subscription(
         _LOGGER.error(
             "Your Home Assistant Instance does not seem to have a public URL."
             " The Strava Home Assistant integration requires a public URL"
+        )
+        return
+
+    # Shared-app mode: if another entry already owns the webhook for this client_id,
+    # copy its webhook_id and skip registration entirely.
+    peer = _peer_entry_for_client_id(hass, entry.data[CONF_CLIENT_ID], entry.entry_id)
+    if peer is not None:
+        _LOGGER.debug(
+            "Shared-app mode: reusing webhook_id %s from entry %s",
+            peer.data[CONF_WEBHOOK_ID],
+            peer.entry_id,
+        )
+        hass.config_entries.async_update_entry(
+            entry, data={**entry.data, CONF_WEBHOOK_ID: peer.data[CONF_WEBHOOK_ID]}
         )
         return
 
@@ -389,21 +415,30 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     if unload_ok:
-        # Clean up webhook subscription
+        # Clean up webhook subscription — only when this is the last entry using this client_id.
         if webhook_id := entry.data.get(CONF_WEBHOOK_ID):
-            try:
-                websession = async_get_clientsession(hass)
-                async with websession.delete(
-                    f"{WEBHOOK_SUBSCRIPTION_URL}/{webhook_id}",
-                    data={
-                        "client_id": entry.data[CONF_CLIENT_ID],
-                        "client_secret": entry.data[CONF_CLIENT_SECRET],
-                    },
-                ) as response:
-                    response.raise_for_status()
-                    _LOGGER.debug("Successfully deleted webhook subscription")
-            except aiohttp.ClientError as err:
-                _LOGGER.error(f"Failed to delete webhook subscription: {err}")
+            peer = _peer_entry_for_client_id(
+                hass, entry.data[CONF_CLIENT_ID], entry.entry_id
+            )
+            if peer is not None:
+                _LOGGER.debug(
+                    "Shared-app mode: skipping webhook delete; peer entry %s still active",
+                    peer.entry_id,
+                )
+            else:
+                try:
+                    websession = async_get_clientsession(hass)
+                    async with websession.delete(
+                        f"{WEBHOOK_SUBSCRIPTION_URL}/{webhook_id}",
+                        data={
+                            "client_id": entry.data[CONF_CLIENT_ID],
+                            "client_secret": entry.data[CONF_CLIENT_SECRET],
+                        },
+                    ) as response:
+                        response.raise_for_status()
+                        _LOGGER.debug("Successfully deleted webhook subscription")
+                except aiohttp.ClientError as err:
+                    _LOGGER.error(f"Failed to delete webhook subscription: {err}")
 
         hass.data[DOMAIN].pop(entry.entry_id)
 

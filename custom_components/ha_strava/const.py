@@ -35,6 +35,11 @@ CONF_API_RETRY_BASE_DELAY_SECONDS = 1
 CONF_WEBHOOK_ID = "webhook_id"
 CONF_CALLBACK_URL = "callback_url"
 WEBHOOK_SUBSCRIPTION_URL = "https://www.strava.com/api/v3/push_subscriptions"
+
+# Strava API tier / shared-app mode
+CONF_STRAVA_APP_MODE = "strava_app_mode"
+STRAVA_APP_MODE_SOLO = "solo"  # 1-to-1: one API app per user (default)
+STRAVA_APP_MODE_SHARED = "shared"  # 10-to-1: one API app shared by multiple users
 CONF_DISTANCE_UNIT_OVERRIDE = "conf_distance_unit"
 CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT = "default"
 CONF_DISTANCE_UNIT_OVERRIDE_METRIC = "metric"

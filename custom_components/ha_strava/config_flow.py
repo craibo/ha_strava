@@ -39,16 +39,29 @@ from .const import (
     CONF_NUM_RECENT_ACTIVITIES_DEFAULT,
     CONF_NUM_RECENT_ACTIVITIES_MAX,
     CONF_PHOTOS,
+    CONF_STRAVA_APP_MODE,
     DEFAULT_ACTIVITY_TYPES,
     DOMAIN,
     OAUTH2_AUTHORIZE,
     OAUTH2_SCOPES,
     OAUTH2_TOKEN,
+    STRAVA_APP_MODE_SHARED,
+    STRAVA_APP_MODE_SOLO,
     SUPPORTED_ACTIVITY_TYPES,
     normalize_activity_type,
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _find_entries_with_client_id(hass, client_id: str) -> list:
+    """Return all loaded config entries that share the given client_id."""
+    return [
+        e
+        for e in hass.config_entries.async_entries(DOMAIN)
+        if e.data.get(CONF_CLIENT_ID) == client_id
+    ]
+
 
 DISTANCE_UNIT_OVERRIDE_OPTIONS = [
     CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT,
@@ -516,6 +529,7 @@ class OAuth2FlowHandler(
         """Initialize the OAuth2 flow handler."""
         super().__init__()
         self._user_input = None
+        self._shared_app: bool = False
         self.reauth_entry_data: Optional[Mapping[str, Any]] = None
 
     @property
@@ -622,6 +636,10 @@ class OAuth2FlowHandler(
 
         if user_input is not None:
             self._user_input = user_input
+            existing = _find_entries_with_client_id(
+                self.hass, user_input[CONF_CLIENT_ID]
+            )
+            self._shared_app = len(existing) > 0
             config_entry_oauth2_flow.async_register_implementation(
                 self.hass,
                 DOMAIN,
@@ -716,6 +734,10 @@ class OAuth2FlowHandler(
             data[CONF_NUM_RECENT_ACTIVITIES] = CONF_NUM_RECENT_ACTIVITIES_DEFAULT
             data[CONF_GEAR_ENABLED] = False
             data[CONF_NUM_GEAR_SENSORS] = CONF_NUM_GEAR_SENSORS_DEFAULT
+
+        data[CONF_STRAVA_APP_MODE] = (
+            STRAVA_APP_MODE_SHARED if self._shared_app else STRAVA_APP_MODE_SOLO
+        )
 
         return self.async_create_entry(title=title, data=data)
 
