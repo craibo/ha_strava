@@ -15,6 +15,9 @@ The unofficial Strava intregration for Home Assistant. Adds a custom component t
 
 ## Important Notes:
 
+> ⚠️ **Strava subscription required from 1 July 2026**
+> Strava now requires a paid Strava subscription to use the API as a Standard Tier developer. Without an active subscription, the integration will stop receiving updates after this date. [Redeem your 3-month free trial](https://www.strava.com/settings/api) if you don't already have one.
+
 When configuring the Strava API, the **Authorization Callback Domain** must be set to: **my.home-assistant.io**
 
 ## Features
@@ -27,7 +30,7 @@ When configuring the Strava API, the **Authorization Callback Domain** must be s
 - **Activity Type Selection**: Choose which of the 50 supported activity types to track
 - **Device Source Tracking**: Automatically detects and displays the device used for each activity
 - **Gear Sensors**: Track your bikes and shoes with distance and detailed information (brand, model, etc.)
-- **Multi-User Support**: Add multiple Strava accounts, each with their own unique Strava app credentials
+- **Multi-User Support**: Add up to 10 Strava accounts sharing a single API app (Standard Tier), or each with their own app credentials
 - **Webhook-First Architecture**: Uses Strava webhooks for real-time updates, respecting API rate limits
 - **Easy set-up**: only enter your Strava Client-ID and Client-Secret and you're ready to go
 
@@ -77,17 +80,20 @@ _If you use **Nabu Casa** then do this configuration from your **Nabu Casa URL**
 
 ### 2. Obtain your Strava API credentials
 
-**For Single User Setup:**
+Head over to your **Strava Profile** and go to `Settings` > `My API Application` (or click [here](https://www.strava.com/settings/api)).
 
-After you've set up remote access for your Home Assistant instance, click [here](https://www.strava.com/settings/api) **or** head over to your **Strava Profile** and go to `Settings` > `My API Application`.
-
-Follow the steps in the configuration wizard, and eventually obtain your Strava API credentials (ID + secret). We need those credentials during the final installation step.
+Follow the steps in the configuration wizard to obtain your Strava API credentials (Client ID + Client Secret).
 
 **!!! IMPORTANT !!!** The **Authorization Callback Domain** must be set to: **my.home-assistant.io**
 
-**For Multiple Users:**
+**Strava API tiers — how many users can share one app?**
 
-If you want to add multiple Strava accounts to Home Assistant, each user must create their own Strava app with unique credentials. Strava only supports one athlete per Strava app, so you cannot reuse the same app credentials for different accounts. See the "Adding Multiple Strava Accounts" section below for detailed instructions.
+| Tier               | Athletes per app | How to get it                                                                                         |
+| ------------------ | ---------------- | ----------------------------------------------------------------------------------------------------- |
+| Standard (default) | Up to 10         | Self-upgrade in your [API settings dashboard](https://www.strava.com/settings/api) — no review needed |
+| Extended Access    | Higher limits    | Apply via Strava developer program                                                                    |
+
+For a **single user** or a **household sharing one Strava API app** (up to 10 athletes), one set of credentials is all you need. See "Adding Multiple Strava Accounts" below.
 
 ### 3. Add the Strava Home Assistant Integration to your Home Assistant
 
@@ -107,25 +113,34 @@ From within Home Assistant, head over to `Configuration` > `Integrations` and hi
 
 ### 5. Adding Multiple Strava Accounts
 
-The integration supports multiple Strava users in a single Home Assistant instance. Each user must have their own unique Strava app credentials.
+The integration supports multiple Strava users in a single Home Assistant instance. Each user gets their own separate integration entry and fully isolated data.
 
-**Important Requirements:**
+There are two ways to set this up depending on your Strava API tier:
 
-- Each Strava account requires its own unique Strava app (Client ID and Client Secret)
-- Strava only supports one athlete per Strava app - you cannot use the same app credentials for multiple accounts
-- Each user will have their own separate integration entry in Home Assistant
-- Each user's data is completely isolated
+---
 
-**To add an additional Strava account:**
+#### Option A — Shared API app (Standard Tier, up to 10 athletes) ✅ Recommended
 
-1. The second user must create their own Strava app at https://www.strava.com/settings/api
-2. Set the Authorization Callback Domain to: **my.home-assistant.io**
-3. In Home Assistant, go to `Configuration` > `Integrations` and click the `+` button
-4. Search for "Strava Home Assistant" and add the integration again
-5. Enter the new user's unique Client ID and Client Secret
-6. Complete the OAuth2 authentication flow for the second user
+One person creates a single Strava API app and shares the Client ID and Client Secret with everyone who needs access. The integration handles webhook deduplication automatically — only one webhook subscription is ever registered regardless of how many users are added.
 
-**Note:** You can add as many Strava accounts as needed, as long as each account has its own unique Strava app credentials.
+**Setup:**
+
+1. The app owner self-upgrades their Strava app to Standard Tier in the [API settings dashboard](https://www.strava.com/settings/api) (no review required, supports up to 10 athletes)
+2. Ensure the **Authorization Callback Domain** is set to: **my.home-assistant.io**
+3. Share the **Client ID** and **Client Secret** with each user who needs to be added
+4. For each additional user, in Home Assistant go to `Settings` > `Devices & Services` and click `Add Integration`
+5. Search for "Strava Home Assistant" and enter the **same** Client ID and Client Secret
+6. Each user completes the OAuth2 flow with **their own Strava account** — this is what links their personal data
+
+> **Note:** Add users one at a time, not simultaneously, to avoid a race condition on webhook registration.
+
+---
+
+#### Option B — Separate API app per user
+
+Each user creates their own Strava app at [strava.com/settings/api](https://www.strava.com/settings/api) with a unique Client ID and Client Secret. Follow the same steps 3–6 above, entering each user's own credentials.
+
+Use this approach if you need more than 10 users, or if users prefer to manage their own API apps independently.
 
 ## Configuration/Customization
 
