@@ -16,7 +16,7 @@ The unofficial Strava intregration for Home Assistant. Adds a custom component t
 ## Important Notes:
 
 > ⚠️ **Strava subscription required from 1 July 2026**
-> Strava now requires a paid Strava subscription to use the API as a Standard Tier developer. Without an active subscription, the integration will stop receiving updates after this date. [Redeem your 3-month free trial](https://www.strava.com/settings/api) if you don't already have one.
+> Strava now requires a paid Strava subscription to use the API as a Standard Tier developer. Without an active subscription, the integration will stop receiving updates after this date. Visit your [API settings dashboard](https://www.strava.com/settings/api) to check your subscription status.
 
 When configuring the Strava API, the **Authorization Callback Domain** must be set to: **my.home-assistant.io**
 
