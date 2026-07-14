@@ -693,7 +693,10 @@ class StravaActivityTypeSensor(CoordinatorEntity, SensorEntity):
     def _calculate_speed(self, activity):
         """Calculate speed for the activity."""
         distance = activity.get(CONF_SENSOR_DISTANCE, 0)
-        moving_time = activity.get(CONF_SENSOR_MOVING_TIME, 1)
+        moving_time = activity.get(CONF_SENSOR_MOVING_TIME, 0)
+
+        if distance == 0 or moving_time == 0:
+            return 0.0
 
         speed = (distance / 1000) / (moving_time / 3600)  # km/h
         is_metric = self._is_metric()
@@ -1142,7 +1145,10 @@ class StravaActivityMetricSensor(StravaActivityAttributeSensor):
     def _calculate_speed(self, activity):
         """Calculate speed for the activity."""
         distance = activity.get(CONF_SENSOR_DISTANCE, 0)
-        moving_time = activity.get(CONF_SENSOR_MOVING_TIME, 1)
+        moving_time = activity.get(CONF_SENSOR_MOVING_TIME, 0)
+
+        if distance == 0 or moving_time == 0:
+            return 0.0
 
         speed = (distance / 1000) / (moving_time / 3600)  # km/h
         is_metric = self._is_metric()
@@ -1681,7 +1687,10 @@ class StravaRecentActivityMetricSensor(StravaRecentActivityAttributeSensor):
     def _calculate_speed(self, activity):
         """Calculate speed for the activity."""
         distance = activity.get(CONF_SENSOR_DISTANCE, 0)
-        moving_time = activity.get(CONF_SENSOR_MOVING_TIME, 1)
+        moving_time = activity.get(CONF_SENSOR_MOVING_TIME, 0)
+
+        if distance == 0 or moving_time == 0:
+            return 0.0
 
         speed = (distance / 1000) / (moving_time / 3600)
         is_metric = self._is_metric()
