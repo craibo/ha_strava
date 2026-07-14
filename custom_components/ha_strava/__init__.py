@@ -13,7 +13,12 @@ from aiohttp.web import Request, Response, json_response
 from homeassistant.components.http.view import HomeAssistantView
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET, CONF_WEBHOOK_ID
-from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.core import (
+    HomeAssistant,
+    ServiceCall,
+    ServiceResponse,
+    SupportsResponse,
+)
 from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.entity_registry import async_entries_for_config_entry
@@ -21,13 +26,17 @@ from homeassistant.helpers.entity_registry import async_get as er_async_get
 from homeassistant.helpers.network import NoURLAvailableError, get_url
 
 from .const import (
+    CONF_ATTR_POLYLINE,
     CONF_CALLBACK_URL,
+    CONF_SENSOR_ID,
     DOMAIN,
+    SERVICE_GET_ACTIVITY_ROUTE,
     SERVICE_UPDATE_ACTIVITY,
     SUPPORTED_ACTIVITY_TYPES,
     WEBHOOK_SUBSCRIPTION_URL,
 )
 from .coordinator import StravaDataUpdateCoordinator
+from .polyline import decode_polyline
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -404,6 +413,47 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
             ),
         )
 
+    # Register the get_activity_route service once per domain (not per entry)
+    if not hass.services.has_service(DOMAIN, SERVICE_GET_ACTIVITY_ROUTE):
+
+        async def async_handle_get_activity_route(call: ServiceCall) -> ServiceResponse:
+            """Handle the get_activity_route service call."""
+            activity_id = call.data["activity_id"]
+
+            target_activity = None
+            for coord in hass.data[DOMAIN].values():
+                current_data = coord.data or {}
+                for activity in current_data.get("activities") or []:
+                    if str(activity.get(CONF_SENSOR_ID)) == str(activity_id):
+                        target_activity = activity
+                        break
+                if target_activity:
+                    break
+
+            if target_activity is None:
+                raise ServiceValidationError(
+                    "Activity not found in any tracked athlete's recent activities. "
+                    "Trigger a refresh first or check the activity ID."
+                )
+
+            encoded_polyline = target_activity.get(CONF_ATTR_POLYLINE)
+            if not encoded_polyline:
+                raise ServiceValidationError(
+                    f"Activity {activity_id} has no route/polyline data available."
+                )
+
+            decoded = decode_polyline(encoded_polyline)
+
+            return {"route": [{"lat": lat, "lon": lon} for lat, lon in decoded]}
+
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_GET_ACTIVITY_ROUTE,
+            async_handle_get_activity_route,
+            schema=vol.Schema({vol.Required("activity_id"): vol.Coerce(str)}),
+            supports_response=SupportsResponse.ONLY,
+        )
+
     # Register update listener for options changes
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
@@ -442,9 +492,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
 
         hass.data[DOMAIN].pop(entry.entry_id)
 
-        # Remove the service if no more entries remain
+        # Remove the services if no more entries remain
         if not hass.data[DOMAIN]:
             hass.services.async_remove(DOMAIN, SERVICE_UPDATE_ACTIVITY)
+            hass.services.async_remove(DOMAIN, SERVICE_GET_ACTIVITY_ROUTE)
 
     return unload_ok
 

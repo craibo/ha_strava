@@ -123,3 +123,18 @@ update_activity:
       selector:
         text:
           multiline: true
+
+get_activity_route:
+  name: Get Activity Route
+  description: >-
+    Decode an activity's stored polyline (map.summary_polyline) into a list of
+    latitude/longitude coordinates. Returns the route on demand instead of storing
+    decoded coordinates in sensor attributes, keeping recorder history small.
+  fields:
+    activity_id:
+      name: Activity ID
+      description: The numeric Strava activity ID to fetch the route for.
+      required: true
+      example: "1234567890"
+      selector:
+        text:
