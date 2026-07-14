@@ -13,6 +13,7 @@ OAUTH2_SCOPES = "activity:read_all,profile:read_all,activity:write"
 
 # Services
 SERVICE_UPDATE_ACTIVITY = "update_activity"
+SERVICE_GET_ACTIVITY_ROUTE = "get_activity_route"
 
 # Camera Config
 CONF_PHOTOS = "conf_photos"
