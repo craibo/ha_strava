@@ -194,6 +194,32 @@ The gear items are sorted by distance (most used first), and the integration res
 2. The integration now fetches up to 200 activities instead of being limited to 10.
 3. Device source tracking automatically detects the device used for each activity (Garmin, Apple Watch, etc.).
 
+## Displaying an Activity Route/Map
+
+Activity sensors expose a `polyline` attribute containing the route as a Google-encoded polyline string. Since that string isn't directly usable by map cards, the integration provides the `ha_strava.get_activity_route` service to decode it into a list of `{lat, lon}` coordinates on demand — keeping the raw encoded string in sensor attributes (recorder-friendly) while giving you real coordinates when you need to render a map.
+
+**Calling the service:**
+
+```yaml
+service: ha_strava.get_activity_route
+data:
+  activity_id: "1234567890"
+```
+
+The service returns a response shaped like:
+
+```yaml
+route:
+  - lat: 38.5
+    lon: -120.2
+  - lat: 40.7
+    lon: -120.95
+```
+
+**Rendering the route on a map card:**
+
+The [journey-viewer-card](https://github.com/nledenyi/journey-viewer-card) Lovelace card can render Strava-style per-activity maps using this service. It reads activity data from any sensor matching its [data contract](https://github.com/nledenyi/journey-viewer-card/blob/main/README.md#data-contract) and lazily loads the route via a configurable `route_service` hook, which you can point at `ha_strava.get_activity_route`. See the card's documentation for full setup instructions.
+
 ## Contributors
 
 - [@craibo](https://github.com/craibo)
