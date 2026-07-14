@@ -25,6 +25,7 @@ from custom_components.ha_strava.sensor import (
     StravaActivityDateSensor,
     StravaActivityDeviceInfoSensor,
     StravaActivityMetricSensor,
+    StravaRecentActivityMetricSensor,
 )
 
 
@@ -513,6 +514,40 @@ class TestStravaActivityMetricSensor:
         assert value is not None
         assert isinstance(value, (int, float))
 
+    def test_speed_calculation_zero_moving_time(self):
+        """Test speed calculation returns 0.0 instead of raising ZeroDivisionError.
+
+        Regression test: activities with moving_time=0 (e.g. manually logged
+        activities) previously crashed entity setup with a ZeroDivisionError.
+        """
+        coordinator = MagicMock()
+        coordinator.data = {
+            "activities": [
+                {
+                    "id": 1,
+                    "type": "Run",
+                    "sport_type": "Run",
+                    "distance": 0.0,
+                    "moving_time": 0,
+                },
+            ],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+        coordinator.entry = MagicMock()
+        mock_hass = MagicMock()
+        mock_hass.config.units = METRIC_SYSTEM
+        coordinator.hass = mock_hass
+
+        sensor = StravaActivityMetricSensor(
+            coordinator=coordinator,
+            activity_type="Run",
+            metric_type=CONF_SENSOR_SPEED,
+            athlete_id="12345",
+        )
+        sensor.hass = mock_hass
+
+        assert sensor.native_value == 0.0
+
     def test_unit_of_measurement_distance(self):
         """Test unit of measurement for distance sensor."""
         coordinator = MagicMock()
@@ -830,3 +865,39 @@ class TestStravaActivityMetricSensor:
 
         state = sensor.native_value
         assert state is None
+
+
+class TestStravaRecentActivityMetricSensorSpeed:
+    """Test StravaRecentActivityMetricSensor speed calculation."""
+
+    def test_speed_calculation_zero_moving_time(self):
+        """Test speed calculation returns 0.0 instead of raising ZeroDivisionError.
+
+        Regression test: activities with moving_time=0 (e.g. manually logged
+        activities) previously crashed entity setup with a ZeroDivisionError.
+        """
+        coordinator = MagicMock()
+        coordinator.data = {
+            "activities": [
+                {
+                    "id": 1,
+                    "type": "Run",
+                    "distance": 0.0,
+                    "moving_time": 0,
+                },
+            ],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+        coordinator.entry = MagicMock()
+        mock_hass = MagicMock()
+        mock_hass.config.units = METRIC_SYSTEM
+        coordinator.hass = mock_hass
+
+        sensor = StravaRecentActivityMetricSensor(
+            coordinator=coordinator,
+            metric_type=CONF_SENSOR_SPEED,
+            athlete_id="12345",
+        )
+        sensor.hass = mock_hass
+
+        assert sensor.native_value == 0.0
