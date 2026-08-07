@@ -169,7 +169,8 @@ class TestStravaActivityAttributeSensor:
             athlete_id="12345",
         )
 
-        assert sensor.name == "Strava Test User Run Test Attribute"
+        assert sensor.name == "Test Attribute"
+        assert sensor.has_entity_name is True
 
 
 class TestStravaActivityDeviceInfoSensor:

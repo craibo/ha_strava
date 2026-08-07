@@ -83,6 +83,7 @@ async def async_setup_entry(
 
 
 class StravaActivityRefreshButton(CoordinatorEntity, ButtonEntity):
+    _attr_has_entity_name = True
     _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(
@@ -144,6 +145,7 @@ class StravaActivityRefreshButton(CoordinatorEntity, ButtonEntity):
 
 
 class StravaRecentActivityRefreshButton(CoordinatorEntity, ButtonEntity):
+    _attr_has_entity_name = True
     _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(

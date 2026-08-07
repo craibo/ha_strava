@@ -47,7 +47,8 @@ class TestStravaActivityTypeSensor:
         )
 
         assert sensor._activity_type == "Run"
-        assert sensor.name == "Strava Test User Run"
+        assert sensor.name is None
+        assert sensor.has_entity_name is True
         assert sensor.unique_id == "strava_12345_run"
 
     def test_sensor_state_with_activity(self, mock_strava_activities):
@@ -239,7 +240,8 @@ class TestStravaSummaryStatsSensor:
             athlete_id="12345",
         )
 
-        assert sensor.name == "Strava Test User Stats Recent Run Distance"
+        assert sensor.name == "Recent Run Distance"
+        assert sensor.has_entity_name is True
         assert sensor.unique_id == "strava_12345_stats_recent_run_totals_distance"
 
     def test_sensor_state_with_stats(self, mock_strava_stats):
@@ -622,7 +624,9 @@ class TestStravaSummaryStatsSensor:
         assert sensor._is_metric() is True
 
     @pytest.mark.asyncio
-    async def test_is_metric_options_takes_precedence_over_data(self, hass: HomeAssistant):
+    async def test_is_metric_options_takes_precedence_over_data(
+        self, hass: HomeAssistant
+    ):
         """Test _is_metric() prioritizes options over data when both are set."""
         summary_stats = {
             "ytd_run_totals": {
@@ -963,7 +967,8 @@ class TestStravaActivityGearSensor:
         )
 
         assert sensor._activity_type == "Ride"
-        assert sensor.name.startswith("Strava Test User Ride Gear Name")
+        assert sensor.name == "Gear Name"
+        assert sensor.has_entity_name is True
 
     def test_sensor_state_with_gear_data(self):
         """Test gear sensor state when gear data is available."""

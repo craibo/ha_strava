@@ -109,12 +109,13 @@ class TestStravaGearNameSensor:
         assert sensor.native_value is None
 
     def test_name_property(self):
-        """name property returns a human-readable name using gear's own name."""
+        """name is None: this sensor is the gear device's primary entity."""
         coordinator = _make_coordinator([GEAR_BIKE])
         sensor = StravaGearNameSensor(
             coordinator, gear_id="b111111", athlete_id="12345"
         )
-        assert sensor.name == "Strava Test User CGR SL Name"
+        assert sensor.name is None
+        assert sensor.has_entity_name is True
 
     def test_device_info_uses_gear_id(self):
         """device_info identifiers must be based on gear ID, not index."""
