@@ -141,9 +141,7 @@ class TestWebhookSubscription:
         with patch(
             "custom_components.ha_strava.get_url", return_value="https://example.com"
         ):
-            aioresponses_mock.get(
-                "https://example.com/api/strava/webhook", status=200
-            )
+            aioresponses_mock.get("https://example.com/api/strava/webhook", status=200)
             # Mock existing subscriptions
             aioresponses_mock.get(
                 "https://www.strava.com/api/v3/push_subscriptions"
@@ -193,9 +191,7 @@ class TestWebhookSubscription:
             "async_update_entry",
             wraps=hass.config_entries.async_update_entry,
         ) as mock_update:
-            aioresponses_mock.get(
-                "https://example.com/api/strava/webhook", status=200
-            )
+            aioresponses_mock.get("https://example.com/api/strava/webhook", status=200)
             push_subs_url = (
                 "https://www.strava.com/api/v3/push_subscriptions"
                 "?client_id=test_client_id&client_secret=test_client_secret"
@@ -227,9 +223,7 @@ class TestWebhookSubscription:
             "async_update_entry",
             wraps=hass.config_entries.async_update_entry,
         ) as mock_update:
-            aioresponses_mock.get(
-                "https://example.com/api/strava/webhook", status=200
-            )
+            aioresponses_mock.get("https://example.com/api/strava/webhook", status=200)
             push_subs_url = (
                 "https://www.strava.com/api/v3/push_subscriptions"
                 "?client_id=test_client_id&client_secret=test_client_secret"
@@ -260,9 +254,7 @@ class TestWebhookSubscription:
         with patch(
             "custom_components.ha_strava.get_url", return_value="https://example.com"
         ):
-            aioresponses_mock.get(
-                "https://example.com/api/strava/webhook", status=200
-            )
+            aioresponses_mock.get("https://example.com/api/strava/webhook", status=200)
             aioresponses_mock.get(
                 "https://www.strava.com/api/v3/push_subscriptions",
                 payload=[
@@ -297,9 +289,7 @@ class TestWebhookSubscription:
             "async_update_entry",
             wraps=hass.config_entries.async_update_entry,
         ) as mock_update:
-            aioresponses_mock.get(
-                "https://example.com/api/strava/webhook", status=200
-            )
+            aioresponses_mock.get("https://example.com/api/strava/webhook", status=200)
             aioresponses_mock.get(
                 "https://www.strava.com/api/v3/push_subscriptions",
                 payload=[{"id": 1}],
@@ -328,9 +318,7 @@ class TestWebhookSubscription:
         with patch(
             "custom_components.ha_strava.get_url", return_value="https://example.com"
         ):
-            aioresponses_mock.get(
-                "https://example.com/api/strava/webhook", status=200
-            )
+            aioresponses_mock.get("https://example.com/api/strava/webhook", status=200)
             aioresponses_mock.get(
                 "https://www.strava.com/api/v3/push_subscriptions",
                 payload=[
@@ -373,9 +361,7 @@ class TestWebhookSubscription:
             "async_update_entry",
             wraps=hass.config_entries.async_update_entry,
         ) as mock_update:
-            aioresponses_mock.get(
-                "https://example.com/api/strava/webhook", status=200
-            )
+            aioresponses_mock.get("https://example.com/api/strava/webhook", status=200)
             aioresponses_mock.get(
                 "https://www.strava.com/api/v3/push_subscriptions",
                 status=500,

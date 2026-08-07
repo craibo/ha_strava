@@ -82,6 +82,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 class UrlCam(CoordinatorEntity, Camera):
     """A camera that cycles through a list of image URLs."""
 
+    _attr_has_entity_name = True
     _attr_should_poll = False
 
     def __init__(
@@ -98,7 +99,9 @@ class UrlCam(CoordinatorEntity, Camera):
         self._athlete_id = athlete_id
         self._athlete_name = get_athlete_name_from_title(self.coordinator.entry.title)
         self._attr_unique_id = f"strava_{athlete_id}_photos"
-        self._attr_name = generate_device_name(self._athlete_name, "Photos")
+        # None makes this the device's primary entity: HA uses the device
+        # name alone instead of concatenating an entity name onto it.
+        self._attr_name = None
         self._store = Store(
             hass,
             STORAGE_VERSION,

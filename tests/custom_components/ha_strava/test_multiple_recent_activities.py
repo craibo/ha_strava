@@ -81,26 +81,8 @@ class TestNamingConventions:
         assert sensor_id_2 == "strava_12345_recent_3_title"
 
     def test_generate_recent_activity_sensor_name(self):
-        """Test sensor name generation for different activity indices."""
-        athlete_name = "John Doe"
-        sensor_type = "distance"
-
-        # Test index 0 (backward compatibility)
-        sensor_name_0 = generate_recent_activity_sensor_name(
-            athlete_name, sensor_type, 0
-        )
-        assert sensor_name_0 == "Strava John Doe Recent Activity Distance"
-
-        # Test index 1+ (numbered)
-        sensor_name_1 = generate_recent_activity_sensor_name(
-            athlete_name, sensor_type, 1
-        )
-        assert sensor_name_1 == "Strava John Doe Recent Activity 2 Distance"
-
-        sensor_name_2 = generate_recent_activity_sensor_name(
-            athlete_name, sensor_type, 2
-        )
-        assert sensor_name_2 == "Strava John Doe Recent Activity 3 Distance"
+        """Sensor name is short-form only; HA composes it with the device name."""
+        assert generate_recent_activity_sensor_name("distance") == "Distance"
 
 
 class TestStravaRecentActivitySensor:
@@ -127,7 +109,8 @@ class TestStravaRecentActivitySensor:
         )
 
         assert sensor._activity_index == 0
-        assert sensor.name == "Strava Test User Recent Activity"
+        assert sensor.name is None
+        assert sensor.has_entity_name is True
         assert sensor.unique_id == "strava_12345_recent_recent"
 
     @pytest.mark.asyncio
@@ -151,7 +134,8 @@ class TestStravaRecentActivitySensor:
         )
 
         assert sensor._activity_index == 1
-        assert sensor.name == "Strava Test User Recent Activity 2"
+        assert sensor.name is None
+        assert sensor.has_entity_name is True
         assert sensor.unique_id == "strava_12345_recent_2_recent"
 
     def test_latest_activity_property(self):
@@ -232,7 +216,8 @@ class TestStravaRecentActivityAttributeSensor:
 
         assert sensor._activity_index == 1
         assert sensor.unique_id == "strava_12345_recent_2_distance"
-        assert sensor.name == "Strava Test User Recent Activity 2 Distance"
+        assert sensor.name == "Distance"
+        assert sensor.has_entity_name is True
 
     def test_device_info_with_index(self):
         """Test device_info property includes correct index."""
@@ -402,11 +387,17 @@ class TestSensorSetupWithMultipleActivities:
         indices = [sensor._activity_index for sensor in recent_activity_sensors]
         assert sorted(indices) == [0, 1, 2]
 
-        # Check names
+        # Entity name is None (primary entity of its device); the
+        # distinguishing text lives in the device name instead.
         names = [sensor.name for sensor in recent_activity_sensors]
-        assert "Strava Test User Recent Activity" in names  # Index 0
-        assert "Strava Test User Recent Activity 2" in names  # Index 1
-        assert "Strava Test User Recent Activity 3" in names  # Index 2
+        assert names == [None, None, None]
+
+        device_names = [
+            sensor.device_info["name"] for sensor in recent_activity_sensors
+        ]
+        assert "Strava Test User Recent Activity" in device_names  # Index 0
+        assert "Strava Test User Recent Activity 2" in device_names  # Index 1
+        assert "Strava Test User Recent Activity 3" in device_names  # Index 2
 
     @pytest.mark.asyncio
     async def test_setup_with_max_recent_activities(self, hass: HomeAssistant):

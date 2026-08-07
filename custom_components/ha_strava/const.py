@@ -550,18 +550,13 @@ def generate_sensor_id(athlete_id: str, activity_type: str, sensor_type: str) ->
     return f"strava_{athlete_id}_{activity_type}_{sensor_type}"
 
 
-def generate_sensor_name(
-    athlete_name: str, activity_type: str, sensor_type: str
-) -> str:
-    """Generate standardized sensor name."""
+def generate_sensor_name(sensor_type: str) -> str:
+    """Generate standardized sensor name (short form, for use with has_entity_name)."""
     # Special case for calories sensor
     if sensor_type == "kcal":
-        formatted_sensor = "Calories"
-    else:
-        # Format sensor type for display (replace underscores with spaces and title case)
-        formatted_sensor = sensor_type.replace("_", " ").title()
-
-    return f"Strava {athlete_name} {activity_type.title()} {formatted_sensor}"
+        return "Calories"
+    # Format sensor type for display (replace underscores with spaces and title case)
+    return sensor_type.replace("_", " ").title()
 
 
 def generate_recent_activity_sensor_id(
@@ -573,22 +568,13 @@ def generate_recent_activity_sensor_id(
     return f"strava_{athlete_id}_recent_{activity_index + 1}_{sensor_type}"
 
 
-def generate_recent_activity_sensor_name(
-    athlete_name: str, sensor_type: str, activity_index: int = 0
-) -> str:
-    """Generate standardized recent activity sensor name."""
+def generate_recent_activity_sensor_name(sensor_type: str) -> str:
+    """Generate standardized recent activity sensor name (short form, for use with has_entity_name)."""
     # Special case for calories sensor
     if sensor_type == "kcal":
-        formatted_sensor = "Calories"
-    else:
-        # Format sensor type for display (replace underscores with spaces and title case)
-        formatted_sensor = sensor_type.replace("_", " ").title()
-
-    if activity_index == 0:
-        return f"Strava {athlete_name} Recent Activity {formatted_sensor}"
-    return (
-        f"Strava {athlete_name} Recent Activity {activity_index + 1} {formatted_sensor}"
-    )
+        return "Calories"
+    # Format sensor type for display (replace underscores with spaces and title case)
+    return sensor_type.replace("_", " ").title()
 
 
 def generate_gear_device_id(athlete_id: str, gear_id: str) -> str:
@@ -606,12 +592,9 @@ def generate_gear_sensor_id(athlete_id: str, gear_id: str, sensor_type: str) -> 
     return f"strava_{athlete_id}_gear_{gear_id}_{sensor_type}"
 
 
-def generate_gear_sensor_name(
-    athlete_name: str, gear_name: str, sensor_type: str
-) -> str:
-    """Generate standardized gear sensor name."""
-    formatted_sensor = sensor_type.replace("_", " ").title()
-    return f"Strava {athlete_name} {gear_name} {formatted_sensor}"
+def generate_gear_sensor_name(sensor_type: str) -> str:
+    """Generate standardized gear sensor name (short form, for use with has_entity_name)."""
+    return sensor_type.replace("_", " ").title()
 
 
 def normalize_activity_type(activity_type: str) -> str:

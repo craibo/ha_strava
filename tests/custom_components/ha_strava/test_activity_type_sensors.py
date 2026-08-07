@@ -39,11 +39,10 @@ class TestStravaActivityTypeSensor:
         for i, sensor in enumerate(sensors):
             activity_type = SUPPORTED_ACTIVITY_TYPES[i]
             assert sensor._activity_type == activity_type
-            # Format activity type for display (handle camelCase)
-            import re
-
-            formatted_activity_type = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", activity_type)
-            assert sensor.name == f"Strava Test User {formatted_activity_type}"
+            # name is None: this sensor is the device's primary entity, so
+            # HA displays the device name alone via has_entity_name
+            assert sensor.name is None
+            assert sensor.has_entity_name is True
             assert sensor.unique_id == f"strava_12345_{activity_type.lower()}"
 
     def test_sensor_creation_selected_activity_types(self, mock_config_entry):
@@ -75,7 +74,8 @@ class TestStravaActivityTypeSensor:
         # Verify each sensor has correct properties
         for sensor in sensors:
             assert sensor._activity_type in selected_types
-            assert sensor.name.startswith("Strava ")
+            assert sensor.name is None
+            assert sensor.has_entity_name is True
             assert sensor.unique_id.startswith("strava_12345_")
 
     def test_sensor_attributes_with_activity_data(self, mock_strava_activities):

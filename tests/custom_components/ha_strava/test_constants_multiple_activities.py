@@ -1,5 +1,7 @@
 """Test constants and helper functions for multiple recent activity devices."""
 
+import pytest
+
 from custom_components.ha_strava.const import (
     CONF_NUM_RECENT_ACTIVITIES,
     CONF_NUM_RECENT_ACTIVITIES_DEFAULT,
@@ -224,40 +226,15 @@ class TestGenerateRecentActivitySensorId:
 
 
 class TestGenerateRecentActivitySensorName:
-    """Test generate_recent_activity_sensor_name function."""
+    """Test generate_recent_activity_sensor_name function.
 
-    def test_default_index_zero(self):
-        """Test sensor name generation with default index (0)."""
-        athlete_name = "John Doe"
-        sensor_type = "title"
-        sensor_name = generate_recent_activity_sensor_name(athlete_name, sensor_type)
-        assert sensor_name == "Strava John Doe Recent Activity Title"
-
-    def test_explicit_index_zero(self):
-        """Test sensor name generation with explicit index 0."""
-        athlete_name = "John Doe"
-        sensor_type = "title"
-        sensor_name = generate_recent_activity_sensor_name(athlete_name, sensor_type, 0)
-        assert sensor_name == "Strava John Doe Recent Activity Title"
-
-    def test_index_one(self):
-        """Test sensor name generation with index 1."""
-        athlete_name = "John Doe"
-        sensor_type = "title"
-        sensor_name = generate_recent_activity_sensor_name(athlete_name, sensor_type, 1)
-        assert sensor_name == "Strava John Doe Recent Activity 2 Title"
-
-    def test_index_two(self):
-        """Test sensor name generation with index 2."""
-        athlete_name = "John Doe"
-        sensor_type = "distance"
-        sensor_name = generate_recent_activity_sensor_name(athlete_name, sensor_type, 2)
-        assert sensor_name == "Strava John Doe Recent Activity 3 Distance"
+    The function returns a short entity name only (no athlete/device
+    prefix or activity index) — HA composes the full displayed name by
+    prefixing the device name via has_entity_name.
+    """
 
     def test_sensor_type_formatting(self):
         """Test that sensor types are properly formatted for display."""
-        athlete_name = "Test User"
-
         test_cases = [
             ("title", "Title"),
             ("distance", "Distance"),
@@ -269,72 +246,12 @@ class TestGenerateRecentActivitySensorName:
         ]
 
         for sensor_type, expected_formatted in test_cases:
-            # Test index 0
-            sensor_name = generate_recent_activity_sensor_name(
-                athlete_name, sensor_type, 0
-            )
-            assert (
-                sensor_name == f"Strava Test User Recent Activity {expected_formatted}"
-            )
-
-            # Test index 1
-            sensor_name = generate_recent_activity_sensor_name(
-                athlete_name, sensor_type, 1
-            )
-            assert (
-                sensor_name
-                == f"Strava Test User Recent Activity 2 {expected_formatted}"
-            )
+            sensor_name = generate_recent_activity_sensor_name(sensor_type)
+            assert sensor_name == expected_formatted
 
     def test_kcal_sensor_type_formatting(self):
         """Test that 'kcal' sensor type is properly formatted as 'Calories'."""
-        athlete_name = "Test User"
-
-        # Test index 0 - should show "Calories" not "Kcal"
-        sensor_name = generate_recent_activity_sensor_name(athlete_name, "kcal", 0)
-        assert sensor_name == "Strava Test User Recent Activity Calories"
-
-        # Test index 1 - should show "Calories" not "Kcal"
-        sensor_name = generate_recent_activity_sensor_name(athlete_name, "kcal", 1)
-        assert sensor_name == "Strava Test User Recent Activity 2 Calories"
-
-        # Test index 2 - should show "Calories" not "Kcal"
-        sensor_name = generate_recent_activity_sensor_name(athlete_name, "kcal", 2)
-        assert sensor_name == "Strava Test User Recent Activity 3 Calories"
-
-        # Test index 9 (max) - should show "Calories" not "Kcal"
-        sensor_name = generate_recent_activity_sensor_name(athlete_name, "kcal", 9)
-        assert sensor_name == "Strava Test User Recent Activity 10 Calories"
-
-    def test_different_athlete_names(self):
-        """Test sensor name generation with different athlete names."""
-        sensor_type = "test_sensor"
-
-        # Test with single name
-        sensor_name = generate_recent_activity_sensor_name("Alice", sensor_type, 1)
-        assert sensor_name == "Strava Alice Recent Activity 2 Test Sensor"
-
-        # Test with multiple names
-        sensor_name = generate_recent_activity_sensor_name("Bob Smith", sensor_type, 2)
-        assert sensor_name == "Strava Bob Smith Recent Activity 3 Test Sensor"
-
-    def test_index_numbering_starts_at_two(self):
-        """Test that index numbering starts at 2 (index 1 -> 2, index 2 -> 3, etc.)."""
-        athlete_name = "Test User"
-        sensor_type = "test_sensor"
-
-        for i in range(10):
-            sensor_name = generate_recent_activity_sensor_name(
-                athlete_name, sensor_type, i
-            )
-            if i == 0:
-                assert sensor_name == "Strava Test User Recent Activity Test Sensor"
-            else:
-                expected_number = i + 1
-                assert (
-                    sensor_name
-                    == f"Strava Test User Recent Activity {expected_number} Test Sensor"
-                )
+        assert generate_recent_activity_sensor_name("kcal") == "Calories"
 
 
 class TestEdgeCases:
@@ -380,8 +297,8 @@ class TestEdgeCases:
         sensor_id = generate_recent_activity_sensor_id("12345", "", 1)
         assert sensor_id == "strava_12345_recent_2_"
 
-        sensor_name = generate_recent_activity_sensor_name("Test User", "", 1)
-        assert sensor_name == "Strava Test User Recent Activity 2 "
+        sensor_name = generate_recent_activity_sensor_name("")
+        assert sensor_name == ""
 
     def test_none_values(self):
         """Test behavior with None values."""
@@ -397,6 +314,6 @@ class TestEdgeCases:
         sensor_id = generate_recent_activity_sensor_id("12345", None, 1)
         assert sensor_id == "strava_12345_recent_2_None"
 
-        # Test with None athlete_name for sensor
-        sensor_name = generate_recent_activity_sensor_name(None, "test", 1)
-        assert sensor_name == "Strava None Recent Activity 2 Test"
+        # None sensor_type raises, same as before this refactor
+        with pytest.raises(AttributeError):
+            generate_recent_activity_sensor_name(None)

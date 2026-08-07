@@ -305,6 +305,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 class StravaSummaryStatsSensor(CoordinatorEntity, SensorEntity):
     """A sensor for Strava summary statistics."""
 
+    _attr_has_entity_name = True
     _attr_state_class = SensorStateClass.TOTAL
 
     def __init__(
@@ -507,12 +508,12 @@ class StravaSummaryStatsSensor(CoordinatorEntity, SensorEntity):
             activity_type = parts[-2]
             period = parts[0]
             formatted_sensor = self._metric_key.replace("_", " ").title()
-            return f"Strava {self._athlete_name} Stats {period.title()} {activity_type.title()} {formatted_sensor}"
+            return f"{period.title()} {activity_type.title()} {formatted_sensor}"
         elif self._api_key in ["biggest_ride_distance", "biggest_climb_elevation_gain"]:
             formatted_sensor = self._metric_key.replace("_", " ").title()
-            return f"Strava {self._athlete_name} Stats {formatted_sensor}"
+            return formatted_sensor
         else:
-            return f"Strava {self._athlete_name} Stats {self._display_name}"
+            return self._display_name
 
     @property
     def extra_state_attributes(self):
@@ -574,6 +575,7 @@ class StravaSummaryStatsSensor(CoordinatorEntity, SensorEntity):
 class StravaActivityTypeSensor(CoordinatorEntity, SensorEntity):
     """A sensor for specific activity type with latest activity data."""
 
+    _attr_has_entity_name = True
     _attr_state_class = None
     _attr_device_class = None
 
@@ -643,8 +645,12 @@ class StravaActivityTypeSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def name(self):
-        """Return the name of the sensor."""
-        return f"Strava {self._athlete_name} {format_activity_type_display(self._activity_type)}"
+        """Return the name of the sensor.
+
+        None makes this the device's primary entity: HA uses the device
+        name alone instead of concatenating an entity name onto it.
+        """
+        return None
 
     @property
     def extra_state_attributes(self):
@@ -735,6 +741,8 @@ class StravaActivityTypeSensor(CoordinatorEntity, SensorEntity):
 class StravaActivityAttributeSensor(CoordinatorEntity, SensorEntity):
     """Base class for individual activity attribute sensors."""
 
+    _attr_has_entity_name = True
+
     def __init__(
         self,
         coordinator: StravaDataUpdateCoordinator,
@@ -809,11 +817,7 @@ class StravaActivityAttributeSensor(CoordinatorEntity, SensorEntity):
     @property
     def name(self):
         """Return the name of the sensor."""
-        return generate_sensor_name(
-            self._athlete_name,
-            format_activity_type_display(self._activity_type),
-            self._attribute_type,
-        )
+        return generate_sensor_name(self._attribute_type)
 
     def _get_value_or_unavailable(self, value):
         """Return the value or None if None, blank, or -1."""
@@ -1203,6 +1207,7 @@ class StravaActivityMetricSensor(StravaActivityAttributeSensor):
 class StravaRecentActivitySensor(CoordinatorEntity, SensorEntity):
     """A sensor for the most recent activity across all activity types."""
 
+    _attr_has_entity_name = True
     _attr_state_class = None
     _attr_device_class = None
 
@@ -1278,10 +1283,12 @@ class StravaRecentActivitySensor(CoordinatorEntity, SensorEntity):
 
     @property
     def name(self):
-        """Return the name of the sensor."""
-        return generate_recent_activity_device_name(
-            self._athlete_name, self._activity_index
-        )
+        """Return the name of the sensor.
+
+        None makes this the device's primary entity: HA uses the device
+        name alone instead of concatenating an entity name onto it.
+        """
+        return None
 
     @property
     def extra_state_attributes(self):
@@ -1311,6 +1318,8 @@ class StravaRecentActivitySensor(CoordinatorEntity, SensorEntity):
 
 class StravaRecentActivityAttributeSensor(CoordinatorEntity, SensorEntity):
     """Base class for individual recent activity attribute sensors."""
+
+    _attr_has_entity_name = True
 
     def __init__(
         self,
@@ -1385,11 +1394,7 @@ class StravaRecentActivityAttributeSensor(CoordinatorEntity, SensorEntity):
     @property
     def name(self):
         """Return the name of the sensor."""
-        return generate_recent_activity_sensor_name(
-            self._athlete_name,
-            self._attribute_type,
-            self._activity_index,
-        )
+        return generate_recent_activity_sensor_name(self._attribute_type)
 
     def _get_value_or_unavailable(self, value):
         """Return the value or None if None, blank, or -1."""
@@ -1745,6 +1750,7 @@ class StravaRecentActivityMetricSensor(StravaRecentActivityAttributeSensor):
 class StravaGearNameSensor(CoordinatorEntity, SensorEntity):
     """Sensor for gear name with attributes."""
 
+    _attr_has_entity_name = True
     _attr_state_class = None
     _attr_device_class = None
 
@@ -1810,14 +1816,12 @@ class StravaGearNameSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def name(self):
-        """Return the name of the sensor."""
-        gear_data = self._gear_data
-        gear_name = (
-            gear_data.get("name", f"Gear {self._gear_id}")
-            if gear_data
-            else f"Gear {self._gear_id}"
-        )
-        return generate_gear_sensor_name(self._athlete_name, gear_name, "name")
+        """Return the name of the sensor.
+
+        None makes this the device's primary entity: HA uses the device
+        name alone instead of concatenating an entity name onto it.
+        """
+        return None
 
     @property
     def extra_state_attributes(self):
@@ -1842,6 +1846,7 @@ class StravaGearNameSensor(CoordinatorEntity, SensorEntity):
 class StravaGearDistanceSensor(CoordinatorEntity, SensorEntity):
     """Sensor for gear distance."""
 
+    _attr_has_entity_name = True
     _attr_state_class = SensorStateClass.TOTAL
     _attr_device_class = DEVICE_CLASS_DISTANCE
 
@@ -1927,13 +1932,7 @@ class StravaGearDistanceSensor(CoordinatorEntity, SensorEntity):
     @property
     def name(self):
         """Return the name of the sensor."""
-        gear_data = self._gear_data
-        gear_name = (
-            gear_data.get("name", f"Gear {self._gear_id}")
-            if gear_data
-            else f"Gear {self._gear_id}"
-        )
-        return generate_gear_sensor_name(self._athlete_name, gear_name, "distance")
+        return generate_gear_sensor_name("distance")
 
     def _is_metric(self):
         """Determine if the user has configured metric units."""
