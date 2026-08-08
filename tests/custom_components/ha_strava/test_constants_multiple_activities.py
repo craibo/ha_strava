@@ -86,56 +86,61 @@ class TestGenerateRecentActivityDeviceId:
 
 
 class TestGenerateRecentActivityDeviceName:
-    """Test generate_recent_activity_device_name function."""
+    """Test generate_recent_activity_device_name function.
+
+    The athlete_name argument is accepted for signature compatibility but
+    no longer appears in the returned string — athlete identity is shown
+    via the config entry, and the device name is kept short.
+    """
 
     def test_default_index_zero(self):
         """Test device name generation with default index (0)."""
         athlete_name = "John Doe"
         device_name = generate_recent_activity_device_name(athlete_name)
-        assert device_name == "Strava John Doe Recent Activity"
+        assert device_name == "Recent Activity"
 
     def test_explicit_index_zero(self):
         """Test device name generation with explicit index 0."""
         athlete_name = "John Doe"
         device_name = generate_recent_activity_device_name(athlete_name, 0)
-        assert device_name == "Strava John Doe Recent Activity"
+        assert device_name == "Recent Activity"
 
     def test_index_one(self):
         """Test device name generation with index 1."""
         athlete_name = "John Doe"
         device_name = generate_recent_activity_device_name(athlete_name, 1)
-        assert device_name == "Strava John Doe Recent Activity 2"
+        assert device_name == "Recent Activity 2"
 
     def test_index_two(self):
         """Test device name generation with index 2."""
         athlete_name = "John Doe"
         device_name = generate_recent_activity_device_name(athlete_name, 2)
-        assert device_name == "Strava John Doe Recent Activity 3"
+        assert device_name == "Recent Activity 3"
 
     def test_index_nine(self):
         """Test device name generation with index 9 (max)."""
         athlete_name = "John Doe"
         device_name = generate_recent_activity_device_name(athlete_name, 9)
-        assert device_name == "Strava John Doe Recent Activity 10"
+        assert device_name == "Recent Activity 10"
 
     def test_different_athlete_names(self):
-        """Test device name generation with different athlete names."""
+        """Test device name generation is independent of athlete name."""
         # Test with single name
         device_name = generate_recent_activity_device_name("Alice", 1)
-        assert device_name == "Strava Alice Recent Activity 2"
+        assert device_name == "Recent Activity 2"
 
         # Test with multiple names
         device_name = generate_recent_activity_device_name("Bob Smith", 2)
-        assert device_name == "Strava Bob Smith Recent Activity 3"
+        assert device_name == "Recent Activity 3"
 
         # Test with special characters
         device_name = generate_recent_activity_device_name("José María", 1)
-        assert device_name == "Strava José María Recent Activity 2"
+        assert device_name == "Recent Activity 2"
 
     def test_empty_athlete_name(self):
         """Test device name generation with empty athlete name."""
         device_name = generate_recent_activity_device_name("", 1)
-        assert device_name == "Strava  Recent Activity 2"
+        assert device_name == "Recent Activity 2"
 
     def test_index_numbering_starts_at_two(self):
         """Test that index numbering starts at 2 (index 1 -> 2, index 2 -> 3, etc.)."""
@@ -144,12 +149,10 @@ class TestGenerateRecentActivityDeviceName:
         for i in range(10):
             device_name = generate_recent_activity_device_name(athlete_name, i)
             if i == 0:
-                assert device_name == "Strava Test User Recent Activity"
+                assert device_name == "Recent Activity"
             else:
                 expected_number = i + 1
-                assert (
-                    device_name == f"Strava Test User Recent Activity {expected_number}"
-                )
+                assert device_name == f"Recent Activity {expected_number}"
 
 
 class TestGenerateRecentActivitySensorId:
@@ -268,7 +271,7 @@ class TestEdgeCases:
 
         # Device name with negative index
         device_name = generate_recent_activity_device_name(athlete_name, -1)
-        assert device_name == "Strava Test User Recent Activity 0"
+        assert device_name == "Recent Activity 0"
 
     def test_large_index(self):
         """Test behavior with large index."""
@@ -281,7 +284,7 @@ class TestEdgeCases:
 
         # Device name with large index
         device_name = generate_recent_activity_device_name(athlete_name, 100)
-        assert device_name == "Strava Test User Recent Activity 101"
+        assert device_name == "Recent Activity 101"
 
     def test_empty_strings(self):
         """Test behavior with empty strings."""
@@ -291,7 +294,7 @@ class TestEdgeCases:
 
         # Empty athlete name
         device_name = generate_recent_activity_device_name("", 1)
-        assert device_name == "Strava  Recent Activity 2"
+        assert device_name == "Recent Activity 2"
 
         # Empty sensor type
         sensor_id = generate_recent_activity_sensor_id("12345", "", 1)
@@ -308,7 +311,7 @@ class TestEdgeCases:
 
         # Test with None athlete_name
         device_name = generate_recent_activity_device_name(None, 1)
-        assert device_name == "Strava None Recent Activity 2"
+        assert device_name == "Recent Activity 2"
 
         # Test with None sensor_type
         sensor_id = generate_recent_activity_sensor_id("12345", None, 1)

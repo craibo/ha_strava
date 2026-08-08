@@ -1,12 +1,14 @@
 """Test that entity naming/grouping stays isolated per athlete.
 
-Sensor `name` properties were shortened to drop the "Strava {athlete}"
-prefix, relying on `has_entity_name` so Home Assistant composes the
-displayed name from the device name. This module verifies that removing
-the prefix from entity names does not collapse grouping or identity
-across multiple athlete config entries: unique_id and device identifiers
-must still be athlete-scoped even though the entity `name` text is now
-identical for equivalent sensors across athletes.
+Sensor `name` properties and device names were shortened to drop the
+"Strava {athlete}" prefix, relying on `has_entity_name` so Home Assistant
+composes the displayed name from the device name, and on each athlete
+having their own config entry for visual separation in the UI. This
+module verifies that removing the prefix does not collapse grouping or
+identity across multiple athlete config entries: unique_id and device
+identifiers must still be athlete-scoped even though the entity `name`
+and device `name` text are now identical for equivalent sensors across
+athletes.
 """
 
 from unittest.mock import MagicMock
@@ -64,11 +66,10 @@ class TestActivityTypeSensorIsolation:
         assert (DOMAIN, "strava_11111_run") in sensor_a.device_info["identifiers"]
         assert (DOMAIN, "strava_22222_run") in sensor_b.device_info["identifiers"]
 
-        # Device names still carry the athlete name, so the UI stays
-        # distinguishable even though entity names are athlete-agnostic.
-        assert sensor_a.device_info["name"] != sensor_b.device_info["name"]
-        assert "Alice Athlete" in sensor_a.device_info["name"]
-        assert "Bob Athlete" in sensor_b.device_info["name"]
+        # Device names are also athlete-agnostic now ("Run" for both) — the
+        # config entry (one per athlete) is what visually separates them in
+        # the HA UI, and identifiers/unique_id are what enforce isolation.
+        assert sensor_a.device_info["name"] == sensor_b.device_info["name"] == "Run"
 
 
 class TestActivityAttributeSensorIsolation:

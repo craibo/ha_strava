@@ -524,9 +524,11 @@ def generate_device_id(athlete_id: str, device_type: str) -> str:
     return f"strava_{athlete_id}_{device_type}"
 
 
-def generate_device_name(athlete_name: str, device_type: str) -> str:
-    """Generate standardized device name."""
-    return f"Strava {athlete_name} {device_type.title()}"
+def generate_device_name(
+    athlete_name: str, device_type: str  # pylint: disable=unused-argument
+) -> str:
+    """Generate standardized device name (short form; athlete identity lives on the config entry)."""
+    return device_type.title()
 
 
 def generate_recent_activity_device_id(athlete_id: str, activity_index: int = 0) -> str:
@@ -537,12 +539,12 @@ def generate_recent_activity_device_id(athlete_id: str, activity_index: int = 0)
 
 
 def generate_recent_activity_device_name(
-    athlete_name: str, activity_index: int = 0
+    athlete_name: str, activity_index: int = 0  # pylint: disable=unused-argument
 ) -> str:
-    """Generate standardized recent activity device name."""
+    """Generate standardized recent activity device name (short form; athlete identity lives on the config entry)."""
     if activity_index == 0:
-        return f"Strava {athlete_name} Recent Activity"
-    return f"Strava {athlete_name} Recent Activity {activity_index + 1}"
+        return "Recent Activity"
+    return f"Recent Activity {activity_index + 1}"
 
 
 def generate_sensor_id(athlete_id: str, activity_type: str, sensor_type: str) -> str:
@@ -582,9 +584,11 @@ def generate_gear_device_id(athlete_id: str, gear_id: str) -> str:
     return f"strava_{athlete_id}_gear_{gear_id}"
 
 
-def generate_gear_device_name(athlete_name: str, gear_name: str) -> str:
-    """Generate standardized gear device name."""
-    return f"Strava {athlete_name} {gear_name}"
+def generate_gear_device_name(
+    athlete_name: str, gear_name: str  # pylint: disable=unused-argument
+) -> str:
+    """Generate standardized gear device name (short form; athlete identity lives on the config entry)."""
+    return gear_name
 
 
 def generate_gear_sensor_id(athlete_id: str, gear_id: str, sensor_type: str) -> str:
