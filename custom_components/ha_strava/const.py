@@ -601,6 +601,19 @@ def generate_gear_sensor_name(sensor_type: str) -> str:
     return sensor_type.replace("_", " ").title()
 
 
+def get_gear_type_label(gear_id: str) -> str:
+    """Return the gear type label ("Bike" or "Shoes") from a Strava gear ID.
+
+    Strava gear IDs are prefixed by type: "b" for bikes (including indoor
+    trainers) and "g" for shoes. Falls back to "Gear" for anything else.
+    """
+    if gear_id and gear_id.startswith("b"):
+        return "Bike"
+    if gear_id and gear_id.startswith("g"):
+        return "Shoes"
+    return "Gear"
+
+
 def normalize_activity_type(activity_type: str) -> str:
     """Normalize activity type for consistent naming."""
     if activity_type is None or not isinstance(activity_type, str):

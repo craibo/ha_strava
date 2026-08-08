@@ -88,6 +88,7 @@ from .const import (
     generate_sensor_id,
     generate_sensor_name,
     get_athlete_name_from_title,
+    get_gear_type_label,
     normalize_activity_type,
 )
 from .coordinator import StravaDataUpdateCoordinator
@@ -1748,9 +1749,14 @@ class StravaRecentActivityMetricSensor(StravaRecentActivityAttributeSensor):
 
 
 class StravaGearNameSensor(CoordinatorEntity, SensorEntity):
-    """Sensor for gear name with attributes."""
+    """Sensor for gear name with attributes.
 
-    _attr_has_entity_name = True
+    has_entity_name is intentionally left off (defaults to False): the
+    device is named after the equipment itself (e.g. "ASICS GT-2000 10 US12
+    Wide"), so composing "{device name} {entity name}" would be redundant.
+    The bare entity name ("Shoes"/"Bike") is used as-is instead.
+    """
+
     _attr_state_class = None
     _attr_device_class = None
 
@@ -1804,7 +1810,11 @@ class StravaGearNameSensor(CoordinatorEntity, SensorEntity):
     @property
     def icon(self):
         """Return the icon of the sensor."""
-        return "mdi:bike"
+        return (
+            "mdi:bike"
+            if get_gear_type_label(self._gear_id) == "Bike"
+            else "mdi:shoe-sneaker"
+        )
 
     @property
     def native_value(self):
@@ -1816,12 +1826,8 @@ class StravaGearNameSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def name(self):
-        """Return the name of the sensor.
-
-        None makes this the device's primary entity: HA uses the device
-        name alone instead of concatenating an entity name onto it.
-        """
-        return None
+        """Return the name of the sensor: the gear type (e.g. "Bike", "Shoes")."""
+        return get_gear_type_label(self._gear_id)
 
     @property
     def extra_state_attributes(self):

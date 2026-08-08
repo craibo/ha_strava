@@ -154,7 +154,7 @@ class TestGearSensorIsolation:
 
         # Same gear name/id on both athletes, but device identifiers and
         # unique_id remain athlete-scoped.
-        assert name_a.name == name_b.name is None
+        assert name_a.name == name_b.name == "Bike"
         assert name_a.unique_id != name_b.unique_id
         assert name_a.device_info["identifiers"] != name_b.device_info["identifiers"]
 
