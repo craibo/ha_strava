@@ -81,11 +81,11 @@ Uses `config_entry_oauth2_flow.OAuth2Session` with `LocalOAuth2Implementation`. 
 
 ## Branching & PR Workflow
 
-- **Never commit directly to `main` or `develop`**
+- **Never commit directly to `main`**
 - All changes must be on a dedicated feature/fix branch (`feat/`, `fix/`, `chore/`, `refactor/`, `docs/`)
-- PRs must target `develop` (not `main`) — `main` is only updated via release merges from `develop`
+- All PRs must target `main`
 - Branch naming: short, lowercase, hyphen-separated (e.g. `feat/pace-numeric-sensor`, `fix/gear-entity-id`)
-- **Always increment the version in `manifest.json` before opening a PR to `develop`**
+- **Always increment the version in `manifest.json` before opening a PR**
 
 ## Code Standards
 
