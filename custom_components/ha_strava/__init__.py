@@ -327,6 +327,26 @@ def _remove_legacy_gear_entries(hass: HomeAssistant, entry: ConfigEntry) -> None
             break
 
 
+def _migrate_entity_registry_names(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Clear stale original_name left over from before has_entity_name.
+
+    Entities registered before the switch to has_entity_name had their full
+    "Strava {athlete} ..." name stored as original_name in the entity
+    registry. That stored value doesn't update on its own when the entity's
+    name property changes on integration upgrade, so the old text keeps
+    showing in the UI unless it's explicitly cleared here to let HA fall
+    back to the current name property (or device name).
+
+    Only original_name (the integration-provided default) is touched; a
+    user-set name override is left untouched.
+    """
+    entity_registry = er_async_get(hass)
+    for entity in async_entries_for_config_entry(entity_registry, entry.entry_id):
+        if entity.original_name is None:
+            continue
+        entity_registry.async_update_entity(entity.entity_id, original_name=None)
+
+
 async def async_setup(
     hass: HomeAssistant, config: dict
 ):  # pylint: disable=unused-argument
@@ -345,6 +365,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     # Remove any gear entities/devices left over from the old index-based unique_id format
     _remove_legacy_gear_entries(hass, entry)
+
+    # Clear stale registry names left over from before has_entity_name
+    _migrate_entity_registry_names(hass, entry)
 
     # Set up webhook
     hass.http.register_view(StravaWebhookView(hass))

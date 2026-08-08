@@ -765,3 +765,73 @@ class TestRemoveLegacyGearEntries:
 
         mock_er.async_remove.assert_not_called()
         mock_dr.async_remove_device.assert_not_called()
+
+
+class TestMigrateEntityRegistryNames:
+    """Test the _migrate_entity_registry_names helper called during async_setup_entry."""
+
+    @pytest.mark.asyncio
+    async def test_clears_stale_original_name(self, hass: HomeAssistant):
+        """Entities with a stored original_name have it cleared so the live name property applies."""
+        from custom_components.ha_strava import _migrate_entity_registry_names
+        from custom_components.ha_strava.const import DOMAIN
+
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            unique_id="12345",
+            data={CONF_CLIENT_ID: "cid", CONF_CLIENT_SECRET: "csec"},
+            title="Strava: Test User",
+        )
+
+        stale_entity = MagicMock()
+        stale_entity.entity_id = "sensor.strava_12345_recent_title"
+        stale_entity.original_name = "Strava Test User Recent Activity"
+
+        already_clean_entity = MagicMock()
+        already_clean_entity.entity_id = "sensor.strava_12345_distance"
+        already_clean_entity.original_name = None
+
+        mock_er = MagicMock()
+
+        with patch(
+            "custom_components.ha_strava.er_async_get",
+            return_value=mock_er,
+        ), patch(
+            "custom_components.ha_strava.async_entries_for_config_entry",
+            return_value=[stale_entity, already_clean_entity],
+        ):
+            _migrate_entity_registry_names(hass, config_entry)
+
+        mock_er.async_update_entity.assert_called_once_with(
+            "sensor.strava_12345_recent_title", original_name=None
+        )
+
+    @pytest.mark.asyncio
+    async def test_no_op_when_no_stale_names(self, hass: HomeAssistant):
+        """No updates occur when all entities already have no original_name set."""
+        from custom_components.ha_strava import _migrate_entity_registry_names
+        from custom_components.ha_strava.const import DOMAIN
+
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            unique_id="12345",
+            data={CONF_CLIENT_ID: "cid", CONF_CLIENT_SECRET: "csec"},
+            title="Strava: Test User",
+        )
+
+        clean_entity = MagicMock()
+        clean_entity.entity_id = "sensor.strava_12345_distance"
+        clean_entity.original_name = None
+
+        mock_er = MagicMock()
+
+        with patch(
+            "custom_components.ha_strava.er_async_get",
+            return_value=mock_er,
+        ), patch(
+            "custom_components.ha_strava.async_entries_for_config_entry",
+            return_value=[clean_entity],
+        ):
+            _migrate_entity_registry_names(hass, config_entry)
+
+        mock_er.async_update_entity.assert_not_called()
