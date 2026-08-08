@@ -6,6 +6,7 @@ from custom_components.ha_strava.const import (
     CONF_DISTANCE_UNIT_OVERRIDE,
     CONF_DISTANCE_UNIT_OVERRIDE_METRIC,
     DOMAIN,
+    get_gear_type_label,
 )
 from custom_components.ha_strava.sensor import (
     StravaGearDistanceSensor,
@@ -109,13 +110,21 @@ class TestStravaGearNameSensor:
         assert sensor.native_value is None
 
     def test_name_property(self):
-        """name is None: this sensor is the gear device's primary entity."""
+        """name is the gear type label; has_entity_name is off so it's shown bare."""
         coordinator = _make_coordinator([GEAR_BIKE])
         sensor = StravaGearNameSensor(
             coordinator, gear_id="b111111", athlete_id="12345"
         )
-        assert sensor.name is None
-        assert sensor.has_entity_name is True
+        assert sensor.name == "Bike"
+        assert sensor.has_entity_name is False
+
+    def test_name_property_shoes(self):
+        """Shoe gear IDs (g-prefixed) get the "Shoes" type label."""
+        coordinator = _make_coordinator([GEAR_SHOES])
+        sensor = StravaGearNameSensor(
+            coordinator, gear_id="g222222", athlete_id="12345"
+        )
+        assert sensor.name == "Shoes"
 
     def test_device_info_uses_gear_id(self):
         """device_info identifiers must be based on gear ID, not index."""
@@ -215,3 +224,22 @@ class TestStravaGearDistanceSensor:
             name_sensor.device_info["identifiers"]
             == dist_sensor.device_info["identifiers"]
         )
+
+
+class TestGetGearTypeLabel:
+    """Test get_gear_type_label helper."""
+
+    def test_bike_prefix(self):
+        assert get_gear_type_label("b111111") == "Bike"
+
+    def test_shoe_prefix(self):
+        assert get_gear_type_label("g222222") == "Shoes"
+
+    def test_unknown_prefix(self):
+        assert get_gear_type_label("x999999") == "Gear"
+
+    def test_empty_string(self):
+        assert get_gear_type_label("") == "Gear"
+
+    def test_none(self):
+        assert get_gear_type_label(None) == "Gear"
