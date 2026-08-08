@@ -348,7 +348,7 @@ class TestStravaActivityTypeSensor:
 
         # Verify device info
         assert device_info["identifiers"] == {("ha_strava", "strava_12345_run")}
-        assert device_info["name"] == "Strava Test User Run"
+        assert device_info["name"] == "Run"
         assert device_info["manufacturer"] == "Powered by Strava"
         assert device_info["model"] == "Run Activity"
 

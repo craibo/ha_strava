@@ -55,14 +55,14 @@ class TestNamingConventions:
 
         # Test index 0 (backward compatibility)
         device_name_0 = generate_recent_activity_device_name(athlete_name, 0)
-        assert device_name_0 == "Strava John Doe Recent Activity"
+        assert device_name_0 == "Recent Activity"
 
         # Test index 1+ (numbered)
         device_name_1 = generate_recent_activity_device_name(athlete_name, 1)
-        assert device_name_1 == "Strava John Doe Recent Activity 2"
+        assert device_name_1 == "Recent Activity 2"
 
         device_name_2 = generate_recent_activity_device_name(athlete_name, 2)
-        assert device_name_2 == "Strava John Doe Recent Activity 3"
+        assert device_name_2 == "Recent Activity 3"
 
     def test_generate_recent_activity_sensor_id(self):
         """Test sensor ID generation for different activity indices."""
@@ -189,13 +189,13 @@ class TestStravaRecentActivitySensor:
         sensor_0 = StravaRecentActivitySensor(coordinator, "12345", 0)
         device_info_0 = sensor_0.device_info
         assert device_info_0["identifiers"] == {("ha_strava", "strava_12345_recent")}
-        assert device_info_0["name"] == "Strava Test User Recent Activity"
+        assert device_info_0["name"] == "Recent Activity"
 
         # Test index 1
         sensor_1 = StravaRecentActivitySensor(coordinator, "12345", 1)
         device_info_1 = sensor_1.device_info
         assert device_info_1["identifiers"] == {("ha_strava", "strava_12345_recent_2")}
-        assert device_info_1["name"] == "Strava Test User Recent Activity 2"
+        assert device_info_1["name"] == "Recent Activity 2"
 
 
 class TestStravaRecentActivityAttributeSensor:
@@ -234,7 +234,7 @@ class TestStravaRecentActivityAttributeSensor:
 
         device_info = sensor.device_info
         assert device_info["identifiers"] == {("ha_strava", "strava_12345_recent_3")}
-        assert device_info["name"] == "Strava Test User Recent Activity 3"
+        assert device_info["name"] == "Recent Activity 3"
 
 
 class TestSpecificRecentActivitySensors:
@@ -395,9 +395,9 @@ class TestSensorSetupWithMultipleActivities:
         device_names = [
             sensor.device_info["name"] for sensor in recent_activity_sensors
         ]
-        assert "Strava Test User Recent Activity" in device_names  # Index 0
-        assert "Strava Test User Recent Activity 2" in device_names  # Index 1
-        assert "Strava Test User Recent Activity 3" in device_names  # Index 2
+        assert "Recent Activity" in device_names  # Index 0
+        assert "Recent Activity 2" in device_names  # Index 1
+        assert "Recent Activity 3" in device_names  # Index 2
 
     @pytest.mark.asyncio
     async def test_setup_with_max_recent_activities(self, hass: HomeAssistant):
