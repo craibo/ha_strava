@@ -198,6 +198,8 @@ The gear items are sorted by distance (most used first), and the integration res
 
 Activity sensors expose a `polyline` attribute containing the route as a Google-encoded polyline string. Since that string isn't directly usable by map cards, the integration provides the `ha_strava.get_activity_route` service to decode it into a list of `{lat, lon}` coordinates on demand — keeping the raw encoded string in sensor attributes (recorder-friendly) while giving you real coordinates when you need to render a map.
 
+> **Note:** If you have map visibility hidden in your Strava privacy settings, Strava's API won't return route data for your activities — this applies even to your own activities. Check **Strava Settings → Privacy Controls → Map Visibility** if the `polyline` attribute is empty or the route service returns no data.
+
 **Calling the service:**
 
 ```yaml
