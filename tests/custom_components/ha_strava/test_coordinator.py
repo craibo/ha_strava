@@ -11,6 +11,8 @@ from custom_components.ha_strava.const import (
     CONF_ACTIVITY_TYPES_TO_TRACK,
     CONF_ATTR_DEVICE_NAME,
     CONF_ATTR_DEVICE_TYPE,
+    CONF_ATTR_KOM_SEGMENTS,
+    CONF_ATTR_PR_SEGMENTS,
     CONF_ATTR_SPORT_TYPE,
     CONF_PHOTO_CACHE_HOURS,
     CONF_PHOTO_FETCH_DELAY_SECONDS,
@@ -20,6 +22,7 @@ from custom_components.ha_strava.const import (
     CONF_SENSOR_DATE,
     CONF_SENSOR_DISTANCE,
     CONF_SENSOR_ID,
+    CONF_SENSOR_PR_COUNT,
     CONF_SENSOR_TITLE,
     DOMAIN,
 )
@@ -1481,3 +1484,54 @@ class TestStravaDataUpdateCoordinator:
         assert result is not None
         assert len(result) == 1
         assert result[0]["activity_id"] == 2
+
+    def test_sensor_activity_pr_and_kom_segments(
+        self, hass: HomeAssistant, mock_config_entry
+    ):
+        """Test that pr_count, pr_segments, and kom_segments are extracted correctly."""
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        activity = {
+            "id": 42,
+            "name": "Hilly Ride",
+            "type": "Ride",
+            "sport_type": "Ride",
+            "start_date_local": "2024-01-01T06:00:00Z",
+            "pr_count": 2,
+        }
+        activity_dto = {
+            "segment_efforts": [
+                {"name": "Alpe d'Huez", "is_kom": False, "pr_rank": 1},
+                {"name": "Col du Galibier", "is_kom": True, "pr_rank": None},
+                {"name": "Flat Bit", "is_kom": False, "pr_rank": None},
+                {"name": "Both At Once", "is_kom": True, "pr_rank": 1},
+            ],
+        }
+
+        result = coordinator._sensor_activity(activity, activity_dto)
+
+        assert result[CONF_SENSOR_PR_COUNT] == 2
+        assert result[CONF_ATTR_PR_SEGMENTS] == ["Alpe d'Huez", "Both At Once"]
+        assert result[CONF_ATTR_KOM_SEGMENTS] == ["Col du Galibier", "Both At Once"]
+
+    def test_sensor_activity_no_segment_efforts(
+        self, hass: HomeAssistant, mock_config_entry
+    ):
+        """Test pr_count/pr_segments/kom_segments default safely with no detail data."""
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        activity = {
+            "id": 43,
+            "name": "Easy Spin",
+            "type": "Ride",
+            "sport_type": "Ride",
+            "start_date_local": "2024-01-01T06:00:00Z",
+        }
+
+        result = coordinator._sensor_activity(activity, activity_dto=None)
+
+        assert result[CONF_SENSOR_PR_COUNT] is None
+        assert result[CONF_ATTR_PR_SEGMENTS] == []
+        assert result[CONF_ATTR_KOM_SEGMENTS] == []

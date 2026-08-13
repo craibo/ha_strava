@@ -99,6 +99,7 @@ def mock_strava_activities():
             "average_heartrate": 150.0,
             "max_heartrate": 180.0,
             "calories": 300,
+            "pr_count": 1,
         },
         {
             "id": 2,
@@ -126,6 +127,7 @@ def mock_strava_activities():
             "average_watts": 200.0,
             "max_watts": 500.0,
             "weighted_average_watts": 180.0,
+            "pr_count": 0,
         },
         {
             "id": 3,
@@ -147,6 +149,7 @@ def mock_strava_activities():
             "average_speed": 1.67,
             "max_speed": 2.5,
             "calories": 100,
+            "pr_count": 0,
         },
         {
             "id": 4,
@@ -168,6 +171,7 @@ def mock_strava_activities():
             "average_speed": 0.83,
             "max_speed": 1.2,
             "calories": 200,
+            "pr_count": 0,
             "laps": [
                 {"lap_index": 1, "split": 120, "distance": 50.0},
                 {"lap_index": 2, "split": 125, "distance": 50.0},
