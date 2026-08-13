@@ -222,6 +222,14 @@ route:
 
 The [journey-viewer-card](https://github.com/nledenyi/journey-viewer-card) Lovelace card can render Strava-style per-activity maps using this service. It reads activity data from any sensor matching its [data contract](https://github.com/nledenyi/journey-viewer-card/blob/main/README.md#data-contract) and lazily loads the route via a configurable `route_service` hook, which you can point at `ha_strava.get_activity_route`. See the card's documentation for full setup instructions.
 
+## Personal Records and Segment Leaderboards
+
+Activity sensors also expose PR and KOM/QOM data pulled from the segment efforts already included in the activity detail response, so no extra API calls are needed:
+
+- `pr_count` — number of segments in the activity where a new all-time personal record was set. Available as its own metric sensor alongside `trophies`.
+- `pr_segments` — list of segment names where a new all-time personal record was set on this activity.
+- `kom_segments` — list of segment names where this activity currently holds the King/Queen of the Mountain spot (leaderboard #1).
+
 ## Contributors
 
 - [@craibo](https://github.com/craibo)
