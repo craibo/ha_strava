@@ -12,14 +12,18 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from custom_components.ha_strava.const import (
     CONF_ACTIVITY_TYPES_TO_TRACK,
     CONF_ATTR_ACTIVITY_ID,
+    CONF_ATTR_KOM_SEGMENTS,
+    CONF_ATTR_PR_SEGMENTS,
     CONF_DISTANCE_UNIT_OVERRIDE,
     CONF_DISTANCE_UNIT_OVERRIDE_DEFAULT,
     CONF_DISTANCE_UNIT_OVERRIDE_IMPERIAL,
     CONF_DISTANCE_UNIT_OVERRIDE_METRIC,
+    CONF_SENSOR_PR_COUNT,
     DOMAIN,
 )
 from custom_components.ha_strava.sensor import (
     StravaActivityGearSensor,
+    StravaActivityMetricSensor,
     StravaActivityTypeSensor,
     StravaSummaryStatsSensor,
     async_setup_entry,
@@ -145,6 +149,62 @@ class TestStravaActivityTypeSensor:
         assert attributes["latitude"] == 40.7128
         assert attributes["longitude"] == -74.0060
 
+    def test_sensor_attributes_with_pr_and_kom_segments(self):
+        """Test sensor attributes include pr_segments and kom_segments."""
+        activity_with_achievements = {
+            "id": 1,
+            "name": "Test Run",
+            "type": "Run",
+            "sport_type": "Run",
+            "distance": 5000.0,
+            "moving_time": 1800,
+            "elapsed_time": 1900,
+            "total_elevation_gain": 100.0,
+            "elevation_gain": 100.0,
+            "start_date": "2024-01-01T06:00:00Z",
+            "date": "2024-01-01T06:00:00Z",
+            "commute": False,
+            "private": False,
+            "pr_segments": ["Alpe d'Huez", "Both At Once"],
+            "kom_segments": ["Col du Galibier", "Both At Once"],
+        }
+
+        coordinator = MagicMock()
+        coordinator.data = {
+            "activities": [activity_with_achievements],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+        coordinator.entry = MagicMock()
+
+        sensor = StravaActivityTypeSensor(
+            coordinator=coordinator,
+            activity_type="Run",
+            athlete_id="12345",
+        )
+
+        attributes = sensor.extra_state_attributes
+        assert attributes[CONF_ATTR_PR_SEGMENTS] == ["Alpe d'Huez", "Both At Once"]
+        assert attributes[CONF_ATTR_KOM_SEGMENTS] == ["Col du Galibier", "Both At Once"]
+
+    def test_sensor_attributes_with_no_pr_or_kom_segments(self, mock_strava_activities):
+        """Test sensor attributes default to empty lists when no achievements present."""
+        coordinator = MagicMock()
+        coordinator.data = {
+            "activities": mock_strava_activities,
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+        coordinator.entry = MagicMock()
+
+        sensor = StravaActivityTypeSensor(
+            coordinator=coordinator,
+            activity_type="Run",
+            athlete_id="12345",
+        )
+
+        attributes = sensor.extra_state_attributes
+        assert attributes.get(CONF_ATTR_PR_SEGMENTS, []) == []
+        assert attributes.get(CONF_ATTR_KOM_SEGMENTS, []) == []
+
     @pytest.mark.asyncio
     async def test_sensor_icon_mapping(self, hass: HomeAssistant):
         """Test sensor icon mapping."""
@@ -216,6 +276,37 @@ class TestStravaActivityTypeSensor:
                 athlete_id="12345",
             )
             assert sensor.device_class == expected_device_class
+
+    def test_pr_count_metric_sensor(self):
+        """Test that pr_count flows through StravaActivityMetricSensor unchanged."""
+        activity = {
+            "id": 1,
+            "name": "Test Ride",
+            "type": "Ride",
+            "sport_type": "Ride",
+            "distance": 5000.0,
+            "moving_time": 1800,
+            "elapsed_time": 1900,
+            "total_elevation_gain": 100.0,
+            "start_date": "2024-01-01T06:00:00Z",
+            "pr_count": 3,
+        }
+
+        coordinator = MagicMock()
+        coordinator.data = {
+            "activities": [activity],
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+        coordinator.entry = MagicMock()
+
+        sensor = StravaActivityMetricSensor(
+            coordinator=coordinator,
+            activity_type="Ride",
+            metric_type=CONF_SENSOR_PR_COUNT,
+            athlete_id="12345",
+        )
+
+        assert sensor.native_value == 3
 
 
 class TestStravaSummaryStatsSensor:

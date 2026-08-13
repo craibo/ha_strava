@@ -86,6 +86,7 @@ CONF_SENSOR_CALORIES = "kcal"
 CONF_SENSOR_ELEVATION = "elevation_gain"
 CONF_SENSOR_POWER = "power"
 CONF_SENSOR_TROPHIES = "trophies"
+CONF_SENSOR_PR_COUNT = "pr_count"
 CONF_SENSOR_TITLE = "title"
 CONF_SENSOR_CITY = "city"
 CONF_SENSOR_MOVING_TIME = "moving_time"
@@ -210,6 +211,7 @@ CONF_SENSORS = {
     CONF_SENSOR_ELEVATION: {"icon": "mdi:elevation-rise"},
     CONF_SENSOR_POWER: {"icon": "mdi:dumbbell"},
     CONF_SENSOR_TROPHIES: {"icon": "mdi:trophy"},
+    CONF_SENSOR_PR_COUNT: {"icon": "mdi:medal"},
     CONF_SENSOR_HEART_RATE_AVG: {"icon": "mdi:heart-pulse"},
     CONF_SENSOR_HEART_RATE_MAX: {"icon": "mdi:heart-pulse"},
 }
@@ -324,6 +326,12 @@ CONF_ATTRIBUTE_SENSORS = {
         "unit": None,
         "state_class": "measurement",
     },
+    CONF_SENSOR_PR_COUNT: {
+        "icon": "mdi:medal",
+        "device_class": None,
+        "unit": None,
+        "state_class": "measurement",
+    },
     CONF_SENSOR_KUDOS: {
         "icon": "mdi:thumb-up-outline",
         "device_class": None,
@@ -398,6 +406,7 @@ CONF_ACTIVITY_TYPE_SENSOR_METRICS = [
     CONF_SENSOR_CADENCE_AVG,
     CONF_SENSOR_POWER,
     CONF_SENSOR_TROPHIES,
+    CONF_SENSOR_PR_COUNT,
     CONF_SENSOR_KUDOS,
 ]
 
@@ -417,6 +426,7 @@ CONF_ATTRIBUTE_SENSOR_TYPES = [
     CONF_SENSOR_CADENCE_AVG,
     CONF_SENSOR_POWER,
     CONF_SENSOR_TROPHIES,
+    CONF_SENSOR_PR_COUNT,
     CONF_SENSOR_KUDOS,
 ]
 
@@ -495,6 +505,8 @@ CONF_ATTR_ATHLETE_URL = "athlete_url"
 CONF_ATTR_COMMUTE = "commute"
 CONF_ATTR_PRIVATE = "private"
 CONF_ATTR_POLYLINE = "polyline"
+CONF_ATTR_PR_SEGMENTS = "pr_segments"
+CONF_ATTR_KOM_SEGMENTS = "kom_segments"
 
 # Device Source Tracking
 CONF_ATTR_DEVICE_NAME = "device_name"

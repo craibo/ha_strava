@@ -24,8 +24,10 @@ from .const import (
     CONF_ATTR_ACTIVITY_ID,
     CONF_ATTR_ACTIVITY_URL,
     CONF_ATTR_COMMUTE,
+    CONF_ATTR_KOM_SEGMENTS,
     CONF_ATTR_LOCATION,
     CONF_ATTR_POLYLINE,
+    CONF_ATTR_PR_SEGMENTS,
     CONF_ATTR_PRIVATE,
     CONF_ATTR_SPORT_TYPE,
     CONF_ATTR_START_LATLONG,
@@ -671,6 +673,8 @@ class StravaActivityTypeSensor(CoordinatorEntity, SensorEntity):
             CONF_ATTR_PRIVATE: activity.get(CONF_ATTR_PRIVATE),
             CONF_ATTR_ACTIVITY_URL: f"{STRAVA_ACTIVITY_BASE_URL}{activity_id}",
             CONF_ATTR_POLYLINE: activity.get(CONF_ATTR_POLYLINE),
+            CONF_ATTR_PR_SEGMENTS: activity.get(CONF_ATTR_PR_SEGMENTS, []),
+            CONF_ATTR_KOM_SEGMENTS: activity.get(CONF_ATTR_KOM_SEGMENTS, []),
         }
 
         # Add starting coordinates if available
@@ -1308,6 +1312,8 @@ class StravaRecentActivitySensor(CoordinatorEntity, SensorEntity):
             CONF_ATTR_PRIVATE: activity.get(CONF_ATTR_PRIVATE),
             CONF_ATTR_ACTIVITY_URL: f"{STRAVA_ACTIVITY_BASE_URL}{activity_id}",
             CONF_ATTR_POLYLINE: activity.get(CONF_ATTR_POLYLINE),
+            CONF_ATTR_PR_SEGMENTS: activity.get(CONF_ATTR_PR_SEGMENTS, []),
+            CONF_ATTR_KOM_SEGMENTS: activity.get(CONF_ATTR_KOM_SEGMENTS, []),
         }
 
         if start_latlng := activity.get(CONF_ATTR_START_LATLONG):

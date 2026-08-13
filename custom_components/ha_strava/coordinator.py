@@ -20,7 +20,9 @@ from .const import (
     CONF_API_RETRY_MAX_ATTEMPTS,
     CONF_ATTR_COMMUTE,
     CONF_ATTR_END_LATLONG,
+    CONF_ATTR_KOM_SEGMENTS,
     CONF_ATTR_POLYLINE,
+    CONF_ATTR_PR_SEGMENTS,
     CONF_ATTR_PRIVATE,
     CONF_ATTR_SPORT_TYPE,
     CONF_ATTR_START_LATLONG,
@@ -58,6 +60,7 @@ from .const import (
     CONF_SENSOR_KUDOS,
     CONF_SENSOR_MOVING_TIME,
     CONF_SENSOR_POWER,
+    CONF_SENSOR_PR_COUNT,
     CONF_SENSOR_TITLE,
     CONF_SENSOR_TROPHIES,
     CONFIG_IMG_SIZE,
@@ -753,6 +756,18 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
 
             calories_kcal = activity_dto.get("calories")
 
+        pr_segments: list[str] = []
+        kom_segments: list[str] = []
+        if activity_dto:
+            for effort in activity_dto.get("segment_efforts") or []:
+                segment_name = effort.get("name")
+                if not segment_name:
+                    continue
+                if effort.get("pr_rank") == 1:
+                    pr_segments.append(segment_name)
+                if effort.get("is_kom"):
+                    kom_segments.append(segment_name)
+
         # Fallback to basic location info
         location = (
             activity.get("location_city")
@@ -781,6 +796,7 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             CONF_SENSOR_ELEVATION: activity.get("total_elevation_gain"),
             CONF_SENSOR_POWER: activity.get("average_watts"),
             CONF_SENSOR_TROPHIES: activity.get("achievement_count"),
+            CONF_SENSOR_PR_COUNT: activity.get("pr_count"),
             CONF_SENSOR_HEART_RATE_AVG: activity.get("average_heartrate"),
             CONF_SENSOR_HEART_RATE_MAX: activity.get("max_heartrate"),
             CONF_SENSOR_CADENCE_AVG: activity.get("average_cadence"),
@@ -790,6 +806,8 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             CONF_ATTR_COMMUTE: activity.get("commute", False),
             CONF_ATTR_PRIVATE: activity.get("private", False),
             CONF_ATTR_POLYLINE: activity.get("map", {}).get("summary_polyline", ""),
+            CONF_ATTR_PR_SEGMENTS: pr_segments,
+            CONF_ATTR_KOM_SEGMENTS: kom_segments,
             # Activity Details
             CONF_SENSOR_CALORIES: calories_kcal,
             # Device source tracking
