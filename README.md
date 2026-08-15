@@ -226,9 +226,11 @@ The [journey-viewer-card](https://github.com/nledenyi/journey-viewer-card) Lovel
 
 Activity sensors also expose PR and KOM/QOM data pulled from the segment efforts already included in the activity detail response, so no extra API calls are needed:
 
-- `pr_count` — number of segments in the activity where a new all-time personal record was set. Available as its own metric sensor alongside `trophies`.
+- `pr_count` — number of segments in the activity where a new all-time personal record was set. Available as its own metric sensor alongside `achievements`.
 - `pr_segments` — list of segment names where a new all-time personal record was set on this activity.
 - `kom_segments` — list of segment names where this activity currently holds the King/Queen of the Mountain spot (leaderboard #1).
+
+> **Note:** The "Trophies" sensor was renamed to "Achievements" to match Strava's own terminology, and now correctly reads its count from the same endpoint Strava's UI uses (previously it could show 0 even when Strava displayed real achievements). Upgrading installs keep their existing entity ID (still ending in `_trophies`) so history and automations aren't broken — only the displayed name changes. Rename the entity ID manually via the UI if you'd like it to match.
 
 ## Contributors
 
