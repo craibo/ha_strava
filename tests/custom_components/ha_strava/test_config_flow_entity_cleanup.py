@@ -835,3 +835,237 @@ class TestMigrateEntityRegistryNames:
             _migrate_entity_registry_names(hass, config_entry)
 
         mock_er.async_update_entity.assert_not_called()
+
+
+class TestMigrateTrophiesToAchievementsEntities:
+    """Test the _migrate_trophies_to_achievements_entities helper called during async_setup_entry."""
+
+    @pytest.mark.asyncio
+    async def test_renames_per_activity_type_trophies_entity(self, hass: HomeAssistant):
+        """A per-activity-type trophies unique_id is renamed to achievements."""
+        from custom_components.ha_strava import (
+            _migrate_trophies_to_achievements_entities,
+        )
+        from custom_components.ha_strava.const import DOMAIN
+
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            unique_id="12345",
+            data={CONF_CLIENT_ID: "cid", CONF_CLIENT_SECRET: "csec"},
+            title="Strava: Test User",
+        )
+
+        trophies_entity = MagicMock()
+        trophies_entity.entity_id = "sensor.strava_12345_run_trophies"
+        trophies_entity.unique_id = "strava_12345_run_trophies"
+
+        mock_er = MagicMock()
+
+        with patch(
+            "custom_components.ha_strava.er_async_get",
+            return_value=mock_er,
+        ), patch(
+            "custom_components.ha_strava.async_entries_for_config_entry",
+            return_value=[trophies_entity],
+        ):
+            _migrate_trophies_to_achievements_entities(hass, config_entry)
+
+        mock_er.async_update_entity.assert_called_once_with(
+            "sensor.strava_12345_run_trophies",
+            new_unique_id="strava_12345_run_achievements",
+        )
+
+    @pytest.mark.asyncio
+    async def test_renames_recent_activity_trophies_entity_index_zero(
+        self, hass: HomeAssistant
+    ):
+        """A recent-activity (index 0) trophies unique_id is renamed to achievements."""
+        from custom_components.ha_strava import (
+            _migrate_trophies_to_achievements_entities,
+        )
+        from custom_components.ha_strava.const import DOMAIN
+
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            unique_id="12345",
+            data={CONF_CLIENT_ID: "cid", CONF_CLIENT_SECRET: "csec"},
+            title="Strava: Test User",
+        )
+
+        trophies_entity = MagicMock()
+        trophies_entity.entity_id = "sensor.strava_12345_recent_trophies"
+        trophies_entity.unique_id = "strava_12345_recent_trophies"
+
+        mock_er = MagicMock()
+
+        with patch(
+            "custom_components.ha_strava.er_async_get",
+            return_value=mock_er,
+        ), patch(
+            "custom_components.ha_strava.async_entries_for_config_entry",
+            return_value=[trophies_entity],
+        ):
+            _migrate_trophies_to_achievements_entities(hass, config_entry)
+
+        mock_er.async_update_entity.assert_called_once_with(
+            "sensor.strava_12345_recent_trophies",
+            new_unique_id="strava_12345_recent_achievements",
+        )
+
+    @pytest.mark.asyncio
+    async def test_renames_recent_activity_trophies_entity_index_nonzero(
+        self, hass: HomeAssistant
+    ):
+        """A recent-activity (index > 0) trophies unique_id is renamed to achievements."""
+        from custom_components.ha_strava import (
+            _migrate_trophies_to_achievements_entities,
+        )
+        from custom_components.ha_strava.const import DOMAIN
+
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            unique_id="12345",
+            data={CONF_CLIENT_ID: "cid", CONF_CLIENT_SECRET: "csec"},
+            title="Strava: Test User",
+        )
+
+        trophies_entity = MagicMock()
+        trophies_entity.entity_id = "sensor.strava_12345_recent_2_trophies"
+        trophies_entity.unique_id = "strava_12345_recent_2_trophies"
+
+        mock_er = MagicMock()
+
+        with patch(
+            "custom_components.ha_strava.er_async_get",
+            return_value=mock_er,
+        ), patch(
+            "custom_components.ha_strava.async_entries_for_config_entry",
+            return_value=[trophies_entity],
+        ):
+            _migrate_trophies_to_achievements_entities(hass, config_entry)
+
+        mock_er.async_update_entity.assert_called_once_with(
+            "sensor.strava_12345_recent_2_trophies",
+            new_unique_id="strava_12345_recent_2_achievements",
+        )
+
+    @pytest.mark.asyncio
+    async def test_idempotent_on_second_run(self, hass: HomeAssistant):
+        """Running the migration again post-migration is a no-op.
+
+        Modeled as two separate scenarios rather than mutating shared mock
+        state between calls: the first call migrates a "_trophies" entity
+        (one update), and the second call simulates the post-migration
+        registry state by seeding an entity whose unique_id already ends in
+        "_achievements" (zero additional updates). Together these show the
+        function converges and stays converged.
+        """
+        from custom_components.ha_strava import (
+            _migrate_trophies_to_achievements_entities,
+        )
+        from custom_components.ha_strava.const import DOMAIN
+
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            unique_id="12345",
+            data={CONF_CLIENT_ID: "cid", CONF_CLIENT_SECRET: "csec"},
+            title="Strava: Test User",
+        )
+
+        trophies_entity = MagicMock()
+        trophies_entity.entity_id = "sensor.strava_12345_run_trophies"
+        trophies_entity.unique_id = "strava_12345_run_trophies"
+
+        mock_er_first_run = MagicMock()
+
+        with patch(
+            "custom_components.ha_strava.er_async_get",
+            return_value=mock_er_first_run,
+        ), patch(
+            "custom_components.ha_strava.async_entries_for_config_entry",
+            return_value=[trophies_entity],
+        ):
+            _migrate_trophies_to_achievements_entities(hass, config_entry)
+
+        assert mock_er_first_run.async_update_entity.call_count == 1
+
+        migrated_entity = MagicMock()
+        migrated_entity.entity_id = "sensor.strava_12345_run_achievements"
+        migrated_entity.unique_id = "strava_12345_run_achievements"
+
+        mock_er_second_run = MagicMock()
+
+        with patch(
+            "custom_components.ha_strava.er_async_get",
+            return_value=mock_er_second_run,
+        ), patch(
+            "custom_components.ha_strava.async_entries_for_config_entry",
+            return_value=[migrated_entity],
+        ):
+            _migrate_trophies_to_achievements_entities(hass, config_entry)
+
+        mock_er_second_run.async_update_entity.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_unrelated_entities_untouched(self, hass: HomeAssistant):
+        """An entity with an unrelated sensor type suffix is left untouched."""
+        from custom_components.ha_strava import (
+            _migrate_trophies_to_achievements_entities,
+        )
+        from custom_components.ha_strava.const import DOMAIN
+
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            unique_id="12345",
+            data={CONF_CLIENT_ID: "cid", CONF_CLIENT_SECRET: "csec"},
+            title="Strava: Test User",
+        )
+
+        distance_entity = MagicMock()
+        distance_entity.entity_id = "sensor.strava_12345_run_distance"
+        distance_entity.unique_id = "strava_12345_run_distance"
+
+        mock_er = MagicMock()
+
+        with patch(
+            "custom_components.ha_strava.er_async_get",
+            return_value=mock_er,
+        ), patch(
+            "custom_components.ha_strava.async_entries_for_config_entry",
+            return_value=[distance_entity],
+        ):
+            _migrate_trophies_to_achievements_entities(hass, config_entry)
+
+        mock_er.async_update_entity.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_already_migrated_entities_untouched(self, hass: HomeAssistant):
+        """An entity already on the achievements unique_id is left untouched."""
+        from custom_components.ha_strava import (
+            _migrate_trophies_to_achievements_entities,
+        )
+        from custom_components.ha_strava.const import DOMAIN
+
+        config_entry = MockConfigEntry(
+            domain=DOMAIN,
+            unique_id="12345",
+            data={CONF_CLIENT_ID: "cid", CONF_CLIENT_SECRET: "csec"},
+            title="Strava: Test User",
+        )
+
+        achievements_entity = MagicMock()
+        achievements_entity.entity_id = "sensor.strava_12345_run_achievements"
+        achievements_entity.unique_id = "strava_12345_run_achievements"
+
+        mock_er = MagicMock()
+
+        with patch(
+            "custom_components.ha_strava.er_async_get",
+            return_value=mock_er,
+        ), patch(
+            "custom_components.ha_strava.async_entries_for_config_entry",
+            return_value=[achievements_entity],
+        ):
+            _migrate_trophies_to_achievements_entities(hass, config_entry)
+
+        mock_er.async_update_entity.assert_not_called()
