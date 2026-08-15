@@ -100,6 +100,64 @@ class TestStravaDataUpdateCoordinator:
         assert activities[0][CONF_SENSOR_TITLE] == "Morning Run"
 
     @pytest.mark.asyncio
+    async def test_fetch_activities_requests_all_segment_efforts(
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        mock_strava_activities,
+        aioresponses_mock,
+    ):
+        """Detail fetches must request include_all_efforts=true.
+
+        Without it, Strava's API only returns a subset of segment efforts
+        (the ones it deems noteworthy), which can under-report PRs/KOMs
+        even for non-private activities.
+        """
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        aioresponses_mock.get(
+            "https://www.strava.com/api/v3/athlete/activities?per_page=200",
+            payload=mock_strava_activities,
+            status=200,
+        )
+
+        activity_types_seen = set()
+        activities_needing_details = set()
+        filtered_activity_count = 0
+        for activity in mock_strava_activities:
+            activity_type = activity.get("type")
+            activity_id = activity["id"]
+            filtered_activity_count += 1
+            if activity_type not in activity_types_seen:
+                activity_types_seen.add(activity_type)
+                activities_needing_details.add(activity_id)
+            if filtered_activity_count <= 1:
+                activities_needing_details.add(activity_id)
+
+        for activity_id in activities_needing_details:
+            aioresponses_mock.get(
+                f"https://www.strava.com/api/v3/activities/{activity_id}"
+                "?include_all_efforts=true",
+                payload={},
+                status=200,
+            )
+
+        await coordinator._fetch_activities()
+
+        requested_urls = [str(key[1]) for key in aioresponses_mock.requests]
+        for activity_id in activities_needing_details:
+            matching = [
+                url
+                for url in requested_urls
+                if url.startswith(
+                    f"https://www.strava.com/api/v3/activities/{activity_id}"
+                )
+            ]
+            assert matching, f"No detail request found for activity {activity_id}"
+            assert all("include_all_efforts=true" in url for url in matching)
+
+    @pytest.mark.asyncio
     async def test_fetch_activities_filtered_by_type(
         self,
         hass: HomeAssistant,

@@ -238,7 +238,10 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
                 try:
                     activity_response = await self.oauth_session.async_request(
                         method="GET",
-                        url=f"https://www.strava.com/api/v3/activities/{activity_id}",
+                        url=(
+                            f"https://www.strava.com/api/v3/activities/{activity_id}"
+                            "?include_all_efforts=true"
+                        ),
                     )
                     if activity_response.status == 200:
                         response_json = await activity_response.json()
@@ -660,7 +663,10 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
         try:
             response = await self.oauth_session.async_request(
                 method="GET",
-                url=f"https://www.strava.com/api/v3/activities/{activity_id}",
+                url=(
+                    f"https://www.strava.com/api/v3/activities/{activity_id}"
+                    "?include_all_efforts=true"
+                ),
             )
             response.raise_for_status()
             activity_detail = await response.json()
