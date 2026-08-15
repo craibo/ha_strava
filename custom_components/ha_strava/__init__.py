@@ -361,12 +361,23 @@ def _migrate_trophies_to_achievements_entities(
     a new entity get created) preserves entity_id and history across the
     upgrade. Idempotent: entities already on "_achievements" are left
     untouched, and this is a no-op on every run after the first.
+
+    Only unique_id is renamed, so entity_id keeps its original "_trophies"
+    suffix for upgraded installs even though the displayed name now reads
+    "Achievements" (derived separately from CONF_SENSOR_TROPHIES). Users
+    can rename the entity_id manually via the UI if they want it to match.
     """
     entity_registry = er_async_get(hass)
     for entity in async_entries_for_config_entry(entity_registry, entry.entry_id):
         if not entity.unique_id.endswith("_trophies"):
             continue
         new_unique_id = entity.unique_id[: -len("_trophies")] + "_achievements"
+        _LOGGER.info(
+            "Migrating achievements sensor unique_id for %s: %s -> %s",
+            entity.entity_id,
+            entity.unique_id,
+            new_unique_id,
+        )
         entity_registry.async_update_entity(
             entity.entity_id, new_unique_id=new_unique_id
         )
