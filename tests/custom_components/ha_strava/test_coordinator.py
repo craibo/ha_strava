@@ -24,6 +24,7 @@ from custom_components.ha_strava.const import (
     CONF_SENSOR_ID,
     CONF_SENSOR_PR_COUNT,
     CONF_SENSOR_TITLE,
+    CONF_SENSOR_TROPHIES,
     DOMAIN,
 )
 from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
@@ -1498,9 +1499,12 @@ class TestStravaDataUpdateCoordinator:
             "type": "Ride",
             "sport_type": "Ride",
             "start_date_local": "2024-01-01T06:00:00Z",
-            "pr_count": 2,
+            "pr_count": 0,
+            "achievement_count": 0,
         }
         activity_dto = {
+            "pr_count": 2,
+            "achievement_count": 2,
             "segment_efforts": [
                 {"name": "Alpe d'Huez", "is_kom": False, "pr_rank": 1},
                 {"name": "Col du Galibier", "is_kom": True, "pr_rank": None},
@@ -1535,3 +1539,53 @@ class TestStravaDataUpdateCoordinator:
         assert result[CONF_SENSOR_PR_COUNT] is None
         assert result[CONF_ATTR_PR_SEGMENTS] == []
         assert result[CONF_ATTR_KOM_SEGMENTS] == []
+
+    def test_sensor_activity_achievement_count_prefers_detail_endpoint(
+        self, hass: HomeAssistant, mock_config_entry
+    ):
+        """Strava's list endpoint can lag; the detail endpoint's achievement_count
+        and pr_count must win whenever detail data was fetched."""
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        activity = {
+            "id": 99,
+            "name": "Fast Ride",
+            "type": "Ride",
+            "sport_type": "Ride",
+            "start_date_local": "2024-01-01T06:00:00Z",
+            "achievement_count": 0,
+            "pr_count": 0,
+        }
+        activity_dto = {
+            "achievement_count": 3,
+            "pr_count": 1,
+            "segment_efforts": [],
+        }
+
+        result = coordinator._sensor_activity(activity, activity_dto)
+
+        assert result[CONF_SENSOR_TROPHIES] == 3
+        assert result[CONF_SENSOR_PR_COUNT] == 1
+
+    def test_sensor_activity_achievement_count_falls_back_without_detail(
+        self, hass: HomeAssistant, mock_config_entry
+    ):
+        """When no detail data was fetched, fall back to the list endpoint's values."""
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        activity = {
+            "id": 100,
+            "name": "Untouched Activity",
+            "type": "Ride",
+            "sport_type": "Ride",
+            "start_date_local": "2024-01-01T06:00:00Z",
+            "achievement_count": 2,
+            "pr_count": 1,
+        }
+
+        result = coordinator._sensor_activity(activity, activity_dto=None)
+
+        assert result[CONF_SENSOR_TROPHIES] == 2
+        assert result[CONF_SENSOR_PR_COUNT] == 1
