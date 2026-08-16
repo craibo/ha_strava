@@ -849,11 +849,23 @@ class TestSensorPlatform:
 
             # Should create main activity sensors + individual attribute sensors + summary stats sensors
             # + recent activity sensors
-            # 4 activity types × (1 main + 15 attribute + 1 gear) + 35 summary stats + 1 recent activity device
-            # (1 main + 15 attribute + 1 gear)
-            # = 68 + 35 + 17 = 120 sensors total
-            expected_sensor_count = 120
+            # 4 activity types × (1 main + 16 attribute + 1 gear)
+            # + 35 existing summary stats + 11 weekly summary stats
+            # + 1 recent activity device (1 main + 16 attribute + 1 gear)
+            # = 72 + 35 + 11 + 18 = 136 sensors total
+            expected_sensor_count = 136
             assert len(call_args) == expected_sensor_count
+
+            weekly_sensors = [
+                sensor
+                for sensor in call_args
+                if getattr(sensor, "_api_key", "").startswith("weekly_")
+            ]
+            assert len(weekly_sensors) == 11
+            assert any(
+                sensor.name == "Weekly Run Distance" for sensor in weekly_sensors
+            )
+            assert not any("Walk" in sensor.name for sensor in weekly_sensors)
 
             # Verify that different sensor types are created
             sensor_types = [type(sensor).__name__ for sensor in call_args]
@@ -1003,8 +1015,9 @@ class TestSensorPlatform:
         call_args = async_add_entities_mock.call_args[0][0]
 
         # Should only create summary stats sensors + recent activity sensors (no activity type sensors)
-        # 35 summary stats + 1 recent activity device (1 main + 15 attribute + 1 gear) = 35 + 17 = 52 sensors
-        expected_sensor_count = 52
+        # 35 existing summary stats + 11 weekly summary stats
+        # + 1 recent activity device (1 main + 16 attribute + 1 gear) = 35 + 11 + 18 = 64 sensors
+        expected_sensor_count = 64
         assert len(call_args) == expected_sensor_count
 
         # Verify no activity type sensors are created
@@ -1232,8 +1245,9 @@ class TestStravaActivityGearSensor:
         call_args = async_add_entities_mock.call_args[0][0]
 
         # Should only create summary stats sensors + recent activity sensors (no activity type sensors)
-        # 35 summary stats + 1 recent activity device (1 main + 15 attribute + 1 gear) = 35 + 17 = 52 sensors
-        expected_sensor_count = 52
+        # 35 existing summary stats + 11 weekly summary stats
+        # + 1 recent activity device (1 main + 16 attribute + 1 gear) = 35 + 11 + 18 = 64 sensors
+        expected_sensor_count = 64
         assert len(call_args) == expected_sensor_count
 
         # Verify no activity type sensors are created
@@ -1271,10 +1285,11 @@ class TestStravaActivityGearSensor:
         async_add_entities_mock.assert_called_once()
         call_args = async_add_entities_mock.call_args[0][0]
 
-        # Should create sensors for Run and Swim (2 activity types × 17 sensors each)
-        # + 35 summary stats + 1 recent activity device (17 sensors)
-        # = 34 + 35 + 17 = 86 sensors
-        expected_sensor_count = 86
+        # Should create sensors for Run and Swim (2 activity types × 18 sensors each)
+        # + 35 existing summary stats + 11 weekly summary stats
+        # + 1 recent activity device (18 sensors)
+        # = 36 + 35 + 11 + 18 = 100 sensors
+        expected_sensor_count = 100
         assert len(call_args) == expected_sensor_count
 
         # Verify activity type sensors are created for Run and Swim

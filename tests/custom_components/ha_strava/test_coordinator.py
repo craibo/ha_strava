@@ -1,7 +1,7 @@
 """Test coordinator for ha_strava."""
 
 from datetime import datetime, timedelta
-from unittest.mock import patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.core import HomeAssistant
@@ -610,6 +610,126 @@ class TestStravaDataUpdateCoordinator:
                 assert key not in stats
 
     @pytest.mark.asyncio
+    async def test_fetch_weekly_totals_uses_current_week_activity_data(
+        self, hass: HomeAssistant, mock_config_entry
+    ):
+        """Test weekly totals are aggregated from the bounded activities endpoint."""
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        weekly_activities = [
+            {
+                "type": "Run",
+                "sport_type": "Run",
+                "distance": 8943.3,
+                "moving_time": 5100,
+                "elapsed_time": 5200,
+                "total_elevation_gain": 100.0,
+                "achievement_count": 1,
+            },
+            {
+                "type": "Run",
+                "sport_type": "Run",
+                "distance": 3826.6,
+                "moving_time": 2200,
+                "elapsed_time": 2300,
+                "total_elevation_gain": 50.0,
+                "achievement_count": 0,
+            },
+            {
+                "type": "Ride",
+                "sport_type": "MountainBikeRide",
+                "distance": 25000.0,
+                "moving_time": 3600,
+                "elapsed_time": 3700,
+                "total_elevation_gain": 500.0,
+                "achievement_count": 2,
+            },
+            {
+                "type": "Walk",
+                "sport_type": "Walk",
+                "distance": 1000.0,
+                "moving_time": 600,
+                "elapsed_time": 650,
+                "total_elevation_gain": 10.0,
+                "achievement_count": 0,
+            },
+            {
+                "type": "Hike",
+                "sport_type": "Hike",
+                "distance": 5000.0,
+                "moving_time": 1800,
+                "elapsed_time": 1900,
+                "total_elevation_gain": 200.0,
+            },
+        ]
+        response = MagicMock()
+        response.json = AsyncMock(return_value=weekly_activities)
+
+        with (
+            patch.object(
+                coordinator,
+                "_weekly_activity_window",
+                return_value=(1786334400, 1786939200),
+            ),
+            patch.object(
+                coordinator.oauth_session,
+                "async_request",
+                new=AsyncMock(return_value=response),
+            ) as async_request,
+        ):
+            weekly_totals = await coordinator._fetch_weekly_totals()
+
+        async_request.assert_awaited_once_with(
+            method="GET",
+            url=(
+                "https://www.strava.com/api/v3/athlete/activities?"
+                "after=1786334400&before=1786939200&page=1&per_page=200"
+            ),
+        )
+        assert weekly_totals["weekly_run_totals"] == {
+            "count": 2,
+            "distance": pytest.approx(12769.9),
+            "moving_time": 7300,
+            "elapsed_time": 7500,
+            "elevation_gain": pytest.approx(150.0),
+            "achievement_count": 1,
+        }
+        assert weekly_totals["weekly_ride_totals"] == {
+            "count": 1,
+            "distance": pytest.approx(25000.0),
+            "moving_time": 3600,
+            "elapsed_time": 3700,
+            "elevation_gain": pytest.approx(500.0),
+            "achievement_count": 2,
+        }
+        assert "weekly_walk_totals" not in weekly_totals
+        assert "weekly_hike_totals" not in weekly_totals
+
+    @pytest.mark.asyncio
+    async def test_fetch_weekly_totals_is_independent_of_activity_selection(
+        self, hass: HomeAssistant, mock_config_entry
+    ):
+        """Test weekly summary data is fetched independently of activity selection."""
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        response = MagicMock()
+        response.json = AsyncMock(return_value=[])
+
+        with patch.object(
+            coordinator.oauth_session,
+            "async_request",
+            new=AsyncMock(return_value=response),
+        ) as async_request:
+            weekly_totals = await coordinator._fetch_weekly_totals()
+
+        assert "weekly_run_totals" in weekly_totals
+        assert "weekly_ride_totals" in weekly_totals
+        assert "weekly_swim_totals" in weekly_totals
+        async_request.assert_awaited_once()
+
+    @pytest.mark.asyncio
     async def test_coordinator_data_update(
         self,
         hass: HomeAssistant,
@@ -660,6 +780,13 @@ class TestStravaDataUpdateCoordinator:
             payload=mock_strava_stats,
             status=200,
         )
+        after, before = coordinator._weekly_activity_window()
+        aioresponses_mock.get(
+            f"https://www.strava.com/api/v3/athlete/activities?after={after}"
+            f"&before={before}&page=1&per_page=200",
+            payload=mock_strava_activities,
+            status=200,
+        )
 
         # Test data update
         result = await coordinator._async_update_data()
@@ -682,6 +809,7 @@ class TestStravaDataUpdateCoordinator:
             "recent_ride_totals" in result["summary_stats"]
             or "all_ride_totals" in result["summary_stats"]
         )
+        assert result["summary_stats"]["weekly_run_totals"]["count"] == 1
 
     @pytest.mark.asyncio
     async def test_coordinator_error_handling(
@@ -865,6 +993,13 @@ class TestStravaDataUpdateCoordinator:
             )
         aioresponses_mock.get(
             "https://www.strava.com/api/v3/athletes/12345/stats", status=200, payload={}
+        )
+        after, before = coordinator._weekly_activity_window()
+        aioresponses_mock.get(
+            f"https://www.strava.com/api/v3/athlete/activities?after={after}"
+            f"&before={before}&page=1&per_page=200",
+            payload=malformed_activities,
+            status=200,
         )
 
         # Test data update with malformed activities
