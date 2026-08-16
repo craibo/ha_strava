@@ -63,8 +63,6 @@ CONF_NUM_GEAR_SENSORS_DEFAULT = 3
 
 STRAVA_ACTIVITY_BASE_URL = "https://www.strava.com/activities/"
 STRAVA_ACTHLETE_BASE_URL = "https://www.strava.com/dashboard"
-STRAVA_ACTIVITIES_URL = "https://www.strava.com/api/v3/athlete/activities"
-STRAVA_ACTIVITIES_PER_PAGE = 200
 
 # Event Specs
 CONF_STRAVA_DATA_UPDATE_EVENT = "strava_data_update"

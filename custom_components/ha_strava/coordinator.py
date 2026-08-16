@@ -68,8 +68,6 @@ from .const import (
     DOMAIN,
     OAUTH2_AUTHORIZE,
     OAUTH2_TOKEN,
-    STRAVA_ACTIVITIES_PER_PAGE,
-    STRAVA_ACTIVITIES_URL,
     SUMMARY_ACTIVITY_TYPES,
     SUPPORTED_ACTIVITY_TYPES,
     normalize_activity_type,
@@ -146,7 +144,7 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
         try:
             response = await self.oauth_session.async_request(
                 method="GET",
-                url=f"{STRAVA_ACTIVITIES_URL}?per_page={STRAVA_ACTIVITIES_PER_PAGE}",
+                url="https://www.strava.com/api/v3/athlete/activities?per_page=200",
             )
             response.raise_for_status()
             activities_json = await response.json()
@@ -288,6 +286,7 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
     async def _fetch_weekly_totals(self) -> dict:
         """Fetch and aggregate activities in the current Monday-to-Sunday week."""
         after, before = self._weekly_activity_window()
+        per_page = 200
         weekly_totals = {
             f"weekly_{normalize_activity_type(activity_type)}_totals": {
                 "count": 0,
@@ -303,8 +302,9 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
         page = 1
         while True:
             url = (
-                f"{STRAVA_ACTIVITIES_URL}?after={after}&before={before}"
-                f"&page={page}&per_page={STRAVA_ACTIVITIES_PER_PAGE}"
+                "https://www.strava.com/api/v3/athlete/activities?"
+                f"after={after}&before={before}"
+                f"&page={page}&per_page={per_page}"
             )
             _LOGGER.debug("Fetching weekly activities page %s", page)
             try:
@@ -340,7 +340,7 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
                 totals["elevation_gain"] += activity.get("total_elevation_gain") or 0
                 totals["achievement_count"] += activity.get("achievement_count") or 0
 
-            if len(activities_json) < STRAVA_ACTIVITIES_PER_PAGE:
+            if len(activities_json) < per_page:
                 break
             page += 1
 
