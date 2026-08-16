@@ -68,7 +68,6 @@ from .const import (
     DOMAIN,
     OAUTH2_AUTHORIZE,
     OAUTH2_TOKEN,
-    SUMMARY_ACTIVITY_TYPES,
     SUPPORTED_ACTIVITY_TYPES,
     normalize_activity_type,
 )
@@ -287,6 +286,7 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
         """Fetch and aggregate activities in the current Monday-to-Sunday week."""
         after, before = self._weekly_activity_window()
         per_page = 200
+        summary_activity_types = ("Run", "Ride", "Swim")
         weekly_totals = {
             f"weekly_{normalize_activity_type(activity_type)}_totals": {
                 "count": 0,
@@ -296,7 +296,7 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
                 "elevation_gain": 0.0,
                 "achievement_count": 0,
             }
-            for activity_type in SUMMARY_ACTIVITY_TYPES
+            for activity_type in summary_activity_types
         }
 
         page = 1
@@ -327,7 +327,7 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
 
             for activity in activities_json:
                 activity_type = activity.get("type")
-                if activity_type not in SUMMARY_ACTIVITY_TYPES:
+                if activity_type not in summary_activity_types:
                     continue
 
                 totals = weekly_totals[

@@ -49,7 +49,6 @@ CONF_DISTANCE_UNIT_OVERRIDE_IMPERIAL = "imperial"
 # Activity Type Selection
 CONF_ACTIVITY_TYPES_TO_TRACK = "activity_types_to_track"
 DEFAULT_ACTIVITY_TYPES = ["Run", "Ride", "Swim"]
-SUMMARY_ACTIVITY_TYPES = ["Run", "Ride", "Swim"]
 
 # Recent Activity Configuration
 CONF_NUM_RECENT_ACTIVITIES = "num_recent_activities"
