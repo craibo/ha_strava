@@ -69,6 +69,10 @@ from .const import (
     OAUTH2_AUTHORIZE,
     OAUTH2_TOKEN,
     SUPPORTED_ACTIVITY_TYPES,
+    WEEKLY_ACTIVITIES_MAX_PAGES,
+    WEEKLY_ACTIVITIES_PER_PAGE,
+    WEEKLY_SPORT_TYPE_TO_CATEGORY,
+    WEEKLY_SUMMARY_ACTIVITY_TYPES,
     normalize_activity_type,
 )
 
@@ -285,26 +289,41 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
     async def _fetch_weekly_totals(self) -> dict:
         """Fetch and aggregate activities in the current Monday-to-Sunday week."""
         after, before = self._weekly_activity_window()
-        per_page = 200
-        summary_activity_types = ("Run", "Ride", "Swim")
+
+        # Only aggregate types the user has selected to track, matching
+        # _fetch_activities' filtering behavior.
+        selected_activity_types = (
+            self.entry.options.get(CONF_ACTIVITY_TYPES_TO_TRACK)
+            if CONF_ACTIVITY_TYPES_TO_TRACK in self.entry.options
+            else (
+                self.entry.data.get(CONF_ACTIVITY_TYPES_TO_TRACK)
+                if CONF_ACTIVITY_TYPES_TO_TRACK in self.entry.data
+                else []
+            )
+        )
+        summary_activity_types = tuple(
+            activity_type
+            for activity_type in WEEKLY_SUMMARY_ACTIVITY_TYPES
+            if activity_type in selected_activity_types
+        )
         weekly_totals = {
             f"weekly_{normalize_activity_type(activity_type)}_totals": {
                 "count": 0,
                 "distance": 0.0,
                 "moving_time": 0,
-                "elapsed_time": 0,
                 "elevation_gain": 0.0,
-                "achievement_count": 0,
             }
             for activity_type in summary_activity_types
         }
+        if not summary_activity_types:
+            return weekly_totals
 
         page = 1
         while True:
             url = (
                 "https://www.strava.com/api/v3/athlete/activities?"
                 f"after={after}&before={before}"
-                f"&page={page}&per_page={per_page}"
+                f"&page={page}&per_page={WEEKLY_ACTIVITIES_PER_PAGE}"
             )
             _LOGGER.debug("Fetching weekly activities page %s", page)
             try:
@@ -326,23 +345,29 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
                 )
 
             for activity in activities_json:
-                activity_type = activity.get("type")
-                if activity_type not in summary_activity_types:
+                raw_activity_type = activity.get("sport_type") or activity.get("type")
+                activity_category = WEEKLY_SPORT_TYPE_TO_CATEGORY.get(raw_activity_type)
+                if activity_category not in summary_activity_types:
                     continue
 
                 totals = weekly_totals[
-                    f"weekly_{normalize_activity_type(activity_type)}_totals"
+                    f"weekly_{normalize_activity_type(activity_category)}_totals"
                 ]
                 totals["count"] += 1
                 totals["distance"] += activity.get("distance") or 0
                 totals["moving_time"] += activity.get("moving_time") or 0
-                totals["elapsed_time"] += activity.get("elapsed_time") or 0
                 totals["elevation_gain"] += activity.get("total_elevation_gain") or 0
-                totals["achievement_count"] += activity.get("achievement_count") or 0
 
-            if len(activities_json) < per_page:
+            if len(activities_json) < WEEKLY_ACTIVITIES_PER_PAGE:
                 break
             page += 1
+            if page > WEEKLY_ACTIVITIES_MAX_PAGES:
+                _LOGGER.warning(
+                    "Reached max page limit (%s) fetching weekly activities; "
+                    "totals may be incomplete",
+                    WEEKLY_ACTIVITIES_MAX_PAGES,
+                )
+                break
 
         return weekly_totals
 

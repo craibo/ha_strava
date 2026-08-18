@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -691,28 +692,41 @@ class TestStravaDataUpdateCoordinator:
             "count": 2,
             "distance": pytest.approx(12769.9),
             "moving_time": 7300,
-            "elapsed_time": 7500,
             "elevation_gain": pytest.approx(150.0),
-            "achievement_count": 1,
         }
         assert weekly_totals["weekly_ride_totals"] == {
             "count": 1,
             "distance": pytest.approx(25000.0),
             "moving_time": 3600,
-            "elapsed_time": 3700,
             "elevation_gain": pytest.approx(500.0),
-            "achievement_count": 2,
         }
         assert "weekly_walk_totals" not in weekly_totals
         assert "weekly_hike_totals" not in weekly_totals
 
     @pytest.mark.asyncio
-    async def test_fetch_weekly_totals_is_independent_of_activity_selection(
-        self, hass: HomeAssistant, mock_config_entry
+    async def test_fetch_weekly_totals_respects_activity_selection(
+        self, hass: HomeAssistant
     ):
-        """Test weekly summary data is fetched independently of activity selection."""
+        """Weekly totals should only be built for selected activity types,
+        matching _fetch_activities' filtering behavior."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            unique_id="12345",
+            data={
+                CONF_CLIENT_ID: "test_client_id",
+                CONF_CLIENT_SECRET: "test_client_secret",
+                "token": {
+                    "access_token": "test_access_token",
+                    "refresh_token": "test_refresh_token",
+                    "expires_at": 4102444800,
+                    "token_type": "Bearer",
+                },
+            },
+            options={CONF_ACTIVITY_TYPES_TO_TRACK: ["Run"]},
+            title="Strava: Test User",
+        )
         with patch("homeassistant.helpers.frame.report_usage"):
-            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+            coordinator = StravaDataUpdateCoordinator(hass, entry=entry)
 
         response = MagicMock()
         response.json = AsyncMock(return_value=[])
@@ -725,9 +739,43 @@ class TestStravaDataUpdateCoordinator:
             weekly_totals = await coordinator._fetch_weekly_totals()
 
         assert "weekly_run_totals" in weekly_totals
-        assert "weekly_ride_totals" in weekly_totals
-        assert "weekly_swim_totals" in weekly_totals
+        assert "weekly_ride_totals" not in weekly_totals
+        assert "weekly_swim_totals" not in weekly_totals
         async_request.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_fetch_weekly_totals_no_selected_types_skips_fetch(
+        self, hass: HomeAssistant
+    ):
+        """No weekly-relevant activity types selected should skip the API call entirely."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            unique_id="12345",
+            data={
+                CONF_CLIENT_ID: "test_client_id",
+                CONF_CLIENT_SECRET: "test_client_secret",
+                "token": {
+                    "access_token": "test_access_token",
+                    "refresh_token": "test_refresh_token",
+                    "expires_at": 4102444800,
+                    "token_type": "Bearer",
+                },
+            },
+            options={CONF_ACTIVITY_TYPES_TO_TRACK: ["Walk"]},
+            title="Strava: Test User",
+        )
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=entry)
+
+        with patch.object(
+            coordinator.oauth_session,
+            "async_request",
+            new=AsyncMock(),
+        ) as async_request:
+            weekly_totals = await coordinator._fetch_weekly_totals()
+
+        assert weekly_totals == {}
+        async_request.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_coordinator_data_update(
