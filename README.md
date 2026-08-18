@@ -24,6 +24,7 @@ When configuring the Strava API, the **Authorization Callback Domain** must be s
 
 - Gives you access to **your most recent activities** in Strava.
 - Pulls Recent (last 4 weeks), Year-to-Date (YTD) and All-Time **summary statistics**
+- Pulls current Monday-to-Sunday **weekly summary statistics** from Strava's activities endpoint
 - Creates a **camera entity** in Home Assistant to **feature recent Strava pictures** as a photo-carousel
 - Supports both the **metric and the imperial** unit system
 - Activity data in Home Assistant **auto-updates** whenever you add, modify, or delete activities on Strava
@@ -56,6 +57,7 @@ The Strava Home Assistant Integration creates **sensor entities** for each activ
 **Summary Statistics Sensors:**
 
 - **Recent** (last 4 weeks): Distance, activity count, and other metrics
+- **Weekly** (current Monday-to-Sunday week): Distance, activity count, moving time, and elevation gain where applicable
 - **Year-to-Date**: Cumulative statistics for the current year
 - **All-Time**: Lifetime statistics for each activity type
 

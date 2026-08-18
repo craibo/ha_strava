@@ -235,7 +235,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     # Activity types and their periods
     activity_types = ["run", "ride", "swim"]
-    periods = ["recent", "all", "ytd"]
+    periods = ["recent", "all", "ytd", "weekly"]
 
     # Metrics to create sensors for
     metrics = ["distance", "count", "moving_time"]
@@ -369,12 +369,15 @@ class StravaSummaryStatsSensor(CoordinatorEntity, SensorEntity):
             "recent_run_totals": "mdi:run",
             "all_run_totals": "mdi:run",
             "ytd_run_totals": "mdi:run",
+            "weekly_run_totals": "mdi:run",
             "recent_ride_totals": "mdi:bike",
             "all_ride_totals": "mdi:bike",
             "ytd_ride_totals": "mdi:bike",
+            "weekly_ride_totals": "mdi:bike",
             "recent_swim_totals": "mdi:swim",
             "all_swim_totals": "mdi:swim",
             "ytd_swim_totals": "mdi:swim",
+            "weekly_swim_totals": "mdi:swim",
             "biggest_ride_distance": "mdi:map-marker-distance",
             "biggest_climb_elevation_gain": "mdi:elevation-rise",
         }

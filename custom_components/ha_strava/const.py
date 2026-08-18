@@ -32,6 +32,27 @@ CONF_PHOTO_CACHE_HOURS = 24
 CONF_API_RETRY_MAX_ATTEMPTS = 3
 CONF_API_RETRY_BASE_DELAY_SECONDS = 1
 
+# Weekly Summary Sensors
+WEEKLY_SUMMARY_ACTIVITY_TYPES = ("Run", "Ride", "Swim")
+WEEKLY_ACTIVITIES_PER_PAGE = 200
+WEEKLY_ACTIVITIES_MAX_PAGES = 10
+# Maps Strava sport_type variants to the general category their weekly
+# totals roll up into, mirroring how Strava's own stats endpoint groups
+# ride/run variants under recent_ride_totals/recent_run_totals.
+WEEKLY_SPORT_TYPE_TO_CATEGORY = {
+    "Ride": "Ride",
+    "MountainBikeRide": "Ride",
+    "GravelRide": "Ride",
+    "EBikeRide": "Ride",
+    "EMountainBikeRide": "Ride",
+    "VirtualRide": "Ride",
+    "Velomobile": "Ride",
+    "Run": "Run",
+    "TrailRun": "Run",
+    "VirtualRun": "Run",
+    "Swim": "Swim",
+}
+
 # Webhook & API Specs
 CONF_WEBHOOK_ID = "webhook_id"
 CONF_CALLBACK_URL = "callback_url"

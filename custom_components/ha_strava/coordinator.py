@@ -6,6 +6,7 @@ import logging
 from datetime import datetime as dt
 from datetime import timedelta
 from typing import Tuple
+from zoneinfo import ZoneInfo
 
 import aiohttp
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
@@ -68,6 +69,11 @@ from .const import (
     OAUTH2_AUTHORIZE,
     OAUTH2_TOKEN,
     SUPPORTED_ACTIVITY_TYPES,
+    WEEKLY_ACTIVITIES_MAX_PAGES,
+    WEEKLY_ACTIVITIES_PER_PAGE,
+    WEEKLY_SPORT_TYPE_TO_CATEGORY,
+    WEEKLY_SUMMARY_ACTIVITY_TYPES,
+    normalize_activity_type,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -122,6 +128,7 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             athlete_id, activities = await self._fetch_activities()
             raw_summary_stats = await self._fetch_summary_stats(athlete_id)
             summary_stats = self._sensor_summary_stats(raw_summary_stats)
+            summary_stats.update(await self._fetch_weekly_totals())
             images = await self._fetch_images(activities)
             gear = await self._fetch_gear(athlete_id)
 
@@ -269,6 +276,100 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             key=lambda activity: activity[CONF_SENSOR_DATE],
             reverse=True,
         )
+
+    def _weekly_activity_window(self) -> tuple[int, int]:
+        """Return the current Monday-to-Monday window as Strava timestamps."""
+        now = dt.now(ZoneInfo(self.hass.config.time_zone))
+        week_start = (now - timedelta(days=now.weekday())).replace(
+            hour=0, minute=0, second=0, microsecond=0
+        )
+        week_end = week_start + timedelta(days=7)
+        return int(week_start.timestamp()), int(week_end.timestamp())
+
+    async def _fetch_weekly_totals(self) -> dict:
+        """Fetch and aggregate activities in the current Monday-to-Sunday week."""
+        after, before = self._weekly_activity_window()
+
+        # Only aggregate types the user has selected to track, matching
+        # _fetch_activities' filtering behavior.
+        selected_activity_types = (
+            self.entry.options.get(CONF_ACTIVITY_TYPES_TO_TRACK)
+            if CONF_ACTIVITY_TYPES_TO_TRACK in self.entry.options
+            else (
+                self.entry.data.get(CONF_ACTIVITY_TYPES_TO_TRACK)
+                if CONF_ACTIVITY_TYPES_TO_TRACK in self.entry.data
+                else []
+            )
+        )
+        summary_activity_types = tuple(
+            activity_type
+            for activity_type in WEEKLY_SUMMARY_ACTIVITY_TYPES
+            if activity_type in selected_activity_types
+        )
+        weekly_totals = {
+            f"weekly_{normalize_activity_type(activity_type)}_totals": {
+                "count": 0,
+                "distance": 0.0,
+                "moving_time": 0,
+                "elevation_gain": 0.0,
+            }
+            for activity_type in summary_activity_types
+        }
+        if not summary_activity_types:
+            return weekly_totals
+
+        page = 1
+        while True:
+            url = (
+                "https://www.strava.com/api/v3/athlete/activities?"
+                f"after={after}&before={before}"
+                f"&page={page}&per_page={WEEKLY_ACTIVITIES_PER_PAGE}"
+            )
+            _LOGGER.debug("Fetching weekly activities page %s", page)
+            try:
+                response = await self.oauth_session.async_request(method="GET", url=url)
+                response.raise_for_status()
+                activities_json = await response.json()
+            except aiohttp.ClientError as err:
+                _LOGGER.error(f"Error fetching weekly activities: {err}")
+                raise UpdateFailed(f"Error fetching weekly activities: {err}") from err
+            except json.JSONDecodeError as json_err:
+                _LOGGER.error(f"Invalid weekly activities response: {json_err}")
+                raise UpdateFailed(
+                    f"Invalid weekly activities response: {json_err}"
+                ) from json_err
+
+            if not isinstance(activities_json, list):
+                raise UpdateFailed(
+                    "Invalid weekly activities response: expected a list"
+                )
+
+            for activity in activities_json:
+                raw_activity_type = activity.get("sport_type") or activity.get("type")
+                activity_category = WEEKLY_SPORT_TYPE_TO_CATEGORY.get(raw_activity_type)
+                if activity_category not in summary_activity_types:
+                    continue
+
+                totals = weekly_totals[
+                    f"weekly_{normalize_activity_type(activity_category)}_totals"
+                ]
+                totals["count"] += 1
+                totals["distance"] += activity.get("distance") or 0
+                totals["moving_time"] += activity.get("moving_time") or 0
+                totals["elevation_gain"] += activity.get("total_elevation_gain") or 0
+
+            if len(activities_json) < WEEKLY_ACTIVITIES_PER_PAGE:
+                break
+            page += 1
+            if page > WEEKLY_ACTIVITIES_MAX_PAGES:
+                _LOGGER.warning(
+                    "Reached max page limit (%s) fetching weekly activities; "
+                    "totals may be incomplete",
+                    WEEKLY_ACTIVITIES_MAX_PAGES,
+                )
+                break
+
+        return weekly_totals
 
     async def _fetch_summary_stats(self, athlete_id: str) -> dict:
         _LOGGER.debug("Fetching summary stats")
