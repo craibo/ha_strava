@@ -412,15 +412,18 @@ class StravaSummaryStatsSensor(CoordinatorEntity, SensorEntity):
         ]:
             # Extract numeric value from data (handle both dict and numeric formats)
             if isinstance(data, dict):
-                numeric_value = data.get(self._metric_key, 0)
+                numeric_value = data.get(self._metric_key)
             else:
-                numeric_value = data if data is not None else 0
+                numeric_value = data
+
+            if numeric_value is None:
+                return None
 
             # Ensure we have a numeric value
             try:
-                numeric_value = float(numeric_value) if numeric_value is not None else 0
+                numeric_value = float(numeric_value)
             except (TypeError, ValueError):
-                numeric_value = 0
+                return None
 
             if self._metric_key == "biggest_ride_distance":
                 # Convert from meters to km/miles
@@ -450,12 +453,14 @@ class StravaSummaryStatsSensor(CoordinatorEntity, SensorEntity):
         # Handle totals data (dictionary with multiple metrics)
         if isinstance(data, dict):
             # Extract the specific metric from the totals data
-            value = data.get(self._metric_key, 0)
+            value = data.get(self._metric_key)
+            if value is None:
+                return None
 
             # Apply unit conversions for distance and elevation
             if self._metric_key == "distance":
                 # Convert from meters to km/miles
-                distance = value / 1000 if value else 0
+                distance = value / 1000
                 is_metric = self._is_metric()
                 if is_metric:
                     return round(distance, 2)
@@ -467,7 +472,7 @@ class StravaSummaryStatsSensor(CoordinatorEntity, SensorEntity):
                 )
             elif self._metric_key == "elevation_gain":
                 # Convert from meters to meters/feet
-                elevation = value if value else 0
+                elevation = value
                 is_metric = self._is_metric()
                 if is_metric:
                     return round(elevation, 2)
@@ -481,8 +486,8 @@ class StravaSummaryStatsSensor(CoordinatorEntity, SensorEntity):
                 # For count and moving_time, return as-is
                 return value
 
-        # Fallback for empty or string data
-        return 0
+        # Fallback for non-dict data (e.g. malformed API response)
+        return None
 
     @property
     def native_unit_of_measurement(self):
