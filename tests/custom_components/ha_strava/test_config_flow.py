@@ -112,8 +112,10 @@ class TestStravaConfigFlow:
     async def test_options_step_success(self, hass: HomeAssistant, mock_config_entry):
         """Test successful options step."""
         # Setup
-        flow = OptionsFlowHandler(mock_config_entry)
+        mock_config_entry.add_to_hass(hass)
+        flow = OptionsFlowHandler()
         flow.hass = hass
+        flow.handler = mock_config_entry.entry_id
         flow.options = {}
 
         # Test options step with valid data
@@ -141,8 +143,10 @@ class TestStravaConfigFlow:
     ):
         """Test options step with validation error."""
         # Setup
-        flow = OptionsFlowHandler(mock_config_entry)
+        mock_config_entry.add_to_hass(hass)
+        flow = OptionsFlowHandler()
         flow.hass = hass
+        flow.handler = mock_config_entry.entry_id
         flow.options = {}
 
         # Test options step with empty activity types (should be accepted)
@@ -165,8 +169,10 @@ class TestStravaConfigFlow:
     ):
         """Test options step with invalid activity types."""
         # Setup
-        flow = OptionsFlowHandler(mock_config_entry)
+        mock_config_entry.add_to_hass(hass)
+        flow = OptionsFlowHandler()
         flow.hass = hass
+        flow.handler = mock_config_entry.entry_id
         flow.options = {}
 
         # Test options step with invalid activity types (should be accepted)
@@ -192,8 +198,10 @@ class TestStravaConfigFlow:
     ):
         """Test options step with mix of valid and invalid activity types."""
         # Setup
-        flow = OptionsFlowHandler(mock_config_entry)
+        mock_config_entry.add_to_hass(hass)
+        flow = OptionsFlowHandler()
         flow.hass = hass
+        flow.handler = mock_config_entry.entry_id
         flow.options = {}
 
         # Test options step with mixed valid and invalid activity types
@@ -220,8 +228,10 @@ class TestStravaConfigFlow:
     ):
         """Test options step with all activity types selected."""
         # Setup
-        flow = OptionsFlowHandler(mock_config_entry)
+        mock_config_entry.add_to_hass(hass)
+        flow = OptionsFlowHandler()
         flow.hass = hass
+        flow.handler = mock_config_entry.entry_id
         flow.options = {}
 
         # Test options step with all activity types
@@ -244,8 +254,10 @@ class TestStravaConfigFlow:
     ):
         """Test options step with default activity types."""
         # Setup
-        flow = OptionsFlowHandler(mock_config_entry)
+        mock_config_entry.add_to_hass(hass)
+        flow = OptionsFlowHandler()
         flow.hass = hass
+        flow.handler = mock_config_entry.entry_id
         flow.options = {}  # Test options step with default activity types
         default_types = ["Run", "Ride", "Hike", "Swim"]
         result = await flow.async_step_init(
@@ -267,8 +279,10 @@ class TestStravaConfigFlow:
     ):
         """Test options step with case sensitivity."""
         # Setup
-        flow = OptionsFlowHandler(mock_config_entry)
+        mock_config_entry.add_to_hass(hass)
+        flow = OptionsFlowHandler()
         flow.hass = hass
+        flow.handler = mock_config_entry.entry_id
         flow.options = {}  # Test options step with different case
         result = await flow.async_step_init(
             {
@@ -288,8 +302,10 @@ class TestStravaConfigFlow:
     ):
         """Test options step with duplicate activity types."""
         # Setup
-        flow = OptionsFlowHandler(mock_config_entry)
+        mock_config_entry.add_to_hass(hass)
+        flow = OptionsFlowHandler()
         flow.hass = hass
+        flow.handler = mock_config_entry.entry_id
         flow.options = {}  # Test options step with duplicates
         result = await flow.async_step_init(
             {
@@ -316,8 +332,10 @@ class TestStravaConfigFlow:
     ):
         """Test options step with whitespace in activity types."""
         # Setup
-        flow = OptionsFlowHandler(mock_config_entry)
+        mock_config_entry.add_to_hass(hass)
+        flow = OptionsFlowHandler()
         flow.hass = hass
+        flow.handler = mock_config_entry.entry_id
         flow.options = {}  # Test options step with whitespace
         result = await flow.async_step_init(
             {
@@ -337,8 +355,10 @@ class TestStravaConfigFlow:
     ):
         """Test options step with None activity types."""
         # Setup
-        flow = OptionsFlowHandler(mock_config_entry)
+        mock_config_entry.add_to_hass(hass)
+        flow = OptionsFlowHandler()
         flow.hass = hass
+        flow.handler = mock_config_entry.entry_id
         flow.options = {}  # Test options step with None
         result = await flow.async_step_init(
             {
@@ -358,8 +378,10 @@ class TestStravaConfigFlow:
     ):
         """Test options step with missing activity types."""
         # Setup
-        flow = OptionsFlowHandler(mock_config_entry)
+        mock_config_entry.add_to_hass(hass)
+        flow = OptionsFlowHandler()
         flow.hass = hass
+        flow.handler = mock_config_entry.entry_id
         flow.options = {}  # Test options step without activity types
         result = await flow.async_step_init(
             {
@@ -379,8 +401,10 @@ class TestStravaConfigFlow:
     ):
         """Test options step with non-list activity types."""
         # Setup
-        flow = OptionsFlowHandler(mock_config_entry)
+        mock_config_entry.add_to_hass(hass)
+        flow = OptionsFlowHandler()
         flow.hass = hass
+        flow.handler = mock_config_entry.entry_id
         flow.options = {}
 
         # Mock config entry
@@ -404,8 +428,10 @@ class TestStravaConfigFlow:
     ):
         """Test options step with very long activity types list."""
         # Setup
-        flow = OptionsFlowHandler(mock_config_entry)
+        mock_config_entry.add_to_hass(hass)
+        flow = OptionsFlowHandler()
         flow.hass = hass
+        flow.handler = mock_config_entry.entry_id
         flow.options = (
             {}
         )  # Test options step with very long list (more than supported types)
@@ -429,8 +455,10 @@ class TestStravaConfigFlow:
     ):
         """Test options step with activity types containing special characters."""
         # Setup
-        flow = OptionsFlowHandler(mock_config_entry)
+        mock_config_entry.add_to_hass(hass)
+        flow = OptionsFlowHandler()
         flow.hass = hass
+        flow.handler = mock_config_entry.entry_id
         flow.options = {}  # Test options step with special characters
         result = await flow.async_step_init(
             {
@@ -450,8 +478,10 @@ class TestStravaConfigFlow:
     ):
         """Test options step with activity types containing numbers."""
         # Setup
-        flow = OptionsFlowHandler(mock_config_entry)
+        mock_config_entry.add_to_hass(hass)
+        flow = OptionsFlowHandler()
         flow.hass = hass
+        flow.handler = mock_config_entry.entry_id
         flow.options = {}  # Test options step with numbers
         result = await flow.async_step_init(
             {
@@ -471,8 +501,10 @@ class TestStravaConfigFlow:
     ):
         """Test options step with activity types containing unicode."""
         # Setup
-        flow = OptionsFlowHandler(mock_config_entry)
+        mock_config_entry.add_to_hass(hass)
+        flow = OptionsFlowHandler()
         flow.hass = hass
+        flow.handler = mock_config_entry.entry_id
         flow.options = {}  # Test options step with unicode
         result = await flow.async_step_init(
             {
@@ -492,8 +524,10 @@ class TestStravaConfigFlow:
     ):
         """Test options step with activity types containing only whitespace."""
         # Setup
-        flow = OptionsFlowHandler(mock_config_entry)
+        mock_config_entry.add_to_hass(hass)
+        flow = OptionsFlowHandler()
         flow.hass = hass
+        flow.handler = mock_config_entry.entry_id
         flow.options = {}  # Test options step with whitespace only
         result = await flow.async_step_init(
             {
@@ -513,8 +547,10 @@ class TestStravaConfigFlow:
     ):
         """Test options step with activity types containing empty strings."""
         # Setup
-        flow = OptionsFlowHandler(mock_config_entry)
+        mock_config_entry.add_to_hass(hass)
+        flow = OptionsFlowHandler()
         flow.hass = hass
+        flow.handler = mock_config_entry.entry_id
         flow.options = {}  # Test options step with empty strings
         result = await flow.async_step_init(
             {
@@ -534,8 +570,10 @@ class TestStravaConfigFlow:
     ):
         """Test options step with activity types containing None values."""
         # Setup
-        flow = OptionsFlowHandler(mock_config_entry)
+        mock_config_entry.add_to_hass(hass)
+        flow = OptionsFlowHandler()
         flow.hass = hass
+        flow.handler = mock_config_entry.entry_id
         flow.options = {}  # Test options step with None values
         result = await flow.async_step_init(
             {
@@ -555,8 +593,10 @@ class TestStravaConfigFlow:
     ):
         """Test options step with activity types containing mixed data types."""
         # Setup
-        flow = OptionsFlowHandler(mock_config_entry)
+        mock_config_entry.add_to_hass(hass)
+        flow = OptionsFlowHandler()
         flow.hass = hass
+        flow.handler = mock_config_entry.entry_id
         flow.options = {}  # Test options step with mixed types
         result = await flow.async_step_init(
             {
@@ -576,8 +616,10 @@ class TestStravaConfigFlow:
     ):
         """Test options step with activity types containing dict values."""
         # Setup
-        flow = OptionsFlowHandler(mock_config_entry)
+        mock_config_entry.add_to_hass(hass)
+        flow = OptionsFlowHandler()
         flow.hass = hass
+        flow.handler = mock_config_entry.entry_id
         flow.options = {}  # Test options step with dict values
         result = await flow.async_step_init(
             {
@@ -597,8 +639,10 @@ class TestStravaConfigFlow:
     ):
         """Test options step with activity types containing list values."""
         # Setup
-        flow = OptionsFlowHandler(mock_config_entry)
+        mock_config_entry.add_to_hass(hass)
+        flow = OptionsFlowHandler()
         flow.hass = hass
+        flow.handler = mock_config_entry.entry_id
         flow.options = {}
 
         # Mock config entry
@@ -622,8 +666,10 @@ class TestStravaConfigFlow:
     ):
         """Test options step with activity types containing boolean values."""
         # Setup
-        flow = OptionsFlowHandler(mock_config_entry)
+        mock_config_entry.add_to_hass(hass)
+        flow = OptionsFlowHandler()
         flow.hass = hass
+        flow.handler = mock_config_entry.entry_id
         flow.options = {}  # Test options step with boolean values
         result = await flow.async_step_init(
             {
@@ -643,8 +689,10 @@ class TestStravaConfigFlow:
     ):
         """Test options step with activity types containing float values."""
         # Setup
-        flow = OptionsFlowHandler(mock_config_entry)
+        mock_config_entry.add_to_hass(hass)
+        flow = OptionsFlowHandler()
         flow.hass = hass
+        flow.handler = mock_config_entry.entry_id
         flow.options = {}  # Test options step with float values
         result = await flow.async_step_init(
             {
@@ -664,8 +712,10 @@ class TestStravaConfigFlow:
     ):
         """Test options step with activity types containing complex values."""
         # Setup
-        flow = OptionsFlowHandler(mock_config_entry)
+        mock_config_entry.add_to_hass(hass)
+        flow = OptionsFlowHandler()
         flow.hass = hass
+        flow.handler = mock_config_entry.entry_id
         flow.options = {}
 
         # Mock config entry

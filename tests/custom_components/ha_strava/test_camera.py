@@ -5,6 +5,7 @@ from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from aioresponses import aioresponses
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -423,3 +424,279 @@ class TestStravaCamera:
 
             # Verify URLs dict is empty when no stored data
             assert camera._urls == {}
+
+    @pytest.mark.asyncio
+    async def test_camera_image_returns_default_when_no_urls(self, hass: HomeAssistant):
+        """Test async_camera_image falls back to the default image when empty."""
+        coordinator = MagicMock()
+        coordinator.entry = MagicMock(title="Strava: Test User")
+        camera = UrlCam(coordinator, hass, athlete_id="12345")
+
+        with aioresponses() as mocked, patch(
+            "custom_components.ha_strava.camera._DEFAULT_IMAGE_URL",
+            "https://example.com/default.png",
+        ):
+            mocked.get(
+                "https://example.com/default.png", status=200, body=b"default-bytes"
+            )
+            image = await camera.async_camera_image()
+
+        assert image == b"default-bytes"
+
+    @pytest.mark.asyncio
+    async def test_camera_image_fetches_current_url(self, hass: HomeAssistant):
+        """Test async_camera_image fetches the URL at the current index."""
+        coordinator = MagicMock()
+        coordinator.entry = MagicMock(title="Strava: Test User")
+        camera = UrlCam(coordinator, hass, athlete_id="12345")
+        camera._urls = {
+            "abc123": {
+                "date": datetime(2024, 1, 1),
+                "url": "https://example.com/photo1.jpg",
+                "activity_id": 1,
+            }
+        }
+
+        with aioresponses() as mocked:
+            mocked.get(
+                "https://example.com/photo1.jpg", status=200, body=b"photo-bytes"
+            )
+            image = await camera.async_camera_image()
+
+        assert image == b"photo-bytes"
+
+    @pytest.mark.asyncio
+    async def test_camera_image_falls_back_on_error_status(self, hass: HomeAssistant):
+        """Test async_camera_image falls back to default when fetch returns non-200."""
+        coordinator = MagicMock()
+        coordinator.entry = MagicMock(title="Strava: Test User")
+        camera = UrlCam(coordinator, hass, athlete_id="12345")
+        camera._urls = {
+            "abc123": {
+                "date": datetime(2024, 1, 1),
+                "url": "https://example.com/photo1.jpg",
+                "activity_id": 1,
+            }
+        }
+
+        with aioresponses() as mocked, patch(
+            "custom_components.ha_strava.camera._DEFAULT_IMAGE_URL",
+            "https://example.com/default.png",
+        ):
+            mocked.get("https://example.com/photo1.jpg", status=404)
+            mocked.get(
+                "https://example.com/default.png", status=200, body=b"default-bytes"
+            )
+            image = await camera.async_camera_image()
+
+        assert image == b"default-bytes"
+
+    @pytest.mark.asyncio
+    async def test_camera_image_falls_back_on_client_error(self, hass: HomeAssistant):
+        """Test async_camera_image falls back to default on a network error."""
+        import aiohttp
+
+        coordinator = MagicMock()
+        coordinator.entry = MagicMock(title="Strava: Test User")
+        camera = UrlCam(coordinator, hass, athlete_id="12345")
+        camera._urls = {
+            "abc123": {
+                "date": datetime(2024, 1, 1),
+                "url": "https://example.com/photo1.jpg",
+                "activity_id": 1,
+            }
+        }
+
+        with aioresponses() as mocked, patch(
+            "custom_components.ha_strava.camera._DEFAULT_IMAGE_URL",
+            "https://example.com/default.png",
+        ):
+            mocked.get(
+                "https://example.com/photo1.jpg",
+                exception=aiohttp.ClientError("boom"),
+            )
+            mocked.get(
+                "https://example.com/default.png", status=200, body=b"default-bytes"
+            )
+            image = await camera.async_camera_image()
+
+        assert image == b"default-bytes"
+
+    @pytest.mark.asyncio
+    async def test_default_img_returns_none_on_non_200(self, hass: HomeAssistant):
+        """Test _return_default_img returns None when the fetch is not a 200."""
+        from custom_components.ha_strava.camera import _return_default_img
+
+        with aioresponses() as mocked, patch(
+            "custom_components.ha_strava.camera._DEFAULT_IMAGE_URL",
+            "https://example.com/default.png",
+        ):
+            mocked.get("https://example.com/default.png", status=500)
+            image = await _return_default_img()
+
+        assert image is None
+
+    @pytest.mark.asyncio
+    async def test_rotate_img_advances_index(self, hass: HomeAssistant):
+        """Test rotate_img cycles through the available URLs."""
+        coordinator = MagicMock()
+        coordinator.entry = MagicMock(title="Strava: Test User")
+        camera = UrlCam(coordinator, hass, athlete_id="12345")
+        camera._urls = {
+            "a": {"date": datetime(2024, 1, 1), "url": "u1", "activity_id": 1},
+            "b": {"date": datetime(2024, 1, 2), "url": "u2", "activity_id": 2},
+        }
+        camera.async_write_ha_state = MagicMock()
+
+        assert camera._url_index == 0
+        await camera.rotate_img()
+        assert camera._url_index == 1
+        await camera.rotate_img()
+        assert camera._url_index == 0
+
+    @pytest.mark.asyncio
+    async def test_rotate_img_noop_when_no_urls(self, hass: HomeAssistant):
+        """Test rotate_img does nothing when there are no URLs."""
+        coordinator = MagicMock()
+        coordinator.entry = MagicMock(title="Strava: Test User")
+        camera = UrlCam(coordinator, hass, athlete_id="12345")
+        camera.async_write_ha_state = MagicMock()
+
+        await camera.rotate_img()
+
+        assert camera._url_index == 0
+        camera.async_write_ha_state.assert_not_called()
+
+    def test_extra_state_attributes_default_when_no_urls(self, hass: HomeAssistant):
+        """Test extra_state_attributes returns the default image URL when empty."""
+        coordinator = MagicMock()
+        coordinator.entry = MagicMock(title="Strava: Test User")
+        camera = UrlCam(coordinator, hass, athlete_id="12345")
+
+        from custom_components.ha_strava.camera import _DEFAULT_IMAGE_URL
+
+        assert camera.extra_state_attributes == {"img_url": _DEFAULT_IMAGE_URL}
+
+    def test_extra_state_attributes_returns_current_url(self, hass: HomeAssistant):
+        """Test extra_state_attributes returns the URL at the current index."""
+        coordinator = MagicMock()
+        coordinator.entry = MagicMock(title="Strava: Test User")
+        camera = UrlCam(coordinator, hass, athlete_id="12345")
+        camera._urls = {
+            "a": {"date": datetime(2024, 1, 1), "url": "https://example.com/a.jpg"}
+        }
+
+        assert camera.extra_state_attributes == {"img_url": "https://example.com/a.jpg"}
+
+    def test_device_info(self, hass: HomeAssistant):
+        """Test device_info returns the expected identifiers and metadata."""
+        coordinator = MagicMock()
+        coordinator.entry = MagicMock(title="Strava: Test User")
+        camera = UrlCam(coordinator, hass, athlete_id="12345")
+
+        info = camera.device_info
+        assert info["manufacturer"] == "Powered by Strava"
+        assert info["model"] == "Activity Photos"
+        assert "12345" in info["configuration_url"]
+
+    @pytest.mark.asyncio
+    async def test_update_urls_filters_to_recent_activities(self, hass: HomeAssistant):
+        """Test _update_urls only keeps images belonging to recent activities."""
+        coordinator = MagicMock()
+        coordinator.entry = MagicMock(title="Strava: Test User")
+        camera = UrlCam(coordinator, hass, athlete_id="12345")
+
+        coordinator.data = {
+            "activities": [
+                {"id": 1, "start_date_local": datetime(2024, 1, 2)},
+                {"id": 2, "start_date_local": datetime(2024, 1, 1)},
+            ],
+            "images": [
+                {
+                    "activity_id": 1,
+                    "url": "https://example.com/keep.jpg",
+                    "date": datetime(2024, 1, 2),
+                },
+                {
+                    "activity_id": 999,
+                    "url": "https://example.com/drop.jpg",
+                    "date": datetime(2024, 1, 1),
+                },
+            ],
+        }
+
+        with patch.object(camera, "_async_save_storage", new_callable=AsyncMock):
+            await camera._update_urls()
+
+        urls = {v["url"] for v in camera._urls.values()}
+        assert "https://example.com/keep.jpg" in urls
+        assert "https://example.com/drop.jpg" not in urls
+
+    @pytest.mark.asyncio
+    async def test_update_urls_noop_when_no_images(self, hass: HomeAssistant):
+        """Test _update_urls does nothing when the coordinator has no images."""
+        coordinator = MagicMock()
+        coordinator.entry = MagicMock(title="Strava: Test User")
+        camera = UrlCam(coordinator, hass, athlete_id="12345")
+        coordinator.data = {"activities": [], "images": []}
+
+        with patch.object(
+            camera, "_async_save_storage", new_callable=AsyncMock
+        ) as mock_save:
+            await camera._update_urls()
+
+        mock_save.assert_not_called()
+        assert camera._urls == {}
+
+    @pytest.mark.asyncio
+    async def test_added_to_hass_registers_listener_and_updates_urls(
+        self, hass: HomeAssistant
+    ):
+        """Test async_added_to_hass wires up the coordinator listener and refreshes URLs."""
+        coordinator = MagicMock()
+        coordinator.entry = MagicMock(title="Strava: Test User")
+        coordinator.async_add_listener = MagicMock(return_value=MagicMock())
+        camera = UrlCam(coordinator, hass, athlete_id="12345")
+
+        with patch.object(
+            camera, "_update_urls", new_callable=AsyncMock
+        ) as mock_update, patch.object(
+            camera, "async_on_remove", MagicMock()
+        ) as mock_on_remove:
+            await camera.async_added_to_hass()
+
+        # CoordinatorEntity's own async_added_to_hass also registers a listener,
+        # so assert our handler was among the calls rather than the only one.
+        registered_callbacks = [
+            call.args[0] for call in coordinator.async_add_listener.call_args_list
+        ]
+        assert camera._handle_coordinator_update in registered_callbacks
+        mock_on_remove.assert_called()
+        mock_update.assert_called_once()
+
+    def test_handle_coordinator_update_schedules_refresh(self, hass: HomeAssistant):
+        """Test _handle_coordinator_update schedules an update task and writes state."""
+        coordinator = MagicMock()
+        coordinator.entry = MagicMock(title="Strava: Test User")
+        camera = UrlCam(coordinator, hass, athlete_id="12345")
+        camera.hass = MagicMock()
+        camera.async_write_ha_state = MagicMock()
+
+        camera._handle_coordinator_update()
+
+        camera.hass.async_create_task.assert_called_once()
+        camera.async_write_ha_state.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_migrate_from_pickle_handles_read_error(
+        self, hass: HomeAssistant, tmp_path
+    ):
+        """Test _migrate_from_pickle recovers gracefully when the pickle file is unreadable."""
+        coordinator = MagicMock()
+        coordinator.entry = MagicMock(title="Strava: Test User")
+        camera = UrlCam(coordinator, hass, athlete_id="12345")
+        camera._url_dump_filepath = str(tmp_path / "missing.pickle")
+
+        await camera._migrate_from_pickle()
+
+        assert camera._urls == {}

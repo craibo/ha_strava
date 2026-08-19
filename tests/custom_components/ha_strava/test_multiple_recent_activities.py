@@ -510,8 +510,10 @@ class TestConfigFlowWithMultipleActivities:
         """Test options flow includes num_recent_activities field."""
         from custom_components.ha_strava.config_flow import OptionsFlowHandler
 
+        mock_config_entry.add_to_hass(hass)
         options_flow = OptionsFlowHandler()
-        options_flow.config_entry = mock_config_entry
+        options_flow.hass = hass
+        options_flow.handler = mock_config_entry.entry_id
 
         # Test the form includes num_recent_activities
         result = await options_flow.show_form_init()

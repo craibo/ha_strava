@@ -34,7 +34,7 @@ class TestOptionsFlowReload:
             # Create options flow handler
             flow = OptionsFlowHandler()
             flow.hass = hass
-            flow.config_entry = mock_config_entry
+            flow.handler = mock_config_entry.entry_id
 
             # Mock entity registry operations
             with patch(
@@ -110,7 +110,7 @@ class TestOptionsFlowReload:
                             # Create options flow handler
                             flow = OptionsFlowHandler()
                             flow.hass = hass
-                            flow.config_entry = mock_entry
+                            flow.handler = mock_entry.entry_id
 
                             # Mock entity registry operations
                             with patch(
@@ -181,7 +181,7 @@ class TestOptionsFlowReload:
                             # Create options flow handler
                             flow = OptionsFlowHandler()
                             flow.hass = hass
-                            flow.config_entry = mock_config_entry
+                            flow.handler = mock_config_entry.entry_id
 
                             # Mock entity registry operations
                             with patch(
@@ -243,7 +243,7 @@ class TestOptionsFlowReload:
         # Create options flow handler
         flow = OptionsFlowHandler()
         flow.hass = hass
-        flow.config_entry = mock_config_entry
+        flow.handler = mock_config_entry.entry_id
 
         # Create mock devices
         mock_device_run = MagicMock()
@@ -336,7 +336,7 @@ class TestOptionsFlowReload:
         # Create options flow handler
         flow = OptionsFlowHandler()
         flow.hass = hass
-        flow.config_entry = mock_config_entry
+        flow.handler = mock_config_entry.entry_id
 
         # Mock device registry
         mock_device_registry = MagicMock()
@@ -378,7 +378,7 @@ class TestOptionsFlowReload:
         # Create options flow handler
         flow = OptionsFlowHandler()
         flow.hass = hass
-        flow.config_entry = mock_config_entry
+        flow.handler = mock_config_entry.entry_id
 
         # Mock device registry
         mock_device_registry = MagicMock()

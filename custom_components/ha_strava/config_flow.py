@@ -75,11 +75,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     Data Entry flow to allow runtime changes to the Strava Home Assistant Config
     """
 
-    def __init__(self, config_entry=None):
+    def __init__(self):
         """Initialize the options flow."""
         super().__init__()
-        if config_entry:
-            self.config_entry = config_entry
         self._config_entry_title = None
         self._import_strava_images = None
         self._img_update_interval_seconds = None
