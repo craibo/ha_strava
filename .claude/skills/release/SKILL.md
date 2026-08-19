@@ -8,8 +8,11 @@ Create a release or pre-release for this integration. Ask the user which one the
 
 ## Versioning rules
 
-- **Release version** = the version currently in `custom_components/ha_strava/manifest.json` (e.g. `4.4.0`), with any `-beta.N` suffix stripped. It must be strictly greater than the previous published release version (ignore pre-releases when comparing — compare against the latest non-prerelease tag).
-- **Pre-release version** = `<manifest base version>-beta.X`, where `X` is the next integer in the beta sequence for that base version, starting at `1`. Find existing betas for the same base version with `git tag -l "<base>-beta.*"` and increment the highest; if none exist, use `beta.1`.
+Both releases and pre-releases use plain patch versions (e.g. `4.6.1`, `4.6.2`) — there is no `-beta.N` suffix. A pre-release is just a normal version tag published with GitHub's "pre-release" flag instead of "latest"; the version string itself doesn't distinguish the two.
+
+- **Target version** = the version currently in `custom_components/ha_strava/manifest.json` (e.g. `4.6.1`).
+- **Pre-release**: if a tag with that exact version already exists (as either a release or a pre-release), bump the patch number by 1 and use that instead — repeat until the version is unused.
+- **Release**: if a tag with that exact version already exists, STOP and tell the user the manifest needs to be bumped first — do not auto-increment a release version on their behalf.
 - Never reuse or go backwards from an existing tag.
 
 ## Steps
@@ -20,21 +23,23 @@ Create a release or pre-release for this integration. Ask the user which one the
 cd <repo root>
 git status --short          # must be clean; if not, stop and tell the user
 git fetch --tags
-cat custom_components/ha_strava/manifest.json   # get the base version
+cat custom_components/ha_strava/manifest.json   # get the current version
 gh release list --limit 10  # see recent releases/pre-releases
 ```
 
-Determine the **base version** from `manifest.json`'s `version` field.
-
 ### 2. Compute the target version
 
-- **Pre-release**: `git tag -l "<base>-beta.*" | sort -V`. Next beta number = highest existing + 1, or `1` if none. Target tag = `<base>-beta.<N>`.
-- **Release**: target tag = `<base>` exactly. Confirm it's greater than the latest non-prerelease tag (`gh release list --exclude-pre-releases --limit 1`, or filter tags without `-beta.` and sort with `sort -V`). If the manifest version is not greater than the latest release, stop and tell the user the manifest needs to be bumped first.
+Start from `manifest.json`'s `version` field. Check `git tag -l "<version>"`.
+
+- **Pre-release**: if it already exists, increment the patch number and check again, repeating until you find a version with no existing tag.
+- **Release**: if it already exists, stop and tell the user to bump `manifest.json` first — do not proceed.
+
+Use the resulting version as the target for both the manifest bump and the tag.
 
 ### 3. Find the previous reference point
 
-- **Pre-release notes** diff against the immediately preceding tag in sequence (the previous beta of the same base version if one exists, otherwise the last published release/pre-release tag — whichever is more recent by date).
-- **Release notes** diff against the latest published **release** tag (not a pre-release), covering everything since then (including any betas that led up to it).
+- **Pre-release notes** diff against the most recently published tag overall (release or pre-release, whichever is more recent by date) — i.e. the immediately preceding entry in `gh release list`.
+- **Release notes** diff against the latest published **release** tag specifically (not a pre-release), covering everything since then (including any pre-releases that led up to it): `gh release list --exclude-pre-releases --limit 1`, or filter tags without matching a pre-release marker.
 
 ```bash
 git log <previous-tag>..HEAD --oneline
@@ -75,15 +80,13 @@ Show the user:
 
 Ask them to confirm or edit before proceeding. **Do not tag, push, or create the GitHub release until the user explicitly confirms.**
 
-### 6. Bump manifest and commit (release only)
+### 6. Bump manifest and commit
 
-For a **release**, if `manifest.json`'s version doesn't already equal the target version exactly (no `-beta` suffix), update it and commit on `main`:
+If `manifest.json`'s version doesn't already equal the target version exactly, update it and commit on `main` — this applies to both releases and pre-releases, since the tag and the manifest always match now:
 
 ```bash
 git commit -m "chore: release <version>"
 ```
-
-For a **pre-release**, do not modify `manifest.json` unless its current value doesn't match the base version being used — pre-releases normally reuse the existing manifest version with a `-beta.X` suffix applied only to the git tag, not the file.
 
 ### 7. Tag and publish
 
