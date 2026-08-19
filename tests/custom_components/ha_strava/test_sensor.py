@@ -555,6 +555,110 @@ class TestStravaSummaryStatsSensor:
 
         assert sensor.native_value is None
 
+    def test_sensor_state_missing_moving_time_field_is_unknown(self):
+        """Test sensor returns None when moving_time key is absent."""
+        summary_stats = {
+            "recent_run_totals": {
+                "distance": 5000.0,
+                "count": 5,
+                "elevation_gain": 100.0,
+                # "moving_time" intentionally omitted
+            }
+        }
+        coordinator = MagicMock()
+        coordinator.data = {
+            "summary_stats": summary_stats,
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+
+        sensor = StravaSummaryStatsSensor(
+            coordinator=coordinator,
+            api_key="recent_run_totals",
+            display_name="Recent Run Moving Time",
+            metric_key="moving_time",
+            athlete_id="12345",
+        )
+
+        assert sensor.native_value is None
+
+    def test_sensor_state_zero_moving_time_field_is_zero(self):
+        """Test sensor still returns 0 when moving_time key is present and explicitly zero."""
+        summary_stats = {
+            "recent_run_totals": {
+                "distance": 0.0,
+                "moving_time": 0,
+                "count": 0,
+                "elevation_gain": 0.0,
+            }
+        }
+        coordinator = MagicMock()
+        coordinator.data = {
+            "summary_stats": summary_stats,
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+
+        sensor = StravaSummaryStatsSensor(
+            coordinator=coordinator,
+            api_key="recent_run_totals",
+            display_name="Recent Run Moving Time",
+            metric_key="moving_time",
+            athlete_id="12345",
+        )
+
+        assert sensor.native_value == 0
+
+    def test_sensor_state_missing_biggest_climb_elevation_gain_is_unknown(self):
+        """Test the biggest_climb_elevation_gain special-case sensor returns None when absent."""
+        summary_stats = {
+            "recent_ride_totals": {"elevation_gain": 500.0},
+            # "biggest_climb_elevation_gain" intentionally omitted from summary_stats
+        }
+        coordinator = MagicMock()
+        coordinator.data = {
+            "summary_stats": summary_stats,
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+        coordinator.entry = MagicMock()
+        coordinator.entry.options = {
+            CONF_DISTANCE_UNIT_OVERRIDE: CONF_DISTANCE_UNIT_OVERRIDE_METRIC
+        }
+
+        sensor = StravaSummaryStatsSensor(
+            coordinator=coordinator,
+            api_key="biggest_climb_elevation_gain",
+            display_name="Longest Climb Elevation Gain",
+            metric_key="biggest_climb_elevation_gain",
+            athlete_id="12345",
+        )
+
+        assert sensor.native_value is None
+
+    def test_sensor_state_malformed_biggest_ride_distance_is_unknown(self):
+        """Test the biggest_ride_distance sensor returns None for a non-numeric value
+        instead of silently coercing it to 0."""
+        summary_stats = {
+            "biggest_ride_distance": "not-a-number",
+        }
+        coordinator = MagicMock()
+        coordinator.data = {
+            "summary_stats": summary_stats,
+            "athlete": {"id": 12345, "firstname": "Test", "lastname": "User"},
+        }
+        coordinator.entry = MagicMock()
+        coordinator.entry.options = {
+            CONF_DISTANCE_UNIT_OVERRIDE: CONF_DISTANCE_UNIT_OVERRIDE_METRIC
+        }
+
+        sensor = StravaSummaryStatsSensor(
+            coordinator=coordinator,
+            api_key="biggest_ride_distance",
+            display_name="Longest Ride Distance",
+            metric_key="biggest_ride_distance",
+            athlete_id="12345",
+        )
+
+        assert sensor.native_value is None
+
     def test_sensor_attributes(self, mock_strava_stats):
         """Test sensor attributes."""
         # Create proper summary_stats structure with raw API data
