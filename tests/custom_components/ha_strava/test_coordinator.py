@@ -3,9 +3,12 @@
 from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import aiohttp
 import pytest
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers.update_coordinator import UpdateFailed
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.ha_strava.const import (
@@ -15,6 +18,8 @@ from custom_components.ha_strava.const import (
     CONF_ATTR_KOM_SEGMENTS,
     CONF_ATTR_PR_SEGMENTS,
     CONF_ATTR_SPORT_TYPE,
+    CONF_GEAR_ENABLED,
+    CONF_NUM_GEAR_SENSORS,
     CONF_PHOTO_CACHE_HOURS,
     CONF_PHOTO_FETCH_DELAY_SECONDS,
     CONF_PHOTO_FETCH_INITIAL_LIMIT,
@@ -1830,3 +1835,480 @@ class TestStravaDataUpdateCoordinator:
 
         assert result[CONF_SENSOR_TROPHIES] == 2
         assert result[CONF_SENSOR_PR_COUNT] == 1
+
+
+class TestFetchGear:
+    """Test _fetch_gear and _fetch_gear_details."""
+
+    @pytest.mark.asyncio
+    async def test_fetch_gear_disabled_returns_empty(
+        self, hass: HomeAssistant, mock_config_entry
+    ):
+        """Gear fetch is skipped entirely when gear sensors are disabled."""
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        with patch.object(
+            coordinator.oauth_session, "async_request", new=AsyncMock()
+        ) as async_request:
+            gear = await coordinator._fetch_gear("12345")
+
+        assert gear == []
+        async_request.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_fetch_gear_success_sorts_and_limits(self, hass: HomeAssistant):
+        """Gear items are merged with details, sorted by distance, and limited."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            unique_id="12345",
+            data={
+                CONF_CLIENT_ID: "test_client_id",
+                CONF_CLIENT_SECRET: "test_client_secret",
+                "token": {
+                    "access_token": "test_access_token",
+                    "refresh_token": "test_refresh_token",
+                    "expires_at": 4102444800,
+                    "token_type": "Bearer",
+                },
+            },
+            options={CONF_GEAR_ENABLED: True, CONF_NUM_GEAR_SENSORS: 2},
+            title="Strava: Test User",
+        )
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=entry)
+
+        athlete_response = MagicMock()
+        athlete_response.status = 200
+        athlete_response.json = AsyncMock(
+            return_value={
+                "bikes": [
+                    {"id": "b1", "distance": 1000},
+                    {"id": "b2", "distance": 5000},
+                ],
+                "shoes": [{"id": "s1", "distance": 2000}],
+            }
+        )
+
+        gear_detail_responses = {
+            "b1": {"id": "b1", "name": "Bike One"},
+            "b2": {"id": "b2", "name": "Bike Two"},
+        }
+
+        async def fake_request(method, url):
+            if url.endswith("/athlete"):
+                return athlete_response
+            for gear_id, payload in gear_detail_responses.items():
+                if url.endswith(f"/gear/{gear_id}"):
+                    resp = MagicMock()
+                    resp.status = 200
+                    resp.json = AsyncMock(return_value=payload)
+                    return resp
+            raise AssertionError(f"Unexpected URL: {url}")
+
+        with patch.object(
+            coordinator.oauth_session, "async_request", side_effect=fake_request
+        ):
+            gear = await coordinator._fetch_gear("12345")
+
+        # Limited to num_gear_sensors=2, sorted by distance desc: b2 (5000), s1 (2000)
+        assert len(gear) == 2
+        assert gear[0]["id"] == "b2"
+        assert gear[0]["name"] == "Bike Two"
+        assert gear[1]["id"] == "s1"
+
+    @pytest.mark.asyncio
+    async def test_fetch_gear_insufficient_permissions_raises_auth_failed(
+        self, hass: HomeAssistant
+    ):
+        """Missing bikes/shoes fields signal insufficient OAuth scope."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            unique_id="12345",
+            data={
+                CONF_CLIENT_ID: "test_client_id",
+                CONF_CLIENT_SECRET: "test_client_secret",
+                "token": {
+                    "access_token": "test_access_token",
+                    "refresh_token": "test_refresh_token",
+                    "expires_at": 4102444800,
+                    "token_type": "Bearer",
+                },
+            },
+            options={CONF_GEAR_ENABLED: True},
+            title="Strava: Test User",
+        )
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=entry)
+
+        response = MagicMock()
+        response.status = 200
+        response.json = AsyncMock(return_value={"id": "athlete_only"})
+
+        with (
+            patch.object(
+                coordinator.oauth_session,
+                "async_request",
+                new=AsyncMock(return_value=response),
+            ),
+            pytest.raises(ConfigEntryAuthFailed),
+        ):
+            await coordinator._fetch_gear("12345")
+
+    @pytest.mark.asyncio
+    async def test_fetch_gear_athlete_fetch_failure_returns_empty(
+        self, hass: HomeAssistant
+    ):
+        """A non-200 athlete response yields an empty gear list."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            unique_id="12345",
+            data={
+                CONF_CLIENT_ID: "test_client_id",
+                CONF_CLIENT_SECRET: "test_client_secret",
+                "token": {
+                    "access_token": "test_access_token",
+                    "refresh_token": "test_refresh_token",
+                    "expires_at": 4102444800,
+                    "token_type": "Bearer",
+                },
+            },
+            options={CONF_GEAR_ENABLED: True},
+            title="Strava: Test User",
+        )
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=entry)
+
+        response = MagicMock()
+        response.status = 500
+
+        with patch.object(
+            coordinator.oauth_session,
+            "async_request",
+            new=AsyncMock(return_value=response),
+        ):
+            gear = await coordinator._fetch_gear("12345")
+
+        assert gear == []
+
+    @pytest.mark.asyncio
+    async def test_fetch_gear_details_failure_falls_back_to_summary(
+        self, hass: HomeAssistant
+    ):
+        """When gear details fail to fetch, the summary data is used instead."""
+        entry = MockConfigEntry(
+            domain=DOMAIN,
+            unique_id="12345",
+            data={
+                CONF_CLIENT_ID: "test_client_id",
+                CONF_CLIENT_SECRET: "test_client_secret",
+                "token": {
+                    "access_token": "test_access_token",
+                    "refresh_token": "test_refresh_token",
+                    "expires_at": 4102444800,
+                    "token_type": "Bearer",
+                },
+            },
+            options={CONF_GEAR_ENABLED: True},
+            title="Strava: Test User",
+        )
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=entry)
+
+        athlete_response = MagicMock()
+        athlete_response.status = 200
+        athlete_response.json = AsyncMock(
+            return_value={"bikes": [{"id": "b1", "distance": 1000}], "shoes": []}
+        )
+
+        async def fake_request(method, url):
+            if url.endswith("/athlete"):
+                return athlete_response
+            raise aiohttp.ClientError("boom")
+
+        with patch.object(
+            coordinator.oauth_session, "async_request", side_effect=fake_request
+        ):
+            gear = await coordinator._fetch_gear("12345")
+
+        assert len(gear) == 1
+        assert gear[0]["id"] == "b1"
+        assert "name" not in gear[0]
+
+    @pytest.mark.asyncio
+    async def test_fetch_gear_details_success(
+        self, hass: HomeAssistant, mock_config_entry
+    ):
+        """_fetch_gear_details returns the parsed JSON body on a 200."""
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        response = MagicMock()
+        response.status = 200
+        response.json = AsyncMock(return_value={"id": "g1", "name": "Trail Shoes"})
+
+        with patch.object(
+            coordinator.oauth_session,
+            "async_request",
+            new=AsyncMock(return_value=response),
+        ):
+            details = await coordinator._fetch_gear_details("g1")
+
+        assert details == {"id": "g1", "name": "Trail Shoes"}
+
+    @pytest.mark.asyncio
+    async def test_fetch_gear_details_empty_id_returns_empty(
+        self, hass: HomeAssistant, mock_config_entry
+    ):
+        """_fetch_gear_details short-circuits for a falsy gear_id."""
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        with patch.object(
+            coordinator.oauth_session, "async_request", new=AsyncMock()
+        ) as async_request:
+            details = await coordinator._fetch_gear_details("")
+
+        assert details == {}
+        async_request.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_fetch_gear_details_non_200_returns_empty(
+        self, hass: HomeAssistant, mock_config_entry
+    ):
+        """_fetch_gear_details returns {} when the API responds with an error status."""
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        response = MagicMock()
+        response.status = 404
+
+        with patch.object(
+            coordinator.oauth_session,
+            "async_request",
+            new=AsyncMock(return_value=response),
+        ):
+            details = await coordinator._fetch_gear_details("missing")
+
+        assert details == {}
+
+
+class TestAsyncUpdateActivity:
+    """Test async_update_activity."""
+
+    @pytest.mark.asyncio
+    async def test_update_activity_success_updates_existing(
+        self, hass: HomeAssistant, mock_config_entry
+    ):
+        """A successful PUT updates the matching activity in coordinator data."""
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        coordinator.async_set_updated_data(
+            {
+                "activities": [
+                    {
+                        CONF_SENSOR_ID: 42,
+                        CONF_SENSOR_TITLE: "Old Title",
+                        CONF_SENSOR_DATE: datetime(2024, 1, 1),
+                    }
+                ]
+            }
+        )
+
+        response = MagicMock()
+        response.status = 200
+        response.raise_for_status = MagicMock()
+        response.json = AsyncMock(
+            return_value={
+                "id": 42,
+                "name": "New Title",
+                "type": "Run",
+                "sport_type": "Run",
+                "start_date_local": "2024-01-01T06:00:00Z",
+            }
+        )
+
+        with patch.object(
+            coordinator.oauth_session,
+            "async_request",
+            new=AsyncMock(return_value=response),
+        ):
+            await coordinator.async_update_activity(42, name="New Title")
+
+        activities = coordinator.data["activities"]
+        assert len(activities) == 1
+        assert activities[0][CONF_SENSOR_TITLE] == "New Title"
+
+    @pytest.mark.asyncio
+    async def test_update_activity_auth_failure_raises(
+        self, hass: HomeAssistant, mock_config_entry
+    ):
+        """A 403 response is surfaced as ConfigEntryAuthFailed."""
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        error = aiohttp.ClientResponseError(
+            request_info=MagicMock(), history=(), status=403
+        )
+        response = MagicMock()
+        response.raise_for_status = MagicMock(side_effect=error)
+        response.status = 403
+
+        with (
+            patch.object(
+                coordinator.oauth_session,
+                "async_request",
+                new=AsyncMock(return_value=response),
+            ),
+            pytest.raises(ConfigEntryAuthFailed),
+        ):
+            await coordinator.async_update_activity(42, name="New Title")
+
+    @pytest.mark.asyncio
+    async def test_update_activity_rate_limited_then_succeeds(
+        self, hass: HomeAssistant, mock_config_entry
+    ):
+        """A 429 response is retried with backoff before succeeding."""
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        rate_limited_response = MagicMock()
+        rate_limited_response.status = 429
+        rate_limited_response.headers = {"Retry-After": "0"}
+
+        success_response = MagicMock()
+        success_response.status = 200
+        success_response.raise_for_status = MagicMock()
+        success_response.json = AsyncMock(
+            return_value={
+                "id": 7,
+                "name": "Retried Activity",
+                "type": "Run",
+                "sport_type": "Run",
+                "start_date_local": "2024-01-01T06:00:00Z",
+            }
+        )
+
+        with (
+            patch.object(
+                coordinator.oauth_session,
+                "async_request",
+                new=AsyncMock(side_effect=[rate_limited_response, success_response]),
+            ),
+            patch(
+                "custom_components.ha_strava.coordinator.asyncio.sleep", new=AsyncMock()
+            ),
+        ):
+            await coordinator.async_update_activity(7, name="x")
+
+        activities = coordinator.data["activities"]
+        assert activities[0][CONF_SENSOR_TITLE] == "Retried Activity"
+
+    @pytest.mark.asyncio
+    async def test_update_activity_network_error_exhausts_retries(
+        self, hass: HomeAssistant, mock_config_entry
+    ):
+        """Persistent network errors raise UpdateFailed after all retries."""
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        with (
+            patch.object(
+                coordinator.oauth_session,
+                "async_request",
+                new=AsyncMock(side_effect=aiohttp.ClientError("network down")),
+            ),
+            patch(
+                "custom_components.ha_strava.coordinator.asyncio.sleep", new=AsyncMock()
+            ),
+            pytest.raises(UpdateFailed),
+        ):
+            await coordinator.async_update_activity(42, name="New Title")
+
+
+class TestAsyncRefreshActivity:
+    """Test async_refresh_activity."""
+
+    @pytest.mark.asyncio
+    async def test_refresh_activity_noop_without_id(
+        self, hass: HomeAssistant, mock_config_entry
+    ):
+        """A falsy activity_id is a no-op."""
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        with patch.object(
+            coordinator.oauth_session, "async_request", new=AsyncMock()
+        ) as async_request:
+            await coordinator.async_refresh_activity(None)
+
+        async_request.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_refresh_activity_success_replaces_existing(
+        self, hass: HomeAssistant, mock_config_entry
+    ):
+        """A successful refresh replaces the matching activity with fresh detail data."""
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        coordinator.async_set_updated_data(
+            {
+                "activities": [
+                    {
+                        CONF_SENSOR_ID: 99,
+                        CONF_SENSOR_TITLE: "Stale",
+                        CONF_SENSOR_DATE: datetime(2024, 1, 1),
+                    }
+                ]
+            }
+        )
+
+        response = MagicMock()
+        response.raise_for_status = MagicMock()
+        response.json = AsyncMock(
+            return_value={
+                "id": 99,
+                "name": "Fresh",
+                "type": "Run",
+                "sport_type": "Run",
+                "start_date_local": "2024-01-02T06:00:00Z",
+            }
+        )
+
+        with patch.object(
+            coordinator.oauth_session,
+            "async_request",
+            new=AsyncMock(return_value=response),
+        ) as async_request:
+            await coordinator.async_refresh_activity(99)
+
+        async_request.assert_awaited_once_with(
+            method="GET",
+            url=(
+                "https://www.strava.com/api/v3/activities/99"
+                "?include_all_efforts=true"
+            ),
+        )
+        activities = coordinator.data["activities"]
+        assert activities[0][CONF_SENSOR_TITLE] == "Fresh"
+
+    @pytest.mark.asyncio
+    async def test_refresh_activity_client_error_leaves_data_untouched(
+        self, hass: HomeAssistant, mock_config_entry
+    ):
+        """A network error during refresh silently returns without changing data."""
+        with patch("homeassistant.helpers.frame.report_usage"):
+            coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+
+        coordinator.async_set_updated_data({"activities": []})
+
+        with patch.object(
+            coordinator.oauth_session,
+            "async_request",
+            new=AsyncMock(side_effect=aiohttp.ClientError("boom")),
+        ):
+            await coordinator.async_refresh_activity(1)
+
+        assert coordinator.data == {"activities": []}

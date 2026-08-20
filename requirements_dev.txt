@@ -1,5 +1,5 @@
 homeassistant
-aiohttp
+aiohttp<3.14
 aiofiles
 numpy
 voluptuous

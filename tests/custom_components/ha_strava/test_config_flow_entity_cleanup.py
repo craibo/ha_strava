@@ -116,9 +116,10 @@ class TestEntityCleanupInOptionsFlow:
             title="Strava: Test User",
         )
 
+        config_entry.add_to_hass(hass)
         options_flow = OptionsFlowHandler()
-        options_flow.config_entry = config_entry
         options_flow.hass = hass
+        options_flow.handler = config_entry.entry_id
 
         # Create mock devices for recent activities
         mock_devices = []
@@ -205,9 +206,10 @@ class TestEntityCleanupInOptionsFlow:
             title="Strava: Test User",
         )
 
+        config_entry.add_to_hass(hass)
         options_flow = OptionsFlowHandler()
-        options_flow.config_entry = config_entry
         options_flow.hass = hass
+        options_flow.handler = config_entry.entry_id
 
         # Create mock devices for recent activities
         mock_devices = []
@@ -281,9 +283,10 @@ class TestEntityCleanupInOptionsFlow:
             title="Strava: Test User",
         )
 
+        config_entry.add_to_hass(hass)
         options_flow = OptionsFlowHandler()
-        options_flow.config_entry = config_entry
         options_flow.hass = hass
+        options_flow.handler = config_entry.entry_id
 
         # Create mock devices for recent activities
         mock_devices = []
@@ -361,9 +364,10 @@ class TestEntityCleanupInOptionsFlow:
             title="Strava: Test User",
         )
 
+        config_entry.add_to_hass(hass)
         options_flow = OptionsFlowHandler()
-        options_flow.config_entry = config_entry
         options_flow.hass = hass
+        options_flow.handler = config_entry.entry_id
 
         # Create mock devices for recent activities
         mock_devices = []
@@ -449,9 +453,10 @@ class TestEntityCleanupInOptionsFlow:
             title="Strava: Test User",
         )
 
+        config_entry.add_to_hass(hass)
         options_flow = OptionsFlowHandler()
-        options_flow.config_entry = config_entry
         options_flow.hass = hass
+        options_flow.handler = config_entry.entry_id
 
         # Create mock devices for recent activities
         mock_devices = []
