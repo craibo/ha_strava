@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 from datetime import datetime, timedelta
@@ -38,6 +39,19 @@ _DEFAULT_IMAGE_URL = (
     "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/"
     "No_image_available_600_x_450.svg/1280px-No_image_available_600_x_450.svg.png"
 )
+
+
+class _DateTimeEncoder(json.JSONEncoder):
+    """JSON encoder that serializes datetime objects as ISO strings.
+
+    Store.async_save() requires a JSONEncoder subclass, not a plain
+    default-serializer callable.
+    """
+
+    def default(self, o):
+        if isinstance(o, datetime):
+            return o.isoformat()
+        return super().default(o)
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
@@ -106,7 +120,7 @@ class UrlCam(CoordinatorEntity, Camera):
             hass,
             STORAGE_VERSION,
             f"{STORAGE_KEY}_{athlete_id}",
-            encoder=self._json_encoder,
+            encoder=_DateTimeEncoder,
         )
         self._url_dump_filepath = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
@@ -115,13 +129,6 @@ class UrlCam(CoordinatorEntity, Camera):
         self._urls = {}
         self._url_index = 0
         self._attr_entity_registry_enabled_default = default_enabled
-
-    @staticmethod
-    def _json_encoder(obj):
-        """JSON encoder for datetime objects."""
-        if isinstance(obj, datetime):
-            return obj.isoformat()
-        raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
 
     async def async_load_storage(self):
         """Load image URLs from Home Assistant storage."""
