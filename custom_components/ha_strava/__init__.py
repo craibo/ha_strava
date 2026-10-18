@@ -174,9 +174,10 @@ async def renew_webhook_subscription(
 
     async def _delete_subscription_async(sub_id: int) -> bool:
         try:
+            # Strava ignores a request body on DELETE and answers 404, so credentials go in the query.
             async with websession.delete(
                 f"{WEBHOOK_SUBSCRIPTION_URL}/{sub_id}",
-                data={
+                params={
                     "client_id": entry.data[CONF_CLIENT_ID],
                     "client_secret": entry.data[CONF_CLIENT_SECRET],
                 },
@@ -184,14 +185,7 @@ async def renew_webhook_subscription(
                 delete_response.raise_for_status()
                 return True
         except aiohttp.ClientResponseError as err:
-            if err.status == 404:
-                _LOGGER.debug(
-                    "Webhook subscription %s already deleted or doesn't exist", sub_id
-                )
-            else:
-                _LOGGER.warning(
-                    "Failed to delete webhook subscription %s: %s", sub_id, err
-                )
+            _LOGGER.warning("Failed to delete webhook subscription %s: %s", sub_id, err)
             return False
         except aiohttp.ClientError as err:
             _LOGGER.warning("Failed to delete webhook subscription %s: %s", sub_id, err)
@@ -266,6 +260,13 @@ async def renew_webhook_subscription(
                 "verify_token": "HA_STRAVA",
             },
         ) as response:
+            if response.status >= 400:
+                _LOGGER.error(
+                    "Strava rejected webhook subscription for %s: %s %s",
+                    callback_url,
+                    response.status,
+                    await response.text(),
+                )
             response.raise_for_status()
             new_sub = await response.json()
 
@@ -542,7 +543,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
                     websession = async_get_clientsession(hass)
                     async with websession.delete(
                         f"{WEBHOOK_SUBSCRIPTION_URL}/{webhook_id}",
-                        data={
+                        params={
                             "client_id": entry.data[CONF_CLIENT_ID],
                             "client_secret": entry.data[CONF_CLIENT_SECRET],
                         },

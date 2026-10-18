@@ -1,5 +1,6 @@
 """Test init module for ha_strava."""
 
+import re
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -765,3 +766,82 @@ class TestUpdateListenerRegistration:
 
                         # Verify the unload callback was called
                         mock_entry.async_on_unload.assert_called_once()
+
+
+class TestWebhookDeleteRequest:
+    """Strava ignores a DELETE body, so credentials must be sent as query params."""
+
+    @pytest.mark.asyncio
+    async def test_outdated_subscription_delete_sends_credentials_in_query(
+        self, hass, mock_config_entry, aioresponses_mock
+    ):
+        mock_config_entry.add_to_hass(hass)
+        with patch(
+            "custom_components.ha_strava.get_url", return_value="https://example.com"
+        ):
+            aioresponses_mock.get("https://example.com/api/strava/webhook", status=200)
+            aioresponses_mock.get(
+                re.compile(r"https://www\.strava\.com/api/v3/push_subscriptions\?.*"),
+                payload=[
+                    {
+                        "id": 1,
+                        "callback_url": "https://old.example.com/api/strava/webhook",
+                    }
+                ],
+                status=200,
+            )
+            aioresponses_mock.delete(
+                re.compile(r"https://www\.strava\.com/api/v3/push_subscriptions/1\?.*"),
+                status=204,
+            )
+            aioresponses_mock.post(
+                "https://www.strava.com/api/v3/push_subscriptions",
+                payload={"id": 123},
+                status=200,
+            )
+
+            await renew_webhook_subscription(hass, mock_config_entry)
+
+        delete_calls = [
+            (key, calls)
+            for key, calls in aioresponses_mock.requests.items()
+            if key[0] == "DELETE"
+        ]
+        assert len(delete_calls) == 1
+        key, calls = delete_calls[0]
+        assert "client_id=" in str(key[1])
+        assert "client_secret=" in str(key[1])
+        assert calls[0].kwargs.get("data") is None
+
+    @pytest.mark.asyncio
+    async def test_delete_404_is_logged_as_warning(
+        self, hass, mock_config_entry, aioresponses_mock, caplog
+    ):
+        mock_config_entry.add_to_hass(hass)
+        with patch(
+            "custom_components.ha_strava.get_url", return_value="https://example.com"
+        ):
+            aioresponses_mock.get("https://example.com/api/strava/webhook", status=200)
+            aioresponses_mock.get(
+                re.compile(r"https://www\.strava\.com/api/v3/push_subscriptions\?.*"),
+                payload=[
+                    {
+                        "id": 1,
+                        "callback_url": "https://old.example.com/api/strava/webhook",
+                    }
+                ],
+                status=200,
+            )
+            aioresponses_mock.delete(
+                re.compile(r"https://www\.strava\.com/api/v3/push_subscriptions/1\?.*"),
+                status=404,
+            )
+            aioresponses_mock.post(
+                "https://www.strava.com/api/v3/push_subscriptions",
+                payload={"id": 123},
+                status=200,
+            )
+
+            await renew_webhook_subscription(hass, mock_config_entry)
+
+        assert "Failed to delete webhook subscription 1" in caplog.text
