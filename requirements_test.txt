@@ -1,2 +1,1 @@
 pytest-homeassistant-custom-component
-aioresponses
