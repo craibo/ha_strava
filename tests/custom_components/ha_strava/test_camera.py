@@ -6,12 +6,12 @@ from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from aioresponses import aioresponses
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.ha_strava.const import CONF_PHOTOS, DOMAIN
+from tests.aiohttp_mock import aiohttp_mock
 
 # Mock homeassistant.components.camera to avoid turbojpeg dependency
 if "homeassistant.components.camera" not in sys.modules:
@@ -475,7 +475,7 @@ class TestStravaCamera:
         coordinator.entry = MagicMock(title="Strava: Test User")
         camera = UrlCam(coordinator, hass, athlete_id="12345")
 
-        with aioresponses() as mocked, patch(
+        with aiohttp_mock() as mocked, patch(
             "custom_components.ha_strava.camera._DEFAULT_IMAGE_URL",
             "https://example.com/default.png",
         ):
@@ -500,7 +500,7 @@ class TestStravaCamera:
             }
         }
 
-        with aioresponses() as mocked:
+        with aiohttp_mock() as mocked:
             mocked.get(
                 "https://example.com/photo1.jpg", status=200, body=b"photo-bytes"
             )
@@ -522,7 +522,7 @@ class TestStravaCamera:
             }
         }
 
-        with aioresponses() as mocked, patch(
+        with aiohttp_mock() as mocked, patch(
             "custom_components.ha_strava.camera._DEFAULT_IMAGE_URL",
             "https://example.com/default.png",
         ):
@@ -550,7 +550,7 @@ class TestStravaCamera:
             }
         }
 
-        with aioresponses() as mocked, patch(
+        with aiohttp_mock() as mocked, patch(
             "custom_components.ha_strava.camera._DEFAULT_IMAGE_URL",
             "https://example.com/default.png",
         ):
@@ -570,7 +570,7 @@ class TestStravaCamera:
         """Test _return_default_img returns None when the fetch is not a 200."""
         from custom_components.ha_strava.camera import _return_default_img
 
-        with aioresponses() as mocked, patch(
+        with aiohttp_mock() as mocked, patch(
             "custom_components.ha_strava.camera._DEFAULT_IMAGE_URL",
             "https://example.com/default.png",
         ):

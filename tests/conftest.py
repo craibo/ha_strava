@@ -3,7 +3,6 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from aioresponses import aioresponses
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -14,6 +13,7 @@ from custom_components.ha_strava.const import (
     DOMAIN,
     SUPPORTED_ACTIVITY_TYPES,
 )
+from tests.aiohttp_mock import aiohttp_mock
 
 # Import the hass fixture from pytest-homeassistant-custom-component
 pytest_plugins = ["pytest_homeassistant_custom_component"]
@@ -369,7 +369,7 @@ def mock_hass():
 @pytest.fixture
 def aioresponses_mock():
     """Mock aioresponses for HTTP testing."""
-    with aioresponses() as m:
+    with aiohttp_mock() as m:
         yield m
 
 
