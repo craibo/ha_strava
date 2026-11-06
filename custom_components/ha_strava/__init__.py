@@ -30,6 +30,8 @@ from .const import (
     CONF_CALLBACK_URL,
     CONF_SENSOR_ID,
     DOMAIN,
+    LOG_REDACT_PATTERN,
+    LOG_REDACTED_PLACEHOLDER,
     SERVICE_GET_ACTIVITY_ROUTE,
     SERVICE_UPDATE_ACTIVITY,
     SUPPORTED_ACTIVITY_TYPES,
@@ -39,6 +41,28 @@ from .coordinator import StravaDataUpdateCoordinator
 from .polyline import decode_polyline
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _redact_secrets(text: str) -> str:
+    """Replace credential values (client_secret, tokens, auth code) in text with a placeholder."""
+    return LOG_REDACT_PATTERN.sub(
+        lambda match: f"{match.group(1)}={LOG_REDACTED_PLACEHOLDER}", text
+    )
+
+
+def _safe_error_text(err: aiohttp.ClientError) -> str:
+    """Return a log-safe description of an aiohttp error.
+
+    aiohttp.ClientResponseError.__str__ includes the full request URL, and Strava
+    needs credentials in the query string on DELETE, so the query is dropped and
+    a redaction pass is applied as a final safety net.
+    """
+    if isinstance(err, aiohttp.ClientResponseError):
+        url = err.request_info.real_url.with_query(None).with_fragment(None)
+        text = f"{err.status}, message={err.message!r}, url={str(url)!r}"
+    else:
+        text = str(err)
+    return _redact_secrets(text)
 
 
 def _normalize_callback_url(url: str) -> str:
@@ -168,7 +192,8 @@ async def renew_webhook_subscription(
             _LOGGER.debug(f"HA webhook available: {response}")
     except aiohttp.ClientError as err:
         _LOGGER.error(
-            f"HA Callback URL for Strava Webhook not available: {err}"  # noqa:E501
+            "HA Callback URL for Strava Webhook not available: %s",
+            _safe_error_text(err),
         )
         return
 
@@ -185,10 +210,18 @@ async def renew_webhook_subscription(
                 delete_response.raise_for_status()
                 return True
         except aiohttp.ClientResponseError as err:
-            _LOGGER.warning("Failed to delete webhook subscription %s: %s", sub_id, err)
+            _LOGGER.warning(
+                "Failed to delete webhook subscription %s: %s",
+                sub_id,
+                _safe_error_text(err),
+            )
             return False
         except aiohttp.ClientError as err:
-            _LOGGER.warning("Failed to delete webhook subscription %s: %s", sub_id, err)
+            _LOGGER.warning(
+                "Failed to delete webhook subscription %s: %s",
+                sub_id,
+                _safe_error_text(err),
+            )
             return False
 
     try:
@@ -241,7 +274,7 @@ async def renew_webhook_subscription(
             return
 
     except aiohttp.ClientError as err:
-        _LOGGER.error("Error managing webhook subscriptions: %s", err)
+        _LOGGER.error("Error managing webhook subscriptions: %s", _safe_error_text(err))
         _LOGGER.debug("Webhook URL mismatch or unconfirmed; deleting and re-creating.")
         stored_id = entry.data.get(CONF_WEBHOOK_ID)
         if stored_id is not None:
@@ -265,7 +298,7 @@ async def renew_webhook_subscription(
                     "Strava rejected webhook subscription for %s: %s %s",
                     callback_url,
                     response.status,
-                    await response.text(),
+                    _redact_secrets(await response.text()),
                 )
             response.raise_for_status()
             new_sub = await response.json()
@@ -275,7 +308,7 @@ async def renew_webhook_subscription(
             hass.config_entries.async_update_entry(entry, data=mutable_data)
 
     except aiohttp.ClientError as err:
-        _LOGGER.error("Error creating webhook subscription: %s", err)
+        _LOGGER.error("Error creating webhook subscription: %s", _safe_error_text(err))
 
 
 def _remove_legacy_gear_entries(hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -551,7 +584,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
                         response.raise_for_status()
                         _LOGGER.debug("Successfully deleted webhook subscription")
                 except aiohttp.ClientError as err:
-                    _LOGGER.error(f"Failed to delete webhook subscription: {err}")
+                    _LOGGER.error(
+                        "Failed to delete webhook subscription: %s",
+                        _safe_error_text(err),
+                    )
 
         hass.data[DOMAIN].pop(entry.entry_id)
 
