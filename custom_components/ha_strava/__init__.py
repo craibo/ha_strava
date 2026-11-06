@@ -30,6 +30,7 @@ from .const import (
     CONF_CALLBACK_URL,
     CONF_SENSOR_ID,
     DOMAIN,
+    EVENT_ACTIVITY_CREATED,
     LOG_REDACT_PATTERN,
     LOG_REDACTED_PLACEHOLDER,
     SERVICE_GET_ACTIVITY_ROUTE,
@@ -138,8 +139,34 @@ class StravaWebhookView(HomeAssistantView):
             _LOGGER.warning("Webhook received without owner_id")
             return Response(status=HTTPStatus.OK)
 
+        entries = self.hass.config_entries.async_entries(DOMAIN)
+        subscription_id = data.get("subscription_id")
+        activity_id = str(data.get("object_id", ""))
+        known_entry = any(
+            entry.unique_id == str(owner_id)
+            or (
+                entry.unique_id is None
+                and subscription_id is not None
+                and str(entry.data.get(CONF_WEBHOOK_ID)) == str(subscription_id)
+            )
+            for entry in entries
+            if entry.disabled_by is None
+        )
+        if (
+            known_entry
+            and data.get("object_type") == "activity"
+            and data.get("aspect_type") == "create"
+            and activity_id.isdecimal()
+        ):
+            # Emit the IDs immediately: automations need not wait for sensor refresh.
+            # A legacy entry can identify its subscription even without an athlete unique ID.
+            self.hass.bus.async_fire(
+                EVENT_ACTIVITY_CREATED,
+                {"athlete_id": str(owner_id), "activity_id": activity_id},
+            )
+
         # Find the coordinator for this user
-        for entry in self.hass.config_entries.async_entries(DOMAIN):
+        for entry in entries:
             if entry.unique_id == str(owner_id):
                 coordinator: StravaDataUpdateCoordinator = self.hass.data[DOMAIN][
                     entry.entry_id
