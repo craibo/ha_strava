@@ -168,10 +168,9 @@ class StravaWebhookView(HomeAssistantView):
         # Find the coordinator for this user
         for entry in entries:
             if entry.unique_id == str(owner_id):
-                coordinator: StravaDataUpdateCoordinator = self.hass.data[DOMAIN][
-                    entry.entry_id
-                ]
-                self.hass.async_create_task(coordinator.async_request_refresh())
+                coordinator = self.hass.data.get(DOMAIN, {}).get(entry.entry_id)
+                if coordinator is not None:
+                    self.hass.async_create_task(coordinator.async_request_refresh())
                 break
         else:
             _LOGGER.warning(f"Webhook received for unknown user: {owner_id}")
@@ -456,6 +455,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     hass.data.setdefault(DOMAIN, {})
 
     coordinator = StravaDataUpdateCoordinator(hass, entry=entry)
+    # Keep webhook automations available even when the API refresh needs retry/reauth.
+    hass.http.register_view(StravaWebhookView(hass))
     await coordinator.async_config_entry_first_refresh()
 
     hass.data[DOMAIN][entry.entry_id] = coordinator
@@ -469,8 +470,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     # Rename legacy "_trophies" unique_ids to "_achievements"
     _migrate_trophies_to_achievements_entities(hass, entry)
 
-    # Set up webhook
-    hass.http.register_view(StravaWebhookView(hass))
+    # Set up webhook subscription
     await renew_webhook_subscription(hass, entry)
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
