@@ -1,8 +1,4 @@
-# Explicit account-scoped activity actions (unsubmitted branch)
-
-Branch: `feat/activity-actions`, based on upstream main independently of webhook
-PR #349. No additional PR is open. Rebase after that PR lands and set the release
-version before proposing these changes upstream.
+# Explicit account-scoped activity actions
 
 ## Behavior
 
@@ -61,42 +57,16 @@ are translated separately. Retry scheduling belongs to the enrichment consumer.
 - HA service permissions and trace/recorder retention still apply. These actions
   do not introduce per-person HA authorization or a general API proxy.
 
-## TDD and validation
+## Validation
 
-Initial fake-client/action specifications failed: 27 failures and one passing
-negative case. Implementing account selection, typed fields, previews, verification,
-and safe API operations made those green. Additional red cases covered malformed
-athlete responses, missing configured identity, description preconditions, generic
-append support, and numeric IDs produced by native templates.
+The regression suite covers preview/write isolation, shared-account ownership,
+HA service registration, malformed inputs, stale descriptions, concurrent appends,
+uncertain-write retries, source unload/replacement, and OAuth/provider failures.
+A local HTTP server exercises the actual form-encoded GET/GET/PUT/GET path.
+All fixtures are synthetic; no real accounts, tokens, routes or activities are included.
 
-Further checks cover a timeout after a write that already took effect, concurrent
-appends preserving both notes, cleared gear normalization, disabled/unloaded
-accounts, stable error categories and safe retries. All fixtures are synthetic.
-Final full-suite result: **494 passed, 11 warnings** on HA 2026.10.4 / Python 3.14.
-Black, isort, flake8 and `git diff --check` pass on the changed files. The existing
-photo-backoff test using `datetime.now()` elapsed time failed once on a repeated
-run (0.895 seconds measured against a 1-second threshold), then passed in isolation
-and on the final full run. That unrelated timing test is unchanged. The existing
-sensor/camera/button AsyncMock warnings also remain outside this diff.
-
-No live activity edits or HA installation were performed for this branch.
-
-## Maintainer-review follow-up
-
-Reviewed against the eight points on webhook PR #349. Thirteen additional
-regressions reproduced lifecycle, precondition, identifier/enum and exception-chain
-gaps before their fixes; three more reproduced malformed-description crashes.
-Native HA service tests cover two-account isolation and repeated registration.
-A real local HTTP server verifies form-encoded GET/GET/PUT/GET and a no-op retry.
-The OAuth adapter catches HA's stable authentication-error base rather than
-requiring a newer exception symbol. No dependency or existing-action changes are
-included. These changes remain on a branch, with no new upstream PR or deployment.
-
-The pre-existing photo-backoff timing test repeatedly failed under the harness's
-clock. A separate `fix/photo-retry-test` branch now asserts the actual awaited
-Retry-After delay for two values, without a wall-clock assertion. That isolated
-test commit is also present in this branch for validation. Land it separately,
-then rebase before opening the feature PR so it is absent from that PR's diff.
-Final checks: **516 passed, 11 existing warnings**; Black, isort, flake8, Pylint
-error checks for the new runtime modules, and local hassfest pass. hassfest is
-metadata validation, not a claim that the full suite ran on another HA version.
+The full suite passes 516 tests on HA 2026.10.4 / Python 3.14, with 11 existing
+AsyncMock warnings. Black, isort, flake8, Pylint error checks for the new modules,
+and local hassfest pass. A broader HA-version runtime matrix has not been run.
+The independent photo-retry test fix is included for deterministic validation;
+the draft PR identifies that dependency so it can be removed from the final diff.
