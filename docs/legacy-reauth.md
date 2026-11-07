@@ -19,13 +19,10 @@ Two tests run HA's native reauthorization flow manager and OAuth exchange throug
 to the saved entry, checking preservation of settings and that no entry is added.
 All credentials, accounts and provider records in the tests are synthetic.
 
-This branch is queued after webhook PR #349, whose authenticated identity helper
-it reuses. Rebase onto the merged upstream commit and choose the next release
-version before opening the separate fix PR. The initial fix was verified live;
-the additional profile-failure hardening has only been tested locally.
+The implementation uses the authenticated identity helper introduced by webhook
+PR #349. The draft PR documents that dependency and the independent photo-retry
+test fix, so their patches can be removed from its final diff when merged.
 
-Final validation: **511 passed, 11 existing mock warnings** on HA 2026.10.4 /
-Python 3.14, with Black, isort, flake8, Pylint error checks for config_flow and
-local hassfest passing. The separate photo-retry timing-test fix is included as
-a prerequisite commit for reliable validation. Land that test-only fix separately
-and rebase before opening this PR; it should not become unrelated feature scope.
+Validation: 511 tests pass on HA 2026.10.4 / Python 3.14, with 11 existing mock
+warnings. Black, isort, flake8, Pylint error checks for config_flow and local
+hassfest pass. A broader HA-version runtime matrix has not been run.
