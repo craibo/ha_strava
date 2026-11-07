@@ -235,3 +235,14 @@ Activity sensors also expose PR and KOM/QOM data pulled from the segment efforts
 > **Note:** Strava appears to only populate achievement and segment-effort data (`achievements`, `pr_count`, `pr_segments`, `kom_segments`) for activities visible to Everyone. Activities set to Followers Only or Only You have consistently returned empty/zero values for these fields in testing, even though Strava's own app may still show achievements to you privately. If these attributes stay empty for an activity you expect to have achievements, check its visibility setting on Strava.
 
 > **Note:** The "Trophies" sensor was renamed to "Achievements" to match Strava's own terminology, and now correctly reads its count from the same endpoint Strava's UI uses (previously it could show 0 even when Strava displayed real achievements). Upgrading installs keep their existing entity ID (still ending in `_trophies`) so history and automations aren't broken — only the displayed name changes. Rename the entity ID manually via the UI if you'd like it to match.
+
+
+## Account-scoped fetch and preview/edit actions
+
+`ha_strava.get_activity` and `ha_strava.edit_activity` provide explicit account-scoped operations.
+Select the Strava account explicitly, fetch by ID without the recent sensor cache,
+and preview edits before enabling writes. Description appends preserve notes and
+are idempotent for an exact line block. The existing update action is unchanged.
+See [the action contract and review notes](docs/activity-actions.md) for fields,
+ownership checks, concurrency limits, and local validation details. No activity
+polling or new webhook subscription is added.

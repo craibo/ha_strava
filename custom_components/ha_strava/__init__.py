@@ -25,6 +25,7 @@ from homeassistant.helpers.entity_registry import async_entries_for_config_entry
 from homeassistant.helpers.entity_registry import async_get as er_async_get
 from homeassistant.helpers.network import NoURLAvailableError, get_url
 
+from .activity_actions import async_register_activity_actions
 from .const import (
     CONF_ATTR_POLYLINE,
     CONF_CALLBACK_URL,
@@ -420,7 +421,8 @@ def _migrate_trophies_to_achievements_entities(
 async def async_setup(
     hass: HomeAssistant, config: dict
 ):  # pylint: disable=unused-argument
-    """Set up the Strava component."""
+    """Set up shared Strava actions once per domain."""
+    async_register_activity_actions(hass)
     return True
 
 

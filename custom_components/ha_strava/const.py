@@ -726,3 +726,28 @@ def format_seconds_to_human_readable(seconds) -> str:
         parts.append(f"{remaining_seconds}sec")
 
     return " ".join(parts)
+
+
+# Explicit account-scoped, on-demand activity operations.
+SERVICE_GET_ACTIVITY = "get_activity"
+SERVICE_EDIT_ACTIVITY = "edit_activity"
+ACTIVITY_API_BASE_URL = "https://www.strava.com/api/v3"
+ACTIVITY_REQUEST_TIMEOUT_SECONDS = 20
+ACTIVITY_RATE_LIMIT_RETRY_SECONDS = 900
+ACTIVITY_ACTION_FIELDS = (
+    "id",
+    "name",
+    "description",
+    "device_name",
+    "sport_type",
+    "distance",
+    "start_date",
+    "start_latlng",
+    "trainer",
+    "manual",
+    "gear_id",
+    "hide_from_home",
+    "commute",
+    "elapsed_time",
+    "moving_time",
+)
