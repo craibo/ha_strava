@@ -20,7 +20,7 @@ to the saved entry, checking preservation of settings and that no entry is added
 All credentials, accounts and provider records in the tests are synthetic.
 
 The implementation uses the authenticated identity helper introduced by webhook
-PR #349. The draft PR documents that dependency and the independent photo-retry
+PR #349. [PR #352](https://github.com/craibo/ha_strava/pull/352) documents that dependency and the independent photo-retry
 test fix, so their patches can be removed from its final diff when merged.
 
 Validation: 511 tests pass on HA 2026.10.4 / Python 3.14, with 11 existing mock
