@@ -235,3 +235,30 @@ Activity sensors also expose PR and KOM/QOM data pulled from the segment efforts
 > **Note:** Strava appears to only populate achievement and segment-effort data (`achievements`, `pr_count`, `pr_segments`, `kom_segments`) for activities visible to Everyone. Activities set to Followers Only or Only You have consistently returned empty/zero values for these fields in testing, even though Strava's own app may still show achievements to you privately. If these attributes stay empty for an activity you expect to have achievements, check its visibility setting on Strava.
 
 > **Note:** The "Trophies" sensor was renamed to "Achievements" to match Strava's own terminology, and now correctly reads its count from the same endpoint Strava's UI uses (previously it could show 0 even when Strava displayed real achievements). Upgrading installs keep their existing entity ID (still ending in `_trophies`) so history and automations aren't broken — only the displayed name changes. Rename the entity ID manually via the UI if you'd like it to match.
+
+## Activity-created automation event
+
+A new activity webhook fires `ha_strava_activity_created` with `athlete_id` and
+`activity_id` as strings. Use an Event trigger in a Home Assistant automation and
+filter `athlete_id` when multiple athletes are configured. This lets automations
+react to uploads without polling sensors or registering a second subscription.
+
+The receiver requires both the owner's configured athlete identity and the saved
+subscription ID to match one enabled entry. The same entry is used for the event
+and coordinator refresh. Legacy entries without an athlete unique ID need an
+identity from their saved OAuth response or authenticated coordinator summary;
+a subscription ID alone never identifies an athlete in a shared app. Missing or
+conflicting local identities are ignored. Legacy entries without a saved OAuth
+athlete identity need a successful initial API refresh before they can match.
+
+The event is fired before the coordinator refresh completes; fetch activity
+details explicitly when needed. Consumers should tolerate duplicate deliveries.
+Updates, deletions and athlete events do not fire this event. The receiver is
+registered once during domain setup, so entry retries do not duplicate routes.
+
+**Webhook input is untrusted.** Strava POSTs are unsigned and this endpoint is
+unauthenticated. Matching a subscription ID is a routing guard, not cryptographic
+proof of origin. Before an automation performs writes or other sensitive actions,
+fetch the activity through the intended athlete's authenticated Strava session
+and verify ownership. Do not assume the supplied activity ID belongs to that
+athlete, and make repeated deliveries safe to process more than once.

@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.network import NoURLAvailableError
+from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.ha_strava import (
@@ -66,7 +67,9 @@ class TestStravaWebhookView:
         request.headers.get.return_value = "example.com"
 
         # Mock config entries
-        mock_entry = MockConfigEntry(domain=DOMAIN, unique_id="12345")
+        mock_entry = MockConfigEntry(
+            domain=DOMAIN, unique_id="12345", data={CONF_WEBHOOK_ID: 1}
+        )
         mock_entry.add_to_hass(hass)
         hass.data[DOMAIN] = {mock_entry.entry_id: mock_coordinator}
 
@@ -390,12 +393,14 @@ class TestAsyncSetup:
     @pytest.mark.asyncio
     async def test_async_setup_success(self, hass: HomeAssistant):
         """Test successful async setup."""
+        assert await async_setup_component(hass, "http", {})
         result = await async_setup(hass, {})
         assert result is True
 
     @pytest.mark.asyncio
     async def test_async_setup_with_config(self, hass: HomeAssistant):
         """Test async setup with config."""
+        assert await async_setup_component(hass, "http", {})
         config = {"strava": {"client_id": "test", "client_secret": "test"}}
         result = await async_setup(hass, config)
         assert result is True
