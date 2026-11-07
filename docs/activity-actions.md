@@ -91,3 +91,12 @@ A real local HTTP server verifies form-encoded GET/GET/PUT/GET and a no-op retry
 The OAuth adapter catches HA's stable authentication-error base rather than
 requiring a newer exception symbol. No dependency or existing-action changes are
 included. These changes remain on a branch, with no new upstream PR or deployment.
+
+The pre-existing photo-backoff timing test repeatedly failed under the harness's
+clock. A separate `fix/photo-retry-test` branch now asserts the actual awaited
+Retry-After delay for two values, without a wall-clock assertion. That isolated
+test commit is also present in this branch for validation. Land it separately,
+then rebase before opening the feature PR so it is absent from that PR's diff.
+Final checks: **516 passed, 11 existing warnings**; Black, isort, flake8, Pylint
+error checks for the new runtime modules, and local hassfest pass. hassfest is
+metadata validation, not a claim that the full suite ran on another HA version.
