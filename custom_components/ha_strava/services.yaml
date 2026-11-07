@@ -138,3 +138,62 @@ get_activity_route:
       example: "1234567890"
       selector:
         text:
+
+get_activity:
+  name: Get Activity by ID
+  description: >-
+    Fetch one activity using an explicitly selected account, without the recent-activity
+    sensor cache. Checks the returned activity owner. No recurring polling is added.
+  fields:
+    config_entry_id:
+      name: Strava account
+      required: true
+      selector:
+        config_entry:
+          integration: ha_strava
+    activity_id:
+      name: Activity ID
+      required: true
+      selector:
+        text:
+
+edit_activity:
+  name: Preview or Edit Activity
+  description: >-
+    Explicit account-scoped edits with ownership checks, serialized changes and read-back
+    verification. Preview is the default. Use append_description for an idempotent annotation,
+    or changes for documented fields. Requires activity:write to perform actual updates.
+  fields:
+    config_entry_id:
+      name: Strava account
+      required: true
+      selector:
+        config_entry:
+          integration: ha_strava
+    activity_id:
+      name: Activity ID
+      required: true
+      selector:
+        text:
+    changes:
+      name: Changes
+      default: {}
+      selector:
+        object:
+    append_description:
+      name: Append to description
+      description: Append an exact line block once, preserving existing notes. Cannot be combined with changes.
+      selector:
+        text:
+          multiline: true
+    expected_description:
+      name: Expected current description
+      description: For replacement edits, reject the write if the current description differs from this snapshot.
+      selector:
+        text:
+          multiline: true
+    dry_run:
+      name: Preview only
+      default: true
+      selector:
+        boolean:

@@ -14,6 +14,8 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import config_entry_oauth2_flow
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
+from .activity_api import ActivityClient
+from .activity_session import HASession
 from .const import (
     CONF_ACTIVITY_TYPE_OTHER,
     CONF_ACTIVITY_TYPES_TO_TRACK,
@@ -107,6 +109,7 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
                 OAUTH2_TOKEN,
             ),
         )
+        self._activity_client = None
         self.image_updates = {}
         super().__init__(
             hass,
@@ -114,6 +117,15 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             name=DOMAIN,
             update_interval=None,  # Disable automatic polling - use webhooks only
         )
+
+    @property
+    def activity_client(self) -> ActivityClient:
+        """One mutation lock per athlete, using the existing OAuth owner."""
+        if self._activity_client is None:
+            self._activity_client = ActivityClient(
+                HASession(self.oauth_session), self.entry.unique_id
+            )
+        return self._activity_client
 
     async def _async_update_data(self):
         """Fetch data from the Strava API.
