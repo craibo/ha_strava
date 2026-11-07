@@ -23,6 +23,7 @@ from homeassistant.helpers.entity_registry import (
 from homeassistant.helpers.network import NoURLAvailableError, get_url
 
 # custom module imports
+from . import _entry_athlete_id, _strava_id
 from .const import (
     CONF_ACTIVITY_TYPES_TO_TRACK,
     CONF_CALLBACK_URL,
@@ -43,6 +44,7 @@ from .const import (
     DEFAULT_ACTIVITY_TYPES,
     DOMAIN,
     OAUTH2_AUTHORIZE,
+    OAUTH2_PROFILE_TIMEOUT_SECONDS,
     OAUTH2_SCOPES,
     OAUTH2_TOKEN,
     STRAVA_APP_MODE_SHARED,
@@ -660,18 +662,37 @@ class OAuth2FlowHandler(
         headers = {
             "Authorization": f"Bearer {data['token']['access_token']}",
         }
-        async with aiohttp.ClientSession() as session, session.get(
-            "https://www.strava.com/api/v3/athlete", headers=headers
-        ) as response:
-            if response.status != 200:
-                return self.async_abort(reason="cannot_connect")
-            athlete_info = await response.json()
+        try:
+            async with aiohttp.ClientSession() as session, session.get(
+                "https://www.strava.com/api/v3/athlete",
+                headers=headers,
+                timeout=OAUTH2_PROFILE_TIMEOUT_SECONDS,
+            ) as response:
+                if response.status != 200:
+                    return self.async_abort(reason="cannot_connect")
+                athlete_info = await response.json()
+        except (aiohttp.ClientError, TimeoutError, ValueError):
+            return self.async_abort(reason="cannot_connect")
 
-        athlete_id = athlete_info["id"]
-        await self.async_set_unique_id(str(athlete_id))
+        athlete_id = (
+            _strava_id(athlete_info.get("id"))
+            if isinstance(athlete_info, dict)
+            else None
+        )
+        if athlete_id is None:
+            return self.async_abort(reason="cannot_connect")
+        await self.async_set_unique_id(athlete_id)
 
         if self.source == config_entries.SOURCE_REAUTH:
-            self._abort_if_unique_id_mismatch(reason="wrong_account")
+            entry = self._get_reauth_entry()
+            # Legacy entries predate unique IDs. Authenticate against their
+            # saved token/coordinator identity before assigning the missing ID.
+            if entry.unique_id is None:
+                if _entry_athlete_id(self.hass, entry) != str(athlete_id):
+                    return self.async_abort(reason="wrong_account")
+                self._abort_if_unique_id_configured()
+            else:
+                self._abort_if_unique_id_mismatch(reason="wrong_account")
             # If re-authenticating, preserve existing options if not provided
             if self._user_input is None and self.reauth_entry_data:
                 data[CONF_PHOTOS] = self.reauth_entry_data.get(CONF_PHOTOS, False)
@@ -697,8 +718,9 @@ class OAuth2FlowHandler(
                     f"{get_url(self.hass, allow_internal=False, allow_ip=False)}/api/strava/webhook"
                 )
 
-            entry = self._get_reauth_entry()
-            return self.async_update_reload_and_abort(entry, data=data)
+            return self.async_update_reload_and_abort(
+                entry, unique_id=str(athlete_id), data_updates=data
+            )
 
         self._abort_if_unique_id_configured()
 
