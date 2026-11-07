@@ -9,7 +9,12 @@ from typing import Any, Protocol
 
 from aiohttp import ClientError
 
-from .const import ACTIVITY_API_BASE_URL
+from .const import (
+    ACTIVITY_API_BASE_URL,
+    ACTIVITY_RATE_LIMIT_RETRY_SECONDS,
+    ACTIVITY_REQUEST_TIMEOUT_SECONDS,
+    SUPPORTED_ACTIVITY_TYPES,
+)
 
 
 class OAuthSession(Protocol):
@@ -40,10 +45,18 @@ def validate_changes(changes: dict[str, Any]) -> None:
     for key, value in changes.items():
         if key in ("hide_from_home", "trainer", "commute"):
             valid = type(value) is bool
-        elif key in ("name", "description", "sport_type"):
+        elif key in ("name", "description"):
             valid = isinstance(value, str)
+        elif key == "sport_type":
+            valid = (
+                isinstance(value, str)
+                and value in SUPPORTED_ACTIVITY_TYPES
+                and value != "Other"
+            )
         elif key == "gear_id":
-            valid = isinstance(value, str) and re.fullmatch(r"(?:[bg]\d+|none)", value)
+            valid = isinstance(value, str) and re.fullmatch(
+                r"(?:[bg][1-9][0-9]*|none)", value
+            )
         else:
             valid = False
         if not valid:
@@ -66,13 +79,13 @@ class ActivityClient:
         self, method: str, activity_id: str, **kwargs: Any
     ) -> dict[str, Any]:
         activity_id = str(activity_id)
-        if not re.fullmatch(r"[0-9]+", activity_id):
+        if not re.fullmatch(r"[1-9][0-9]*", activity_id):
             raise ActivityError("invalid_activity_id")
         try:
             response = await self.session.async_request(
                 method,
                 f"{ACTIVITY_API_BASE_URL}/activities/{activity_id}",
-                timeout=20,
+                timeout=ACTIVITY_REQUEST_TIMEOUT_SECONDS,
                 **kwargs,
             )
             try:
@@ -88,10 +101,16 @@ class ActivityClient:
                     }.get(status, "upstream_unavailable")
                     try:
                         retry_after = max(
-                            0, int(response.headers.get("Retry-After", "900"))
+                            0,
+                            int(
+                                response.headers.get(
+                                    "Retry-After",
+                                    str(ACTIVITY_RATE_LIMIT_RETRY_SECONDS),
+                                )
+                            ),
                         )
                     except (TypeError, ValueError):
-                        retry_after = 900
+                        retry_after = ACTIVITY_RATE_LIMIT_RETRY_SECONDS
                     raise ActivityError(category, retry_after if status == 429 else 0)
                 result = await response.json()
             finally:
@@ -117,11 +136,17 @@ class ActivityClient:
         activity_id: str,
         transform: Callable[[dict[str, Any]], dict[str, Any]],
         dry_run: bool,
+        *,
+        expected: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         if type(dry_run) is not bool:
             raise ActivityError("invalid_dry_run")
         async with self._lock:
             before = await self.get(activity_id)
+            if expected and any(
+                before.get(key) != value for key, value in expected.items()
+            ):
+                raise ActivityError("activity_changed_retry")
             changes = transform(before)
             validate_changes(changes)
             changes = {
@@ -138,6 +163,10 @@ class ActivityClient:
                 return result
             latest = await self.get(activity_id)
             if any(latest.get(key) != before.get(key) for key in changes):
+                raise ActivityError("activity_changed_retry")
+            if expected and any(
+                latest.get(key) != value for key, value in expected.items()
+            ):
                 raise ActivityError("activity_changed_retry")
             await self._request(
                 "PUT",
@@ -165,15 +194,11 @@ class ActivityClient:
     ) -> dict[str, Any]:
         """Preview by default; optional preconditions protect stale caller snapshots."""
         validate_changes(changes)
-
-        def transform(activity: dict[str, Any]) -> dict[str, Any]:
-            if expected and any(
-                activity.get(key) != value for key, value in expected.items()
-            ):
-                raise ActivityError("activity_changed_retry")
-            return changes
-
-        return await self.transform(activity_id, transform, dry_run)
+        if expected is not None and not isinstance(expected, dict):
+            raise ActivityError("invalid_changes")
+        return await self.transform(
+            activity_id, lambda _: changes, dry_run, expected=expected
+        )
 
     async def append(
         self, activity_id: str, text: str, dry_run: bool = True
@@ -183,7 +208,11 @@ class ActivityClient:
             raise ActivityError("invalid_changes")
 
         def transform(activity: dict[str, Any]) -> dict[str, Any]:
-            original = activity.get("description") or ""
+            original = activity.get("description")
+            if original is None:
+                original = ""
+            if not isinstance(original, str):
+                raise ActivityError("invalid_activity_response")
             if f"\n{text}\n" in f"\n{original}\n":
                 return {"description": original}
             separator = (

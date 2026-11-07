@@ -1,9 +1,10 @@
 """Account-scoped action contracts using HA's actual service registry."""
 
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -158,3 +159,110 @@ async def test_numeric_template_activity_id_is_normalized(hass, actions):
             return_response=True,
         )
     get.assert_awaited_once_with("9")
+
+
+@pytest.mark.parametrize(
+    "transition", ["unloaded", "disabled", "replaced", "identity_changed"]
+)
+async def test_source_transition_before_put_prevents_write(
+    hass: HomeAssistant, mock_config_entry: MockConfigEntry, transition: str
+) -> None:
+    """Use a real coordinator/client: an in-flight action must not outlive its account."""
+    from homeassistant.config_entries import ConfigEntryDisabler
+
+    from custom_components.ha_strava.coordinator import StravaDataUpdateCoordinator
+    from tests.aiohttp_mock import aiohttp_mock
+
+    mock_config_entry.add_to_hass(hass)
+    coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
+    hass.data[DOMAIN] = {mock_config_entry.entry_id: coordinator}
+    client = coordinator.activity_client
+    original = client.get
+    reads = 0
+
+    async def get(activity_id: str) -> dict:
+        nonlocal reads
+        result = await original(activity_id)
+        reads += 1
+        if reads == 2:
+            if transition == "unloaded":
+                hass.data[DOMAIN].pop(mock_config_entry.entry_id)
+            elif transition == "replaced":
+                hass.data[DOMAIN][mock_config_entry.entry_id] = SimpleNamespace()
+            elif transition == "disabled":
+                await hass.config_entries.async_set_disabled_by(
+                    mock_config_entry.entry_id, ConfigEntryDisabler.USER
+                )
+            else:
+                hass.config_entries.async_update_entry(
+                    mock_config_entry, unique_id="999"
+                )
+        return result
+
+    await async_setup(hass, {})
+    with aiohttp_mock() as http, patch.object(client, "get", side_effect=get):
+        activity = {"id": 9, "athlete": {"id": 12345}, "name": "old"}
+        http.get(
+            "https://www.strava.com/api/v3/activities/9", payload=activity, repeat=True
+        )
+        http.put(
+            "https://www.strava.com/api/v3/activities/9",
+            payload={**activity, "name": "new"},
+        )
+        with pytest.raises(HomeAssistantError, match="source_not_loaded"):
+            await hass.services.async_call(
+                DOMAIN,
+                "edit_activity",
+                {
+                    "config_entry_id": mock_config_entry.entry_id,
+                    "activity_id": "9",
+                    "changes": {"name": "new"},
+                    "dry_run": False,
+                },
+                blocking=True,
+                return_response=True,
+            )
+        assert not any(method == "PUT" for method, _ in http.requests)
+
+
+async def test_two_accounts_do_not_fall_back_to_matching_owner(
+    hass: HomeAssistant, actions: ActivityClient
+) -> None:
+    """A foreign response must fail against the selected account, not pick its owner."""
+    entry = MockConfigEntry(domain=DOMAIN, unique_id="99", entry_id="other")
+    entry.add_to_hass(hass)
+    session = AsyncMock()
+    response = AsyncMock()
+    response.status = 200
+    response.release = Mock()
+    response.json.return_value = {"id": 9, "athlete": {"id": 42}, "name": "Run"}
+    session.async_request.return_value = response
+    hass.data[DOMAIN]["other"] = SimpleNamespace(
+        activity_client=ActivityClient(session, "99")
+    )
+    with pytest.raises(HomeAssistantError, match="wrong_athlete"):
+        await hass.services.async_call(
+            DOMAIN,
+            "edit_activity",
+            {
+                "config_entry_id": "other",
+                "activity_id": "9",
+                "changes": {"name": "new"},
+                "dry_run": False,
+            },
+            blocking=True,
+            return_response=True,
+        )
+    assert session.async_request.await_count == 1
+    assert session.async_request.await_args.args[0] == "GET"
+    actions.session.async_request.assert_not_awaited()
+
+
+async def test_actions_register_once(hass: HomeAssistant) -> None:
+    """Repeated setup does not replace handlers or add account-specific services."""
+    await async_setup(hass, {})
+    original = hass.services.async_services()[DOMAIN].copy()
+    await async_setup(hass, {})
+    current = hass.services.async_services()[DOMAIN]
+    assert set(current) == {"get_activity", "edit_activity"}
+    assert all(current[name] is service for name, service in original.items())

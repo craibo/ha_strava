@@ -732,6 +732,8 @@ def format_seconds_to_human_readable(seconds) -> str:
 SERVICE_GET_ACTIVITY = "get_activity"
 SERVICE_EDIT_ACTIVITY = "edit_activity"
 ACTIVITY_API_BASE_URL = "https://www.strava.com/api/v3"
+ACTIVITY_REQUEST_TIMEOUT_SECONDS = 20
+ACTIVITY_RATE_LIMIT_RETRY_SECONDS = 900
 ACTIVITY_ACTION_FIELDS = (
     "id",
     "name",

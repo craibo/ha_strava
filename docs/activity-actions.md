@@ -45,12 +45,19 @@ are translated separately. Retry scheduling belongs to the enrichment consumer.
 - Config entry selection is explicit; unknown, disabled or unloaded entries fail.
 - Legacy entries without a numeric unique athlete ID cannot use the new path.
   Do not infer an athlete from an unauthenticated event or choose a different account.
-- Activity IDs are checked before forming URLs. Unicode digits, bools, floats,
+- Activity IDs are canonical positive ASCII IDs, checked before forming URLs. Unicode digits, bools, floats,
   path traversal, arbitrary write fields and malformed athlete responses are rejected.
 - Fetched ownership is checked before returning details and before every write.
 - Helpers never log tokens, descriptions, request payloads or raw provider errors.
 - Shared actions register once during domain setup. A cached client/lock belongs
   to a single coordinator and is replaced when the entry is reloaded.
+- Before every request, the coordinator checks that its entry still exists,
+  remains enabled, has the same identity, and has not been unloaded or replaced.
+  This prevents a pending PUT after a source transition; it cannot retract a
+  request the provider has already accepted.
+- Description preconditions are checked again immediately before PUT, including
+  when the edited field is different. Sports and gear identifiers are validated
+  locally. Malformed upstream descriptions abort without writing.
 - HA service permissions and trace/recorder retention still apply. These actions
   do not introduce per-person HA authorization or a general API proxy.
 
@@ -73,3 +80,14 @@ and on the final full run. That unrelated timing test is unchanged. The existing
 sensor/camera/button AsyncMock warnings also remain outside this diff.
 
 No live activity edits or HA installation were performed for this branch.
+
+## Maintainer-review follow-up
+
+Reviewed against the eight points on webhook PR #349. Thirteen additional
+regressions reproduced lifecycle, precondition, identifier/enum and exception-chain
+gaps before their fixes; three more reproduced malformed-description crashes.
+Native HA service tests cover two-account isolation and repeated registration.
+A real local HTTP server verifies form-encoded GET/GET/PUT/GET and a no-op retry.
+The OAuth adapter catches HA's stable authentication-error base rather than
+requiring a newer exception symbol. No dependency or existing-action changes are
+included. These changes remain on a branch, with no new upstream PR or deployment.

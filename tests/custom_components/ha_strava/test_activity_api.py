@@ -1,6 +1,7 @@
 """Generic authenticated API contract, synthetic records only."""
 
 from copy import deepcopy
+from typing import Any
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -238,3 +239,81 @@ async def test_concurrent_appends_are_serialized(api):
         client.append("9", "first", False), client.append("9", "second", False)
     )
     assert api.activity["description"] == "notes\n\nfirst\n\nsecond"
+
+
+@pytest.mark.parametrize("activity_id", ["0", "00", "09", "٩", 9.0])
+async def test_noncanonical_ids_fail_before_network(
+    api: Any, activity_id: object
+) -> None:
+    """Follow the same positive ASCII ID contract as webhook routing."""
+    with pytest.raises(ActivityError, match="invalid_activity_id"):
+        await ActivityClient(api, "42").get(activity_id)
+    assert not api.calls
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"gear_id": "g١"},
+        {"gear_id": "g0"},
+        {"sport_type": "Other"},
+        {"sport_type": "unknown"},
+    ],
+)
+async def test_invalid_gear_and_sport_fail_before_network(
+    api: Any, changes: dict[str, Any]
+) -> None:
+    """Do not defer obvious identifier/enum validation to a provider error."""
+    with pytest.raises(ActivityError, match="invalid_changes"):
+        await ActivityClient(api, "42").update("9", changes, False)
+    assert not api.calls
+
+
+async def test_precondition_is_rechecked_immediately_before_put(api: Any) -> None:
+    """A snapshot condition must hold at both reads, even for a different edited field."""
+    original = api.async_request
+    reads = 0
+
+    async def changed(method: str, url: str, **kwargs: Any) -> Any:
+        nonlocal reads
+        if method == "GET":
+            reads += 1
+            if reads == 2:
+                api.activity["description"] = "externally changed"
+        return await original(method, url, **kwargs)
+
+    api.async_request = changed
+    with pytest.raises(ActivityError, match="activity_changed_retry"):
+        await ActivityClient(api, "42").update(
+            "9", {"name": "renamed"}, False, expected={"description": "notes"}
+        )
+    assert not writes(api)
+
+
+async def test_refresh_error_does_not_chain_sensitive_provider_exception(
+    api: Any,
+) -> None:
+    """The adapter itself must be safe, independently of the HA service wrapper."""
+    from homeassistant.exceptions import OAuth2TokenRequestReauthError
+
+    from custom_components.ha_strava.activity_session import HASession
+
+    api.async_request = AsyncMock(
+        side_effect=OAuth2TokenRequestReauthError(
+            domain="ha_strava", request_info=None, message="synthetic-secret"
+        )
+    )
+    with pytest.raises(ActivityError, match="reauth_required") as error:
+        await HASession(api).async_request("GET", "https://example.test")
+    assert error.value.__cause__ is None
+
+
+@pytest.mark.parametrize("description", [42, ["notes"], {"notes": "value"}])
+async def test_malformed_description_does_not_escape_or_write(
+    api: Any, description: object
+) -> None:
+    """Provider shape errors must not turn an append into an AttributeError/TypeError."""
+    api.activity["description"] = description
+    with pytest.raises(ActivityError, match="invalid_activity_response"):
+        await ActivityClient(api, "42").append("9", "annotation", False)
+    assert not writes(api)
