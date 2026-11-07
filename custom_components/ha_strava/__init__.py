@@ -1,7 +1,7 @@
 """Strava Home Assistant Custom Component"""
 
-import json
 import logging
+from collections.abc import Mapping
 from http import HTTPStatus
 from urllib.parse import urlparse
 
@@ -91,6 +91,52 @@ def _peer_entry_for_client_id(
     return None
 
 
+def _strava_id(value: object) -> str | None:
+    """Normalize positive ASCII IDs, rejecting bools, floats and Unicode digits."""
+    if type(value) is int:  # bool is an int subclass, but not a Strava ID.
+        return str(value) if value > 0 else None
+    if isinstance(value, str) and value.isascii() and value.isdigit():
+        return value.lstrip("0") or None
+    return None
+
+
+def _entry_athlete_id(hass: HomeAssistant, entry: ConfigEntry) -> str | None:
+    """Get identity from config or authenticated local data, never a webhook."""
+    if entry.unique_id is not None:
+        return _strava_id(entry.unique_id)
+
+    # Old entries may lack a unique ID. Subscription IDs are shared across
+    # athletes in a shared app, so they cannot establish an athlete identity.
+    identities = set()
+    token = entry.data.get("token")
+    if isinstance(token, Mapping) and isinstance(token.get("athlete"), Mapping):
+        if athlete_id := _strava_id(token["athlete"].get(CONF_SENSOR_ID)):
+            identities.add(athlete_id)
+    coordinator = hass.data.get(DOMAIN, {}).get(entry.entry_id)
+    cached = coordinator.data if coordinator is not None else None
+    if isinstance(cached, Mapping) and isinstance(cached.get("summary_stats"), Mapping):
+        if athlete_id := _strava_id(cached["summary_stats"].get(CONF_SENSOR_ID)):
+            identities.add(athlete_id)
+    return identities.pop() if len(identities) == 1 else None
+
+
+def _entry_for_webhook(
+    hass: HomeAssistant, owner_id: str, subscription_id: str
+) -> tuple[ConfigEntry, str] | None:
+    """Resolve one enabled athlete with a matching saved subscription."""
+    matches = []
+    for entry in hass.config_entries.async_entries(DOMAIN):
+        if entry.disabled_by is not None:
+            continue
+        if _strava_id(entry.data.get(CONF_WEBHOOK_ID)) != subscription_id:
+            continue
+        athlete_id = _entry_athlete_id(hass, entry)
+        if athlete_id == owner_id:
+            matches.append((entry, athlete_id))
+    # Never pick an arbitrary credential owner if local legacy entries conflict.
+    return matches[0] if len(matches) == 1 else None
+
+
 PLATFORMS = ["sensor", "camera", "button"]
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -130,51 +176,44 @@ class StravaWebhookView(HomeAssistantView):
 
         try:
             data = await request.json()
-            owner_id = data.get("owner_id")
-        except json.JSONDecodeError:
+        except ValueError:
             _LOGGER.error("Invalid JSON received in webhook")
             return Response(status=HTTPStatus.BAD_REQUEST)
+        if not isinstance(data, dict):
+            _LOGGER.warning("Webhook body must be a JSON object")
+            return Response(status=HTTPStatus.BAD_REQUEST)
 
-        if not owner_id:
-            _LOGGER.warning("Webhook received without owner_id")
-            return Response(status=HTTPStatus.OK)
-
-        entries = self.hass.config_entries.async_entries(DOMAIN)
-        subscription_id = data.get("subscription_id")
-        activity_id = str(data.get("object_id", ""))
-        known_entry = any(
-            entry.unique_id == str(owner_id)
-            or (
-                entry.unique_id is None
-                and subscription_id is not None
-                and str(entry.data.get(CONF_WEBHOOK_ID)) == str(subscription_id)
+        owner_id = _strava_id(data.get("owner_id"))
+        subscription_id = _strava_id(data.get("subscription_id"))
+        if owner_id is None or subscription_id is None:
+            _LOGGER.debug(
+                "Ignoring webhook with missing or invalid owner/subscription ID"
             )
-            for entry in entries
-            if entry.disabled_by is None
-        )
+            return Response(status=HTTPStatus.OK)
+        match = _entry_for_webhook(self.hass, owner_id, subscription_id)
+        if match is None:
+            _LOGGER.debug(
+                "Ignoring webhook without one matching enabled account/subscription"
+            )
+            return Response(status=HTTPStatus.OK)
+        entry, athlete_id = match
+
+        activity_id = _strava_id(data.get("object_id"))
         if (
-            known_entry
-            and data.get("object_type") == "activity"
+            data.get("object_type") == "activity"
             and data.get("aspect_type") == "create"
-            and activity_id.isdecimal()
+            and activity_id is not None
         ):
-            # Emit the IDs immediately: automations need not wait for sensor refresh.
-            # A legacy entry can identify its subscription even without an athlete unique ID.
+            # This is still unsigned, untrusted input. Consumers must verify
+            # activity ownership with Strava before performing sensitive actions.
             self.hass.bus.async_fire(
                 EVENT_ACTIVITY_CREATED,
-                {"athlete_id": str(owner_id), "activity_id": activity_id},
+                {"athlete_id": athlete_id, "activity_id": activity_id},
             )
 
-        # Find the coordinator for this user
-        for entry in entries:
-            if entry.unique_id == str(owner_id):
-                coordinator = self.hass.data.get(DOMAIN, {}).get(entry.entry_id)
-                if coordinator is not None:
-                    self.hass.async_create_task(coordinator.async_request_refresh())
-                break
-        else:
-            _LOGGER.warning(f"Webhook received for unknown user: {owner_id}")
-
+        coordinator = self.hass.data.get(DOMAIN, {}).get(entry.entry_id)
+        if coordinator is not None:
+            self.hass.async_create_task(coordinator.async_request_refresh())
         return Response(status=HTTPStatus.OK)
 
 
@@ -446,7 +485,8 @@ def _migrate_trophies_to_achievements_entities(
 async def async_setup(
     hass: HomeAssistant, config: dict
 ):  # pylint: disable=unused-argument
-    """Set up the Strava component."""
+    """Register the receiver once per domain, before any config-entry refresh."""
+    hass.http.register_view(StravaWebhookView(hass))
     return True
 
 
@@ -455,8 +495,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     hass.data.setdefault(DOMAIN, {})
 
     coordinator = StravaDataUpdateCoordinator(hass, entry=entry)
-    # Keep webhook automations available even when the API refresh needs retry/reauth.
-    hass.http.register_view(StravaWebhookView(hass))
     await coordinator.async_config_entry_first_refresh()
 
     hass.data[DOMAIN][entry.entry_id] = coordinator
