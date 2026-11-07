@@ -69,4 +69,4 @@ The full suite passes 516 tests on HA 2026.10.4 / Python 3.14, with 11 existing
 AsyncMock warnings. Black, isort, flake8, Pylint error checks for the new modules,
 and local hassfest pass. A broader HA-version runtime matrix has not been run.
 The independent photo-retry test fix is included for deterministic validation;
-the draft PR identifies that dependency so it can be removed from the final diff.
+[PR #353](https://github.com/craibo/ha_strava/pull/353) identifies that dependency so it can be removed from the final diff.
