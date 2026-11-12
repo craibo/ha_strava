@@ -1,0 +1,38 @@
+name: Release
+
+# HACS only shows a download count when it installs from an uploaded release
+# asset (hacs.json: zip_release + filename). GitHub does not count downloads
+# of the auto-generated source archive.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to (re)build and upload the zip for"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  upload-zip:
+    runs-on: "ubuntu-latest"
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: "actions/checkout@v4"
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+      - name: Build integration zip
+        run: |
+          cd custom_components/ha_strava
+          zip -r "$GITHUB_WORKSPACE/ha_strava.zip" . -x "*/__pycache__/*" "__pycache__/*" "*.pyc"
+      - name: Check zip layout
+        run: |
+          # HACS extracts the zip straight into custom_components/ha_strava/
+          unzip -l ha_strava.zip | grep -q " manifest.json$"
+      - name: Upload zip to release
+        run: gh release upload "$TAG" ha_strava.zip --clobber --repo "$GITHUB_REPOSITORY"
