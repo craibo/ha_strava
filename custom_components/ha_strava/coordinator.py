@@ -9,11 +9,14 @@ from typing import Tuple
 from zoneinfo import ZoneInfo
 
 import aiohttp
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import config_entry_oauth2_flow
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
+from .activity_api import ActivityClient
+from .activity_session import HASession
 from .const import (
     CONF_ACTIVITY_TYPE_OTHER,
     CONF_ACTIVITY_TYPES_TO_TRACK,
@@ -107,12 +110,34 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
                 OAUTH2_TOKEN,
             ),
         )
+        self._activity_client = None
         self.image_updates = {}
         super().__init__(
             hass,
             _LOGGER,
             name=DOMAIN,
             update_interval=None,  # Disable automatic polling - use webhooks only
+        )
+
+    @property
+    def activity_client(self) -> ActivityClient:
+        """One mutation lock per athlete, using the existing OAuth owner."""
+        if self._activity_client is None:
+            self._activity_client = ActivityClient(
+                HASession(self.oauth_session, self._activity_source_available),
+                self.entry.unique_id,
+            )
+        return self._activity_client
+
+    def _activity_source_available(self) -> bool:
+        """Recheck lifecycle/identity before every request, including a pending PUT."""
+        return (
+            self.hass.config_entries.async_get_entry(self.entry.entry_id) is self.entry
+            and self.entry.disabled_by is None
+            and self.entry.state != ConfigEntryState.UNLOAD_IN_PROGRESS
+            and self.hass.data.get(DOMAIN, {}).get(self.entry.entry_id) is self
+            and self._activity_client is not None
+            and self.entry.unique_id == self._activity_client.athlete_id
         )
 
     async def _async_update_data(self):

@@ -50,5 +50,15 @@
       "no_config": "Could not find the Strava Home Assistant configuration",
       "update_success": "The Strava Home Assistant configuration was updated successfully!"
     }
+  },
+  "services": {
+    "get_activity": {
+      "name": "Get Activity by ID",
+      "description": "Fetch an owned activity using an explicitly selected account."
+    },
+    "edit_activity": {
+      "name": "Preview or Edit Activity",
+      "description": "Preview or verify edits using an explicitly selected account. Preview is the default."
+    }
   }
 }
