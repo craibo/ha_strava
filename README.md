@@ -236,7 +236,6 @@ Activity sensors also expose PR and KOM/QOM data pulled from the segment efforts
 
 > **Note:** The "Trophies" sensor was renamed to "Achievements" to match Strava's own terminology, and now correctly reads its count from the same endpoint Strava's UI uses (previously it could show 0 even when Strava displayed real achievements). Upgrading installs keep their existing entity ID (still ending in `_trophies`) so history and automations aren't broken — only the displayed name changes. Rename the entity ID manually via the UI if you'd like it to match.
 
-
 ## Account-scoped fetch and preview/edit actions
 
 `ha_strava.get_activity` and `ha_strava.edit_activity` provide explicit account-scoped operations.
