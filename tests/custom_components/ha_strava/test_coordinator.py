@@ -1547,9 +1547,14 @@ class TestStravaDataUpdateCoordinator:
         assert response.status == 200
 
     @pytest.mark.asyncio
+    @pytest.mark.parametrize("retry_after", [1, 3])
     async def test_fetch_photo_with_retry_429_then_success(
-        self, hass: HomeAssistant, mock_config_entry, aioresponses_mock
-    ):
+        self,
+        hass: HomeAssistant,
+        mock_config_entry,
+        aioresponses_mock,
+        retry_after: int,
+    ) -> None:
         """Test photo fetch retry on 429 error then success."""
         with patch("homeassistant.helpers.frame.report_usage"):
             coordinator = StravaDataUpdateCoordinator(hass, entry=mock_config_entry)
@@ -1564,7 +1569,7 @@ class TestStravaDataUpdateCoordinator:
         aioresponses_mock.get(
             "https://www.strava.com/api/v3/activities/1/photos?size=512",
             status=429,
-            headers={"Retry-After": "1"},
+            headers={"Retry-After": str(retry_after)},
             payload={"message": "Rate limit exceeded"},
         )
         aioresponses_mock.get(
@@ -1573,13 +1578,15 @@ class TestStravaDataUpdateCoordinator:
             status=200,
         )
 
-        start_time = datetime.now()
-        response = await coordinator._fetch_photo_with_retry(1)
-        end_time = datetime.now()
+        # Assert the awaited backoff, not wall time affected by frozen test clocks.
+        with patch(
+            "custom_components.ha_strava.coordinator.asyncio.sleep",
+            new_callable=AsyncMock,
+        ) as sleep:
+            response = await coordinator._fetch_photo_with_retry(1)
 
         assert response.status == 200
-        elapsed = (end_time - start_time).total_seconds()
-        assert elapsed >= 1.0, "Should have waited for Retry-After header"
+        sleep.assert_awaited_once_with(retry_after)
 
     @pytest.mark.asyncio
     async def test_fetch_photo_with_retry_429_max_attempts(
