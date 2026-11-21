@@ -21,6 +21,11 @@ from homeassistant.helpers.entity_registry import (
     async_get,
 )
 from homeassistant.helpers.network import NoURLAvailableError, get_url
+from homeassistant.helpers.selector import (
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
+)
 
 # custom module imports
 from .const import (
@@ -178,7 +183,13 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                         default=self.config_entry.options.get(
                             CONF_GEAR_SORT, CONF_GEAR_SORT_DEFAULT
                         ),
-                    ): vol.In(GEAR_SORT_OPTIONS),
+                    ): SelectSelector(
+                        SelectSelectorConfig(
+                            options=GEAR_SORT_OPTIONS,
+                            mode=SelectSelectorMode.DROPDOWN,
+                            translation_key=CONF_GEAR_SORT,
+                        )
+                    ),
                 }
             ),
         )

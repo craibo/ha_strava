@@ -43,13 +43,21 @@
           "num_recent_activities": "Number of Recent Activities",
           "gear_enabled": "Enable Gear Sensors",
           "num_gear_sensors": "Number of Gear Sensors",
-          "gear_sort": "Gear order (distance = most used, recent = most recently used)"
+          "gear_sort": "Gear order"
         }
       }
     },
     "abort": {
       "no_config": "Could not find the Strava Home Assistant configuration",
       "update_success": "The Strava Home Assistant configuration was updated successfully!"
+    }
+  },
+  "selector": {
+    "gear_sort": {
+      "options": {
+        "distance": "Most used (distance)",
+        "recent": "Most recently used"
+      }
     }
   }
 }

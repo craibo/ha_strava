@@ -5,7 +5,7 @@ import json
 import logging
 from datetime import datetime as dt
 from datetime import timedelta
-from typing import Tuple
+from typing import Any, Tuple
 from zoneinfo import ZoneInfo
 
 import aiohttp
@@ -147,19 +147,23 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.error(f"Error communicating with API: {err}")
             raise UpdateFailed(f"Error communicating with API: {err}") from err
 
-    def _record_gear_last_used(self, activities: list[dict]) -> None:
+    def _record_gear_last_used(self, activities: Any) -> None:
         """Remember when each gear item was last used, across all sports.
 
         Built from the activities already fetched, so it costs no extra API
         calls. Used to order gear when the gear sort option is "recent".
+        Merges into the existing map (keeping the newer date) so a smaller or
+        empty response never discards what is already known.
         """
-        last_used: dict[str, str] = {}
+        if not isinstance(activities, list):
+            return
         for activity in activities:
+            if not isinstance(activity, dict):
+                continue
             gear_id = activity.get("gear_id")
             start = activity.get("start_date") or ""
-            if gear_id and start > last_used.get(str(gear_id), ""):
-                last_used[str(gear_id)] = start
-        self._gear_last_used = last_used
+            if gear_id and start > self._gear_last_used.get(str(gear_id), ""):
+                self._gear_last_used[str(gear_id)] = start
 
     async def _fetch_activities(self) -> Tuple[str, list[dict]]:
         _LOGGER.debug("Fetching activities")

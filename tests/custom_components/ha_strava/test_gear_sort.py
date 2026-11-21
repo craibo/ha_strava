@@ -2,6 +2,7 @@
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
 from homeassistant.const import CONF_CLIENT_ID, CONF_CLIENT_SECRET
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
@@ -100,13 +101,34 @@ class TestRecordGearLastUsed:
             "b2": "2026-10-12T16:57:40Z",
         }
 
-    async def test_ignores_activities_without_gear_and_resets_between_calls(
-        self, hass: HomeAssistant
-    ):
-        """Activities without gear are skipped and each call replaces the previous map."""
+    async def test_ignores_activities_without_gear(self, hass: HomeAssistant):
+        """Activities without gear are skipped."""
+        coordinator = _make_coordinator(hass)
+        coordinator._record_gear_last_used([{"start_date": "2026-11-21T09:00:00Z"}])
+        assert coordinator._gear_last_used == {}
+
+    async def test_merges_and_keeps_newer_date(self, hass: HomeAssistant):
+        """Later calls merge into the map; an empty or older response loses nothing."""
         coordinator = _make_coordinator(hass)
         coordinator._record_gear_last_used(ACTIVITIES)
-        coordinator._record_gear_last_used([{"start_date": "2026-11-21T09:00:00Z"}])
+        before = dict(coordinator._gear_last_used)
+        coordinator._record_gear_last_used([])
+        coordinator._record_gear_last_used(
+            [{"gear_id": "b1", "start_date": "2020-01-01T00:00:00Z"}]
+        )
+        assert coordinator._gear_last_used == before
+        coordinator._record_gear_last_used(
+            [{"gear_id": "b2", "start_date": "2026-11-21T00:00:00Z"}]
+        )
+        assert coordinator._gear_last_used["b2"] == "2026-11-21T00:00:00Z"
+
+    @pytest.mark.parametrize(
+        "payload", [{"message": "oops"}, None, "text", [None, "x", 1]]
+    )
+    async def test_ignores_malformed_payload(self, hass: HomeAssistant, payload):
+        """A non-list payload or non-dict items must not raise."""
+        coordinator = _make_coordinator(hass)
+        coordinator._record_gear_last_used(payload)
         assert coordinator._gear_last_used == {}
 
 
