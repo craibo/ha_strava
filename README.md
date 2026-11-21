@@ -65,7 +65,7 @@ The Strava Home Assistant Integration creates **sensor entities** for each activ
 
 - **Gear Name**: Shows the name of each gear item (bike or shoe) with attributes including brand, model, and description
 - **Gear Distance**: Tracks the total distance for each gear item with proper unit conversion
-- Configure the number of gear sensors to display (1-20, default: 3)
+- Configure the number of gear sensors to display (1-20, default: 3) and whether they are the most used or the most recently used gear
 
 **Supported Activity Types:**
 The integration supports all 50 Strava activity types including Run, Ride, Walk, Swim, Hike, AlpineSki, BackcountrySki, Badminton, Canoeing, Crossfit, EBikeRide, Elliptical, Golf, GravelRide, Handcycle, HighIntensityIntervalTraining, IceSkate, InlineSkate, Kayaking, Kitesurf, MountainBikeRide, NordicSki, Pickleball, Pilates, Racquetball, RockClimbing, RollerSki, Rowing, Sail, Skateboard, Snowboard, Snowshoe, Soccer, Squash, StairStepper, StandUpPaddling, Surfing, TableTennis, Tennis, TrailRun, Velomobile, VirtualRide, VirtualRow, VirtualRun, WeightTraining, Wheelchair, Windsurf, Workout, and Yoga.
@@ -177,7 +177,7 @@ You can enable or disable automatic photo updates for the camera entity. When en
 
 You can enable gear sensors to track your bikes and shoes from Strava. When enabled, the integration will:
 
-- Fetch your most recently used gear items (bikes and shoes combined)
+- Fetch your gear items (bikes and shoes combined), most used or most recently used first
 - Create a device for each gear item
 - Create two sensors per gear:
   - **Gear Name**: Shows the gear name with attributes (id, brand_name, model_name, primary, description)
@@ -187,8 +187,9 @@ You can enable gear sensors to track your bikes and shoes from Strava. When enab
 
 - **Enable Gear Sensors**: Checkbox to enable/disable gear sensors
 - **Number of Gear Sensors**: Slider to select how many gear items to track (1-20, default: 3)
+- **Gear order**: `distance` (default) tracks your most used gear; `recent` tracks the gear you used most recently
 
-The gear items are sorted by distance (most used first), and the integration respects API rate limits by caching gear details.
+By default gear items are sorted by distance (most used first). With **Gear order** set to `recent` they are sorted by the date of your most recent activity using each item, taken from the activities the integration already fetches (the latest 200), so it adds no extra API calls; gear with no activity in that window comes last, in distance order. The integration respects API rate limits by caching gear details.
 
 **_NOTES_**
 

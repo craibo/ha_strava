@@ -42,7 +42,8 @@
           "conf_distance_unit": "Distance unit system to use",
           "num_recent_activities": "Number of Recent Activities",
           "gear_enabled": "Enable Gear Sensors",
-          "num_gear_sensors": "Number of Gear Sensors"
+          "num_gear_sensors": "Number of Gear Sensors",
+          "gear_sort": "Gear order (distance = most used, recent = most recently used)"
         }
       }
     },

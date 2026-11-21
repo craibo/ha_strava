@@ -55,7 +55,7 @@ The Strava Home Assistant Integration creates **sensor entities** for each activ
 
 - **Gear Name**: Shows the name of each gear item (bike or shoe) with attributes including brand, model, and description
 - **Gear Distance**: Tracks the total distance for each gear item with proper unit conversion
-- Configure the number of gear sensors to display (1-20, default: 3)
+- Configure the number of gear sensors to display (1-20, default: 3) and whether they are the most used or the most recently used gear
 
 **Supported Activity Types:**
 The integration supports all 50 Strava activity types including Run, Ride, Walk, Swim, Hike, AlpineSki, BackcountrySki, Badminton, Canoeing, Crossfit, EBikeRide, Elliptical, Golf, GravelRide, Handcycle, HighIntensityIntervalTraining, IceSkate, InlineSkate, Kayaking, Kitesurf, MountainBikeRide, NordicSki, Pickleball, Pilates, Racquetball, RockClimbing, RollerSki, Rowing, Sail, Skateboard, Snowboard, Snowshoe, Soccer, Squash, StairStepper, StandUpPaddling, Surfing, TableTennis, Tennis, TrailRun, Velomobile, VirtualRide, VirtualRow, VirtualRun, WeightTraining, Wheelchair, Windsurf, Workout, and Yoga.

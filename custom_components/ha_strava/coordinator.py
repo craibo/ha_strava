@@ -28,6 +28,8 @@ from .const import (
     CONF_ATTR_SPORT_TYPE,
     CONF_ATTR_START_LATLONG,
     CONF_GEAR_ENABLED,
+    CONF_GEAR_SORT,
+    CONF_GEAR_SORT_DEFAULT,
     CONF_NUM_GEAR_SENSORS,
     CONF_NUM_GEAR_SENSORS_DEFAULT,
     CONF_NUM_RECENT_ACTIVITIES,
@@ -66,6 +68,7 @@ from .const import (
     CONF_SENSOR_TROPHIES,
     CONFIG_IMG_SIZE,
     DOMAIN,
+    GEAR_SORT_RECENT,
     OAUTH2_AUTHORIZE,
     OAUTH2_TOKEN,
     SUPPORTED_ACTIVITY_TYPES,
@@ -108,6 +111,8 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             ),
         )
         self.image_updates = {}
+        # gear_id -> start_date of the newest activity using it (see _record_gear_last_used)
+        self._gear_last_used: dict[str, str] = {}
         super().__init__(
             hass,
             _LOGGER,
@@ -142,6 +147,20 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.error(f"Error communicating with API: {err}")
             raise UpdateFailed(f"Error communicating with API: {err}") from err
 
+    def _record_gear_last_used(self, activities: list[dict]) -> None:
+        """Remember when each gear item was last used, across all sports.
+
+        Built from the activities already fetched, so it costs no extra API
+        calls. Used to order gear when the gear sort option is "recent".
+        """
+        last_used: dict[str, str] = {}
+        for activity in activities:
+            gear_id = activity.get("gear_id")
+            start = activity.get("start_date") or ""
+            if gear_id and start > last_used.get(str(gear_id), ""):
+                last_used[str(gear_id)] = start
+        self._gear_last_used = last_used
+
     async def _fetch_activities(self) -> Tuple[str, list[dict]]:
         _LOGGER.debug("Fetching activities")
         try:
@@ -151,6 +170,7 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             )
             response.raise_for_status()
             activities_json = await response.json()
+            self._record_gear_last_used(activities_json)
         except aiohttp.ClientError as err:
             _LOGGER.error(f"Error fetching activities: {err}")
             raise UpdateFailed(f"Error fetching activities: {err}") from err
@@ -571,6 +591,18 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             # Sort by distance (descending) - most used gear first
             # Gear without distance will be sorted to the end
             all_gear.sort(key=lambda g: g.get("distance", 0), reverse=True)
+
+            # Optionally order by most recent use instead. The sort is stable, so
+            # gear with no activity in the fetched window keeps its distance order
+            # and sorts to the end.
+            if (
+                self.entry.options.get(CONF_GEAR_SORT, CONF_GEAR_SORT_DEFAULT)
+                == GEAR_SORT_RECENT
+            ):
+                all_gear.sort(
+                    key=lambda g: self._gear_last_used.get(str(g.get("id", "")), ""),
+                    reverse=True,
+                )
 
             # Limit to configured number
             limited_gear = all_gear[:num_gear_sensors]
