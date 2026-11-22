@@ -42,13 +42,22 @@
           "conf_distance_unit": "Sistema de unidades de distância a usar",
           "num_recent_activities": "Número de Atividades Recentes",
           "gear_enabled": "Ativar Sensores de Equipamento",
-          "num_gear_sensors": "Número de Sensores de Equipamento"
+          "num_gear_sensors": "Número de Sensores de Equipamento",
+          "gear_sort": "Ordem do equipamento"
         }
       }
     },
     "abort": {
       "no_config": "Não foi possível encontrar a configuração do Strava com Home Assistant",
       "update_success": "A configuração do Strava com Home Assistant foi atualizada com sucesso!"
+    }
+  },
+  "selector": {
+    "gear_sort": {
+      "options": {
+        "distance": "Mais usado (distância)",
+        "recent": "Usado mais recentemente"
+      }
     }
   }
 }

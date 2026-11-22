@@ -543,8 +543,9 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
     async def _fetch_gear(self, athlete_id: str) -> list[dict]:
         """Fetch gear list from Strava API.
 
-        Returns a list of gear items (bikes + shoes) sorted by distance (most used first),
-        limited to the configured number of gear sensors.
+        Returns a list of gear items (bikes + shoes), limited to the configured
+        number of gear sensors. Items are sorted by distance (most used first) by
+        default, or by most recent use when the gear sort option is "recent".
         """
         # Check if gear sensors are enabled
         gear_enabled = (
