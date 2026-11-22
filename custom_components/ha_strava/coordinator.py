@@ -5,7 +5,7 @@ import json
 import logging
 from datetime import datetime as dt
 from datetime import timedelta
-from typing import Tuple
+from typing import Any, Tuple
 from zoneinfo import ZoneInfo
 
 import aiohttp
@@ -28,6 +28,8 @@ from .const import (
     CONF_ATTR_SPORT_TYPE,
     CONF_ATTR_START_LATLONG,
     CONF_GEAR_ENABLED,
+    CONF_GEAR_SORT,
+    CONF_GEAR_SORT_DEFAULT,
     CONF_NUM_GEAR_SENSORS,
     CONF_NUM_GEAR_SENSORS_DEFAULT,
     CONF_NUM_RECENT_ACTIVITIES,
@@ -66,6 +68,7 @@ from .const import (
     CONF_SENSOR_TROPHIES,
     CONFIG_IMG_SIZE,
     DOMAIN,
+    GEAR_SORT_RECENT,
     OAUTH2_AUTHORIZE,
     OAUTH2_TOKEN,
     SUPPORTED_ACTIVITY_TYPES,
@@ -108,6 +111,8 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             ),
         )
         self.image_updates = {}
+        # gear_id -> start_date of the newest activity using it (see _record_gear_last_used)
+        self._gear_last_used: dict[str, str] = {}
         super().__init__(
             hass,
             _LOGGER,
@@ -142,6 +147,24 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             _LOGGER.error(f"Error communicating with API: {err}")
             raise UpdateFailed(f"Error communicating with API: {err}") from err
 
+    def _record_gear_last_used(self, activities: Any) -> None:
+        """Remember when each gear item was last used, across all sports.
+
+        Built from the activities already fetched, so it costs no extra API
+        calls. Used to order gear when the gear sort option is "recent".
+        Merges into the existing map (keeping the newer date) so a smaller or
+        empty response never discards what is already known.
+        """
+        if not isinstance(activities, list):
+            return
+        for activity in activities:
+            if not isinstance(activity, dict):
+                continue
+            gear_id = activity.get("gear_id")
+            start = activity.get("start_date") or ""
+            if gear_id and start > self._gear_last_used.get(str(gear_id), ""):
+                self._gear_last_used[str(gear_id)] = start
+
     async def _fetch_activities(self) -> Tuple[str, list[dict]]:
         _LOGGER.debug("Fetching activities")
         try:
@@ -151,6 +174,7 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             )
             response.raise_for_status()
             activities_json = await response.json()
+            self._record_gear_last_used(activities_json)
         except aiohttp.ClientError as err:
             _LOGGER.error(f"Error fetching activities: {err}")
             raise UpdateFailed(f"Error fetching activities: {err}") from err
@@ -519,8 +543,9 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
     async def _fetch_gear(self, athlete_id: str) -> list[dict]:
         """Fetch gear list from Strava API.
 
-        Returns a list of gear items (bikes + shoes) sorted by distance (most used first),
-        limited to the configured number of gear sensors.
+        Returns a list of gear items (bikes + shoes), limited to the configured
+        number of gear sensors. Items are sorted by distance (most used first) by
+        default, or by most recent use when the gear sort option is "recent".
         """
         # Check if gear sensors are enabled
         gear_enabled = (
@@ -571,6 +596,18 @@ class StravaDataUpdateCoordinator(DataUpdateCoordinator):
             # Sort by distance (descending) - most used gear first
             # Gear without distance will be sorted to the end
             all_gear.sort(key=lambda g: g.get("distance", 0), reverse=True)
+
+            # Optionally order by most recent use instead. The sort is stable, so
+            # gear with no activity in the fetched window keeps its distance order
+            # and sorts to the end.
+            if (
+                self.entry.options.get(CONF_GEAR_SORT, CONF_GEAR_SORT_DEFAULT)
+                == GEAR_SORT_RECENT
+            ):
+                all_gear.sort(
+                    key=lambda g: self._gear_last_used.get(str(g.get("id", "")), ""),
+                    reverse=True,
+                )
 
             # Limit to configured number
             limited_gear = all_gear[:num_gear_sensors]

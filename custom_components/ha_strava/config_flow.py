@@ -21,6 +21,11 @@ from homeassistant.helpers.entity_registry import (
     async_get,
 )
 from homeassistant.helpers.network import NoURLAvailableError, get_url
+from homeassistant.helpers.selector import (
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
+)
 
 # custom module imports
 from .const import (
@@ -31,6 +36,8 @@ from .const import (
     CONF_DISTANCE_UNIT_OVERRIDE_IMPERIAL,
     CONF_DISTANCE_UNIT_OVERRIDE_METRIC,
     CONF_GEAR_ENABLED,
+    CONF_GEAR_SORT,
+    CONF_GEAR_SORT_DEFAULT,
     CONF_IMG_UPDATE_INTERVAL_SECONDS,
     CONF_IMG_UPDATE_INTERVAL_SECONDS_DEFAULT,
     CONF_NUM_GEAR_SENSORS,
@@ -42,6 +49,7 @@ from .const import (
     CONF_STRAVA_APP_MODE,
     DEFAULT_ACTIVITY_TYPES,
     DOMAIN,
+    GEAR_SORT_OPTIONS,
     OAUTH2_AUTHORIZE,
     OAUTH2_SCOPES,
     OAUTH2_TOKEN,
@@ -169,6 +177,18 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                             max=20,
                             msg="Must be between 1 and 20",
                         ),
+                    ),
+                    vol.Required(
+                        CONF_GEAR_SORT,
+                        default=self.config_entry.options.get(
+                            CONF_GEAR_SORT, CONF_GEAR_SORT_DEFAULT
+                        ),
+                    ): SelectSelector(
+                        SelectSelectorConfig(
+                            options=GEAR_SORT_OPTIONS,
+                            mode=SelectSelectorMode.DROPDOWN,
+                            translation_key=CONF_GEAR_SORT,
+                        )
                     ),
                 }
             ),
@@ -505,6 +525,9 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             )
             ha_strava_options[CONF_NUM_GEAR_SENSORS] = user_input.get(
                 CONF_NUM_GEAR_SENSORS, CONF_NUM_GEAR_SENSORS_DEFAULT
+            )
+            ha_strava_options[CONF_GEAR_SORT] = user_input.get(
+                CONF_GEAR_SORT, CONF_GEAR_SORT_DEFAULT
             )
 
             _LOGGER.debug(f"Strava Config Options: {ha_strava_options}")
